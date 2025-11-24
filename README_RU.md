@@ -21,7 +21,7 @@
 Этот проект содержит элементы дизайна, производные от WPSD Project,
 распространяемые под лицензией GNU FDL v1.3.
 
-Original copyright: Copyright © 2023 WPSD Project Development Team, et al.
+Оригинальные авторские права: Copyright © 2023 WPSD Project Development Team, et al.
 
 ## Описание
 
@@ -68,7 +68,7 @@ Original copyright: Copyright © 2023 WPSD Project Development Team, et al.
 
 **Данный проект НЕ является заменой или обновлением оригинального SVXLink-Dashboard-V2**
 
-Это независимое ответвление (fork) со значительными architectural changes, которые:
+Это независимое ответвление (fork) со значительными изменениями, которые:
 - ❌ **Не совместимы** с оригинальной кодовая базой
 - ❌ **Не могут** быть использованы как drop-in replacement
 - ❌ **Не принимают** Pull Request'ы для оригинального проекта
@@ -77,9 +77,7 @@ Original copyright: Copyright © 2023 WPSD Project Development Team, et al.
 
 | Характеристика | Оригинальный проект | Данный форк |
 |----------------|-------------------|-------------|
-| Архитектура | Монолитная | Микросервисная |
-| Backend | PHP | Node.js/Python |
-| Стиль интерфейса | Pi-star like | WSPD-style |
+| Стиль интерфейса | Pi-star like | WSPD-style like |
 | Совместимость | - | ❌ Не совместим |
 
 ## Для пользователей оригинального проекта
@@ -90,9 +88,4 @@ Original copyright: Copyright © 2023 WPSD Project Development Team, et al.
 - **Полностью переработанную альтернативу** → продолжайте чтение
 
 
-**⚠️ IMPORTANT: This release is NOT compatible with the original SVXLink-Dashboard-V2**
-
-This is an independent fork with:
-- Complete backend rewrite
-- Redesigned WSPD-style interface
-- Breaking changes from original architecture
+**⚠️ ВНИМАНИЕ: Этот форк не совместим с орининальным проектом SVXLink-Dashboard-V2**
