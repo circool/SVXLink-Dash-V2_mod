@@ -6,4 +6,5 @@ Thumbs.db
 originals/
 dev/
 *.tmp
+*tmp*/
 *.bak
