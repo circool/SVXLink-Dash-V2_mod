@@ -3,7 +3,7 @@ Thumbs.db
 
 .vscode/
 .idea/
-.originals/
-.dev/
+originals/
+dev/
 *.tmp
 *.bak
