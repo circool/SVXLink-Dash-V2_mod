@@ -1143,4 +1143,29 @@ function debug_createCompleteEvent($startEvent, $endEvent)
 		'status' => 'complete'
 	];
 }
+
+/**
+ * Парсит XML-теги
+ * Функции отображения активности с указанием длительности
+ * @file funct_debug_active.php
+ * @date 2025-11-26
+ * @version 0.1.4
+ */
+function parseXmlTags($_xml_data) {
+    $result = [];
+    
+    // Регулярное выражение для поиска XML-тегов
+    $pattern = '/<([A-Za-z0-9_]+)>(.*?)<\/\\1>/s';
+    
+    if (preg_match_all($pattern, $_xml_data, $matches, PREG_SET_ORDER)) {
+        foreach ($matches as $match) {
+            $tag_name = $match[1];
+            $payload_content = $match[2];
+            $result[$tag_name] = $payload_content;
+        }
+    }
+    
+    return $result;
+}
+
 ?>
