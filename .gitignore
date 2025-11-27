@@ -4,6 +4,7 @@ Thumbs.db
 .vscode/
 .idea/
 originals/
+src/
 dev/
 *.tmp
 *tmp*/
