@@ -1,6 +1,6 @@
 ![Статус проекта](https://img.shields.io/badge/Статус-В_работе-red?style=flat)
-![Версия](https://img.shields.io/badge/Версия-0.0.3-red?style=flat)
-![Лицензия](https://img.shields.io/badge/Лицензия-MIT-green?style=flat)
+![Версия](https://img.shields.io/badge/Версия-0.1.6-red?style=flat)
+![Лицензия](https://img.shields.io/badge/Лицензия-GNU FDL v1.3-green?style=flat)
 
 ❌  Не пытайтесь использовать этот проект пока видите это сообщение!
 
@@ -32,35 +32,14 @@ Original copyright: Copyright © 2023 WPSD Project Development Team, et al.
 - Новая архитектура серверной части, переписанная с нуля
 
 - Пользовательский интерфейс в стиле WSPD
-![Ghbvthysq внешний вид](./readme_images/review.jpg)
 
-- Информативная панель состояния с информацией о соединениях Echolink,Frn,ReflectorLogic
-
-![панель состояния](./readme_images/panel.jpg)
-
-[-] Разговорные группы рефлектора (устарело)
-
-![Разговорные группы рефлектора](./readme_images/tg_panel.jpg)
+- Информативная панель состояния с информацией о соединениях 
 
 - Рефлекторы, разговорные группы, линки
 
 ![Разговорные группы рефлектора](./readme_images/links.jpg)
 
-- Подключенные узлы Эхолинка
 
-![Подключенные узлы эхолинка](./readme_images/el_panel.jpg)
-
-- Подключенный сервер Frn	
-
-![Подключенный сервер Frn](./readme_images/frn_panel.jpg)
-
-[-] Отображение типов подключенных узлов - устарело
-
-![Отображение типов подключенных узлов](./readme_images/details.jpg)
-
-- Клавиатура DTMF для управления svxlink
-
-![Клавиатура DTMF](./readme_images/dtmf_keypad.jpg)
 
 ## Технические примечания
 
