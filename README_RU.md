@@ -1,6 +1,6 @@
 ![Статус проекта](https://img.shields.io/badge/Статус-В_работе-red?style=flat)
 ![Версия](https://img.shields.io/badge/Версия-0.1.6-red?style=flat)
-![Лицензия](https://img.shields.io/badge/Лицензия-GNU FDL v1.3-green?style=flat)
+![Лицензия](https://img.shields.io/badge/Лицензия-GNU_FDL_v1.3-green?style=flat)
 
 ❌  Не пытайтесь использовать этот проект пока видите это сообщение!
 

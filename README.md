@@ -1,6 +1,6 @@
 ![Project status](https://img.shields.io/badge/Status-In_process-red?style=flat)
 ![Version](https://img.shields.io/badge/Version-0.1.6-red?style=flat)
-![Licensy](https://img.shields.io/badge/Licensy-GNU FDL v1.3-green?style=flat)
+![Licensy](https://img.shields.io/badge/Licensy-GNU_FDL_v1.3-green?style=flat)
 
 ❌  Please do not download this fork until it is announced to be ready!
 
