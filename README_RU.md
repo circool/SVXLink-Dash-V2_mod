@@ -38,9 +38,13 @@ Original copyright: Copyright © 2023 WPSD Project Development Team, et al.
 
 ![панель состояния](./readme_images/panel.jpg)
 
-- Разговорные группы рефлектора
+[-] Разговорные группы рефлектора (устарело)
 
 ![Разговорные группы рефлектора](./readme_images/tg_panel.jpg)
+
+- Рефлекторы, разговорные группы, линки
+
+![Разговорные группы рефлектора](./readme_images/links.jpg)
 
 - Подключенные узлы Эхолинка
 
@@ -50,7 +54,7 @@ Original copyright: Copyright © 2023 WPSD Project Development Team, et al.
 
 ![Подключенный сервер Frn](./readme_images/frn_panel.jpg)
 
-- Отображение типов подключенных узлов
+[-] Отображение типов подключенных узлов - устарело
 
 ![Отображение типов подключенных узлов](./readme_images/details.jpg)
 
