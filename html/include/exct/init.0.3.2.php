@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @filesource /include/exct/init.0.3.1.php
+ * @filesource /include/exct/init.0.3.2.php
  * @version 0.3.2
  * @date 2026.01.03
  * @author vladimir@tsurkanenko.ru
@@ -11,7 +11,7 @@
  * - Добавлен вывод конфигурации WebSocket клиента
  * - Синхронизация host между сервером и клиентом
  * Новое в 0.3.2
- * - Используетя обновленная фкнуция getActualStatus.0.3.1 с параметром forceRebuild для первого запуска
+ * - Используетя обновленная функция getActualStatus.0.3.1 с параметром forceRebuild для первого запуска
  */
 $func_start = microtime(true);
 // Подключаем настройки по умолчанию
