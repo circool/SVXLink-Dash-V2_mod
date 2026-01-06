@@ -12,3 +12,5 @@ dev/
 *.tmp
 *tmp*/
 *.bak
+
+deprecated
