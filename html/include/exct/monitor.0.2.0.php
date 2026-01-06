@@ -7,7 +7,7 @@
  * @author vladimir@tsurkanenko.ru
  * @filesource /include/exct/monitor.0.2.0.php
  * @copyright Copyright (C) 2025 vladimir@tsurkanenko.ru
- * @description Скрипты аудиомониторинга
+ * @description Скрипты аудиомониторинга и управления иеонкой меню
  */
 
 // Проверяем, не был ли уже загружен монитор
@@ -16,7 +16,6 @@ if (defined('AUDIO_MONITOR_LOADED')) {
 }
 define('AUDIO_MONITOR_LOADED', true);
 ?>
-
 
 <script>
 	// Простой аудиомонитор для SvxLink
@@ -177,7 +176,6 @@ define('AUDIO_MONITOR_LOADED', true);
 			}
 
 			var url = 'ws://' + window.location.hostname + ':' + config.port;
-			// var url = 'ws://localhost:' + config.port;
 			console.log('Monitor: Connecting to', url);
 
 			connectionAttempts++;
@@ -186,6 +184,7 @@ define('AUDIO_MONITOR_LOADED', true);
 			try {
 				ws = new WebSocket(url);
 				ws.binaryType = 'arraybuffer';
+
 
 				// Таймаут для подключения (5 секунд)
 				connectionTimeout = setTimeout(function() {
@@ -257,7 +256,7 @@ define('AUDIO_MONITOR_LOADED', true);
 
 		// Обработка аудиоданных (без изменений)
 		function processAudioData(data) {
-						
+
 			if (!audioCtx || !isPlaying) return;
 
 			try {
@@ -269,11 +268,9 @@ define('AUDIO_MONITOR_LOADED', true);
 				for (var i = 0; i < pcm16.length; i++) {
 					float32[i] = pcm16[i] / 32768.0; // -1.0 to 1.0
 				}
-				
+
 				// Воспроизводим
 				playAudio(float32);
-
-				
 
 			} catch (e) {
 				console.error('Monitor: Audio processing error', e);
