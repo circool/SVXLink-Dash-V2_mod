@@ -253,12 +253,12 @@
 │   ├── browserdetect.php               # Подстройка под браузер
 │   ├── connection_details.php          # симлинк -> /include/exct/connection_details.0.2.1.php
 │   ├── debug_page.php          		    # симлинк -> /include/exct/debug_page.0.2.1.php
-│   ├── echolink_data.php               # симлинк -> /include/exct/echolink_data.0.1.4.php
+│   ├── echolink_data.php               # @deprecated v 0.3.x симлинк -> /include/exct/echolink_data.0.1.4.php
 │   ├── footer.php                      # симлинк -> /include/exct/footer.0.1.5.php
 │   ├── init.php                        # симлинк -> /include/exct/init.0.2.2.php
 │   ├── keypad.php               		    # симлинк -> /include/exct/keypad.0.2.1.php
 │   ├── left_panel.php               	  # симлинк -> /include/exct/left_panel.0.2.1.php
-│   ├── log_parser.php               	  # симлинк -> /include/exct/log_parser.0.2.1.php
+│   ├── log_parser.php               	  # @deprecated v 0.3.x симлинк -> /include/exct/log_parser.0.2.1.php
 │   ├── monitor.php               		  # симлинк -> /include/exct/monitor.0.2.0.php
 │   ├── net_activity.php               	# симлинк -> /include/exct/net_activity.0.2.1.php
 │   ├── radio_activity.php				      # симлинк -> /include/exct/radio_activity.0.2.1.php
@@ -267,8 +267,8 @@
 │   ├── session_header.php          	  # симлинк -> /include/exct/session_header.0.0.1.php
 │   ├── settings.php                    # симлинк -> /include/exct/settings.0.2.2.php
 │   ├── top_menu.php          			    # симлинк -> /include/exct/top_menu.0.2.2.php
-│   ├── update_handler.php       		    # симлинк -> /include/exct/update_handler.0.2.1.php
-│   ├── ws_log_parser.php       		    # симлинк -> /include/exct/ws_log_parser.0.2.2.php
+│   ├── update_handler.php       		    # @deprecated v 0.3.x симлинк -> /include/exct/update_handler.0.2.1.php
+│   ├── ws_log_parser.php       		    # @deprecated v 0.3.x симлинк -> /include/exct/ws_log_parser.0.2.2.php
 │   ├── log_parser_dispatcher.php       # @deprecated ver 0.3 симлинк -> /include/exct/log_parser_dispatcher.0.2.4.php
 │   ├── update_simlinks.sh   			      # скрипт для обновления симлинков на последнии версии источников
 │   ├── exct/                                     # сдесь хранятся версионированные источники
@@ -286,7 +286,7 @@
 │   │   ├── left_panel.0.2.1.php     			        # Панель состояний сервиса,логики,модулей,линков
 │   │   ├── log_parser_dispatcher.0.2.4.php     	# @deprecated v 0.3.x Роутер парсеров AJAX/WS - перенаправляет данные на нужный парсер
 │   │   ├── ajax_log_parser.0.2.0.php             # @deprecated v 0.3.x Парсер новых строк журнала для AJAX fallback    
-│   │   ├── ws_log_parser.0.2.2.php     			    # Парсер новых строк журнала для динамически обновляемых страниц (@todo Переписать)
+│   │   ├── ws_log_parser.0.2.2.php     			    # @deprecated v 0.3.x Парсер новых строк журнала для динамически обновляемых страниц (@todo Переписать)
 │   │   ├── log_parser.php     				            # @deprecated Прокси -> отладочный simlink на парсер логов (диспетчер)
 │   │   ├── logout.0.0.1.php     			            # Выход из системы
 │   │   ├── monitor.0.2.0.php     					      # Скрипты аудиомониторинга
@@ -489,3 +489,90 @@ div.container
 ### Особенности структуры
 - Используется адаптивная flex-верстка
 - Поддержка отзывчивого дизайна
+
+
+## 7. Сервис аудио мониторинга
+
+### Сервер
+
+Автоматически перезапускается через 5 секунд после падения.
+
+Выполнен в формате отдельного сервиса (/etc/systemd/system/svxlink-node.service)
+
+
+```bash
+[Unit]
+Description=SVXLink Node.js Server
+After=network.target
+
+[Service]
+# Send logs directly to journald instead of syslog or files
+StandardOutput=journal
+StandardError=journal
+
+# Ensure service restarts even after journal restarts or SIGHUPs
+Restart=always
+RestartSec=5
+
+# Allow clean reloads (optional, useful if you add reload scripts later)
+ExecReload=/bin/kill -HUP
+
+# Give the process a few seconds to shut down gracefully
+TimeoutStopSec=10
+Type=simple
+User=svxlink
+Group=svxlink
+ExecStart=/usr/bin/node /var/www/html/scripts/server.js
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
+```
+
+
+
+#### Управление:
+
+| Команда | Действие |
+|---------|----------|
+| `sudo systemctl stop svxlink-node.service` | Остановить сервер (не будет перезапущен) |
+| `sudo systemctl start svxlink-node.service` | Запустить сервер |
+| `sudo systemctl restart svxlink-node.service` | Перезапустить сервер |
+| `sudo systemctl disable svxlink-node.service` | Отключить автозапуск |
+| `sudo systemctl enable svxlink-node.service` | Включить автозапуск |
+| `sudo journalctl -u svxlink-node.service -f` | Просмотр логов в реальном времени |
+| `sudo journalctl -u svxlink-node.service --since="1 hour ago"` | Логи за последний час |
+
+---
+
+
+#### Настройка
+
+Сервер настраиваем на 'plughw:Loopback,1,0'
+
+```javascript
+function startRecording() {
+  console.log('Starting audio capture...');
+  const record = spawn('arecord', [
+    '-D', 'plughw:Loopback,1,0',
+    '-f', 'S16_LE',
+    '-r', '48000',
+    '-c', '1'
+  ], {
+    stdio: ['ignore', 'pipe', 'ignore'] // stdout only
+  });
+  ...
+```
+
+В конфиге svxlink  настраиваем на 'alsa:plughw:Loopback,0,0'.
+
+```
+[TxStream]
+TYPE = Local
+AUDIO_DEV = alsa:plughw:Loopback,0,0
+AUDIO_CHANNEL = 0
+PTT_TYPE = NONE
+TIMEOUT = 7200
+TX_DELAY = 0
+PREEMPHASIS = 0
+```

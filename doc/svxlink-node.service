@@ -1,0 +1,26 @@
+[Unit]
+Description=SVXLink Node.js Server
+After=network.target
+
+[Service]
+# Send logs directly to journald instead of syslog or files
+StandardOutput=journal
+StandardError=journal
+
+# Ensure service restarts even after journal restarts or SIGHUPs
+Restart=always
+RestartSec=5
+
+# Allow clean reloads (optional, useful if you add reload scripts later)
+ExecReload=/bin/kill -HUP 
+
+# Give the process a few seconds to shut down gracefully
+TimeoutStopSec=10
+Type=simple
+User=svxlink
+Group=svxlink
+ExecStart=/usr/bin/node /var/www/html/scripts/server.js
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
