@@ -418,12 +418,13 @@ div.container
 │           │           └── div
 │           │               └── div#module[имя логики][имя модуля] (модуль 4)
 │           │
-│           ├── div.divTable (узлы активного модуля)
-│           │   ├── div "Nodes" (шапка узлов)
-│           │   └── div#module[имя модуля]NodesTableBody (тело узлов модуля)
-│           │       └── div (ряд узлов)
-│           │           └── div (узел)
-│           │               └── a (ссылка узла)
+│           ├── div#[logic_name]modulesTable.divTable [.hidden опционально, когда нет подключенного модуля] (последний из подкл. узлов активного модуля)
+│           │   ├── div#[logic_name]moduleNodesHeader.divTableHead  (шапка - имя активного модуля)
+│           │   └── div.NodesTableBody (тело узлов модуля)
+│           │       └── div.mode_flex 
+│           │           └── div.mode_flex .row
+│           │               └── div#[logic_name]moduleNodesContent .mode_flex .column .disabled-mode-cell
+│           │                   └── a.tooltip 
 │           │
 │           ├── div.divTable (рефлектор 1.1)
 │           │   ├── div.divTableBody
