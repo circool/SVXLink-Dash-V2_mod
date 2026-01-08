@@ -13,21 +13,28 @@
  * Новое в 0.3.2
  * - Используетя обновленная функция getActualStatus.0.3.1 с параметром forceRebuild для первого запуска
  */
-$func_start = microtime(true);
+
 // Подключаем настройки по умолчанию
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/settings.php';
-require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/dlog.0.2.php';
-require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getActualStatus.0.3.1.php';
+
+if (defined("DEBUG") && DEBUG){
+	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/dlog.0.2.php';
+	$func_start = microtime(true);
+	$ver = "init.0.3.2";
+	dlog("$ver: Начинаю работу", 3, "WARNING");
+}
+
+require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getActualStatus.0.3.2.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.php';
 
-$ver = "init.0.3.2";
+
 
 // Определяем ROOT_DIR здесь, после подключения settings
 if (!defined('ROOT_DIR')) {
 	define('ROOT_DIR', $_SERVER["DOCUMENT_ROOT"]);
 }
 
-if (defined("DEBUG") && DEBUG) dlog("$ver: Начинаю работу", 3, "WARNING");
+
 
 // Инициализация сессии
 if (
@@ -132,6 +139,7 @@ if (defined('WS_ENABLED') && WS_ENABLED) {
 	if (defined("DEBUG") && DEBUG) dlog("$ver: Инициирую клиента WebSocket", 3, "INFO");
 	// ИСПРАВЛЕНО: Добавляем конфигурацию WebSocket клиента
 	// Клиент будет использовать тот же хост, что и страница (DASHBOARD_HOST)
+	define('DASHBOARD_HOST', $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_ADDR'] ?? 'localhost'));
 	echo '<script>
         window.DASHBOARD_CONFIG = window.DASHBOARD_CONFIG || {};
         window.DASHBOARD_CONFIG.websocket = {
@@ -150,8 +158,12 @@ if (defined('WS_ENABLED') && WS_ENABLED) {
     </script>';
 	echo '<script src="/scripts/dashboard_ws_client.js"></script>';
 }
+
+unset($socket, $command, $serverScript, $logFile, $systemTimezone, $port, $host, $errno, $errstr);
+
 if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
 	$func_time = microtime(true) - $func_start;
 	dlog("$ver: Закончил работу за $func_time msec", 3, "WARNING");
+	unset($ver);
 }
-unset($ver);
+
