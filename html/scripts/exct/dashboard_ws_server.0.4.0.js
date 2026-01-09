@@ -189,11 +189,25 @@ class CommandParser {
 					return [
 						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'disabled-mode-cell' },
 						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'active-mode-cell' },
-						{ id: `${device}_Group_${talkgroup}`, action: 'add_class', class: 'paused-mode-cell' },
+						{ id: `logic_${device}_Group_${talkgroup}`, action: 'add_class', class: 'paused-mode-cell' },
 
 					];
 				}
 			},	
+			// Temporary monitor timeout for TG #
+			{
+				regex: /^(.+?): (\S+): Temporary monitor timeout for TG #(\d+)/,
+				handler: (match) => {
+					const device = match[2];
+					const talkgroup = match[3];
+					return [
+						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'paused-mode-cell' },
+						{ id: `logic_${device}_Group_${talkgroup}`, action: 'add_class', class: 'disabled-mode-cell' },
+
+					];
+				}
+			},
+
 
 			// Активация модуля
 			{
