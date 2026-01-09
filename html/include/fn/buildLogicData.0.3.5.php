@@ -245,12 +245,19 @@ function buildLogicData(array $lp_status): array
 
 							$allGroups = [];
 							if (isset($tg['monitoring'])) $allGroups = array_merge($allGroups, $tg['monitoring']);
+							
 							if (
 								isset($tg['selected']) && $tg['selected'] != '0' && $tg['selected'] != '' &&
 								(!isset($tg['monitoring']) || !in_array($tg['selected'], $tg['monitoring']))
 							) {
 								$allGroups[] = $tg['selected'];
 							}
+
+							if ( isset($tg['default']) && $tg['default'] != '0' && $tg['default'] != '' ) 
+							{
+								$default = $tg['default'];
+							}
+
 							if (!empty($tg['temp_monitoring'])) $allGroups = array_merge($allGroups, $tg['temp_monitoring']);
 
 							foreach ($allGroups as $group) {
@@ -264,7 +271,8 @@ function buildLogicData(array $lp_status): array
 								$talkGroups[] = [
 									'name' => $group,
 									'style' => $groupStyle,
-									'title' => $group
+									'title' => $group,
+									'default' =>$default,
 								];
 							}
 
