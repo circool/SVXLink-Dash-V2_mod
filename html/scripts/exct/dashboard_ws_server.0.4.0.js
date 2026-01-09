@@ -154,6 +154,7 @@ class CommandParser {
 					}
 					return [
 						{ id: `logic_${device}_GroupsTableBody`, class: 'disabled-mode-cell', operation: 'replace_class', action: 'handle_element_classes', oldClass: 'active-mode-cell', },
+						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'disabled-mode-cell' },
 						{ id: `logic_${device}_Group_${talkgroup}`, action: 'add_class', class: 'active-mode-cell' },
 						
 					];
@@ -172,6 +173,7 @@ class CommandParser {
 					}
 					return [
 						//{ id: `logic_${device}_GroupsTableBody`, class: 'disabled-mode-cell', operation: 'replace_class', action: 'handle_element_classes', oldClass: 'paused-mode-cell', },
+						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'disabled-mode-cell' },
 						{ id: `logic_${device}_Group_${talkgroup}`, action: 'add_class', class: 'paused-mode-cell' },
 
 					];
@@ -185,7 +187,8 @@ class CommandParser {
 					const device = match[2];
 					const talkgroup = match[3];
 					return [
-
+						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'disabled-mode-cell' },
+						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'active-mode-cell' },
 						{ id: `${device}_Group_${talkgroup}`, action: 'add_class', class: 'paused-mode-cell' },
 
 					];
