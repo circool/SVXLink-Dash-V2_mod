@@ -177,16 +177,16 @@ $displayData = buildLogicData($lp_status);
 					<?php if ($reflector['has_talkgroups']): ?>
 						<div class="divTable">
 							<div class="divTableHead"><?php echo getTranslation('Talk Groups') ?></div>
-							<div id="logic_<?= $reflector['name'] ?>_GroupsTableBody" class="divTableBody">
-								<div class="mode_flex">
+							<div class="divTableBody">
+								<div id="logic_<?= $reflector['name'] ?>_GroupsTableBody" class="mode_flex row">
 									<?php
 									$tgIndex = 0;
 									$tgCount = count($reflector['talkgroups']);
 									foreach ($reflector['talkgroups'] as $group):
-										$defaultCell = $group['name'] === $group['default'] ? "default":"";
+										$defaultCell = $group['name'] === $group['default'] ? "default" : "";
 										// Начало строки каждые 4 группы
 										if ($tgIndex % 4 == 0): ?>
-											<div class="mode_flex row">
+											<!-- <div class="mode_flex row"> -->
 											<?php endif; ?>
 
 											<div id="logic_<?= $reflector['name'] ?>_Group_<?= $group['name'] ?>" class="<?php echo $defaultCell ?> mode_flex column <?= $group['style'] ?>" title="<?= $group['title'] ?>" style="border: .5px solid #3c3f47;">
@@ -196,7 +196,7 @@ $displayData = buildLogicData($lp_status);
 											<?php
 											// Конец строки
 											if ($tgIndex % 4 == 3 || $tgIndex == $tgCount - 1): ?>
-											</div>
+											<!-- </div> -->
 									<?php endif;
 
 											$tgIndex++;

@@ -153,10 +153,16 @@ class CommandParser {
 						return [];
 					}
 					return [
+						{
+							parent_id: `logic_${device}_GroupsTableBody`,
+							id: `logic_${device}_Group_${talkgroup}`,
+							payload: `<div" class="mode_flex column active-mode-cell" title="${talkgroup}" style="border: .5px solid #3c3f47;">${talkgroup}</div>`,
+							action: 'add_parent_content'
+						},
 						{ id: `logic_${device}_GroupsTableBody`, class: 'disabled-mode-cell', operation: 'replace_class', action: 'handle_element_classes', oldClass: 'active-mode-cell', },
 						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'disabled-mode-cell' },
 						{ id: `logic_${device}_Group_${talkgroup}`, action: 'add_class', class: 'active-mode-cell' },
-						
+						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'hidden' }
 					];
 				}
 			},
@@ -172,10 +178,17 @@ class CommandParser {
 						return []; 
 					}
 					return [
-						//{ id: `logic_${device}_GroupsTableBody`, class: 'disabled-mode-cell', operation: 'replace_class', action: 'handle_element_classes', oldClass: 'paused-mode-cell', },
+						{
+							parent_id: `logic_${device}_GroupsTableBody`,
+							id: `logic_${device}_Group_${talkgroup}`,
+							payload: `<div" class="mode_flex column paused-mode-cell" title="${talkgroup}" style="border: .5px solid #3c3f47;">${talkgroup}</div>`,
+							action: 'add_parent_content'
+						},
+						{
+							id: `logic_${device}_GroupsTableBody`, payload: `<div id="logic_${device}_Group_${talkgroup}" class="mode_flex column paused-mode-cell" title="${talkgroup}" style="border: .5px solid #3c3f47;">${talkgroup}</div>`, action: 'add_content'},
 						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'disabled-mode-cell' },
 						{ id: `logic_${device}_Group_${talkgroup}`, action: 'add_class', class: 'paused-mode-cell' },
-
+						
 					];
 				}
 			},
@@ -201,9 +214,10 @@ class CommandParser {
 					const device = match[2];
 					const talkgroup = match[3];
 					return [
+						{ id: `logic_${device}_Group_${talkgroup}`, action: 'add_class', class: 'hidden' },
 						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'paused-mode-cell' },
 						{ id: `logic_${device}_Group_${talkgroup}`, action: 'add_class', class: 'disabled-mode-cell' },
-
+						
 					];
 				}
 			},

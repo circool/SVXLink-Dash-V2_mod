@@ -323,9 +323,16 @@ class DashboardWebSocketClientV4 {
 
 			case 'replace_content':
 				return this.handleReplaceContent(cmd);
+			
+			case 'add_content':  
+				return this.handleAddContent(cmd);
+			
 
 			case 'add_parent_class':
 				return this.handleParentClass(cmd, 'add');
+			
+			case 'add_parent_content':
+				return this.handleAddParentContent(cmd, 'add');
 
 			case 'remove_parent_class':
 				return this.handleParentClass(cmd, 'remove');
@@ -465,7 +472,125 @@ class DashboardWebSocketClientV4 {
 			return false;
 		}
 	}
+	handleAddContent(cmd) {
+		if (cmd.payload === undefined) {
+			this.log('ERROR', 'add_content missing payload', cmd);
+			return false;
+		}
 
+		const element = this.getElement(cmd.id);
+		if (!element) return false;
+
+		try {
+			// Всегда добавляем в конец (append)
+			element.insertAdjacentHTML('beforeend', cmd.payload);
+
+			if (this.config.debugLevel >= 3) {
+				this.log('DEBUG', `Appended to ${cmd.id}: "${cmd.payload.substring(0, 50)}${cmd.payload.length > 50 ? '...' : ''}"`);
+			}
+			return true;
+
+		} catch (error) {
+			this.log('ERROR', `Error adding content to ${cmd.id}: ${error.message}`, cmd);
+			return false;
+		}
+
+	}
+	handleAddParentContent(cmd) {
+		if (cmd.payload === undefined) {
+			this.log('ERROR', 'add_content missing payload', cmd);
+			return false;
+		}
+
+		if (!cmd.parent_id && !cmd.id) {
+			this.log('ERROR', 'add_content requires either parent_id or id', cmd);
+			return false;
+		}
+
+		try {
+			const elementId = cmd.id;
+			let element = elementId ? this.getElement(elementId) : null;
+			const parentElement = cmd.parent_id ? this.getElement(cmd.parent_id) : null;
+
+			// Проверяем, существует ли элемент
+			if (element) {
+				// Элемент уже существует - обновляем его
+				if (this.config.debugLevel >= 3) {
+					this.log('DEBUG', `Element ${elementId} already exists, updating`);
+				}
+
+				// Создаем временный div для извлечения данных из payload
+				const tempDiv = document.createElement('div');
+				tempDiv.innerHTML = cmd.payload;
+				const payloadDiv = tempDiv.firstElementChild;
+
+				if (payloadDiv) {
+					// Обновляем классы из payload
+					if (payloadDiv.className) {
+						element.className = payloadDiv.className;
+					}
+
+					// Обновляем title
+					if (payloadDiv.title) {
+						element.title = payloadDiv.title;
+					}
+
+					// Обновляем стиль
+					if (payloadDiv.style && payloadDiv.style.cssText) {
+						element.style.cssText = payloadDiv.style.cssText;
+					}
+
+					// Обновляем текст содержимого
+					element.textContent = payloadDiv.textContent || payloadDiv.innerHTML;
+
+					if (this.config.debugLevel >= 3) {
+						this.log('DEBUG', `Updated element ${elementId}`);
+					}
+				}
+
+				return true;
+
+			} else if (parentElement && elementId) {
+				// Элемента нет, но есть parent_id и id - создаем новый элемент внутри родителя
+
+				// Добавляем ID в payload если его там нет
+				let payloadHtml = cmd.payload;
+				if (!payloadHtml.includes('id=')) {
+					// Находим первый тег div и добавляем в него id
+					payloadHtml = payloadHtml.replace(/<div\s*/, `<div id="${elementId}" `);
+				} else if (!payloadHtml.includes(`id="${elementId}"`) && !payloadHtml.includes(`id='${elementId}'`)) {
+					// ID есть, но не совпадает - заменяем
+					payloadHtml = payloadHtml.replace(/id=["'][^"']*["']/, `id="${elementId}"`);
+				}
+
+				// Добавляем в конец родительского элемента
+				parentElement.insertAdjacentHTML('beforeend', payloadHtml);
+
+				if (this.config.debugLevel >= 3) {
+					this.log('DEBUG', `Added new element ${elementId} to parent ${cmd.parent_id}`);
+				}
+				return true;
+
+			} else if (parentElement && !elementId) {
+				// Только parent_id без id - просто добавляем HTML в конец
+				parentElement.insertAdjacentHTML('beforeend', cmd.payload);
+
+				if (this.config.debugLevel >= 3) {
+					this.log('DEBUG', `Added content to parent ${cmd.parent_id}`);
+				}
+				return true;
+
+			} else {
+				// Нет ни существующего элемента, ни родителя
+				this.log('ERROR', `Cannot add content: element ${elementId} not found and no parent_id provided`, cmd);
+				return false;
+			}
+
+		} catch (error) {
+			this.log('ERROR', `Error in add_content: ${error.message}`, cmd);
+			return false;
+		}
+	}
 	handleSetContent(cmd) {
 		if (cmd.payload === undefined) {
 			this.log('ERROR', 'set_content missing payload', cmd);
