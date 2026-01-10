@@ -97,6 +97,9 @@ class CommandParser {
 					}
 				}
 			},
+
+			
+
 			// Talker start
 			{
 				regex: /^(.+?): (\S+): Talker start on TG #(\d*): (\S+)$/,
@@ -114,6 +117,7 @@ class CommandParser {
 					];
 				}
 			},
+
 			// Talker stop
 			{
 				regex: /^(.+?): (\S+): Talker stop on TG #(\d+): (\S+)$/,
@@ -129,6 +133,42 @@ class CommandParser {
 					];
 				}
 			},
+
+			// Node left
+			{
+				regex: /^(.+?): (\S+): Node left: (\S+)$/,
+				handler: (match) => {
+					const device = match[2];
+					const callsign = match[3];
+
+					return [
+						{
+							id: `logic_${device}_node_${callsign}`,
+							action: 'remove_element'
+						}
+					]
+				}
+			},
+
+			// Node joined
+			{
+				regex: /^(.+?): (\S+): Node joined: (\S+)$/,
+				handler: (match) => {
+					const device = match[2];
+					const callsign = match[3];
+					const uptime = 0;
+					return [
+						{
+							id: `logic_${device}_nodes`,
+							action: 'add_child',
+							new_id: `logic_${device}_node_${callsign}`,
+							payload: `<div class="mode_flex column disabled-mode-cell" title="${callsign}" style="border: .5px solid #3c3f47;"><a class="tooltip" href="#"><span><b>Uptime:</b>00:00:00</span>${callsign}</a></div>`,
+						},
+
+					]
+				}
+			},
+
 			// Selecting TG #0
 			{
 				regex: /^(.+?): (\S+): Selecting TG #0/,
@@ -136,33 +176,45 @@ class CommandParser {
 					const device = match[2];
 
 					return [
+						// удалить дочерние элементы, кроме постоянно мониторящихся групп или группы по умолчанию
+						{ id: `logic_${device}_GroupsTableBody`, action: 'remove_child', ignoreClass: 'default,monitored' },
+						// сбросить активную группу всех дочерних элементов
+						{ id: `logic_${device}_GroupsTableBody`, class: 'disabled-mode-cell', operation: 'replace_class', action: 'handle_child_classes', oldClass: 'active-mode-cell' },
+						// установить группу по умолчанию как активную
+						{ id: `logic_${device}_GroupsTableBody`, class: 'default,active-mode-cell', operation: 'replace_class', action: 'handle_child_classes', oldClass: 'default,disabled-mode-cell' },
+						
+						
 
-						{ id: `logic_${device}_GroupsTableBody`, class: 'disabled-mode-cell', operation: 'replace_class', action: 'handle_element_classes', oldClass: 'active-mode-cell' },
-						{ id: `logic_${device}_GroupsTableBody`, class: 'default,active-mode-cell', operation: 'replace_class', action: 'handle_element_classes', oldClass: 'default' },
-						{ id: `logic_${device}_GroupsTableBody`, class: 'default', operation: 'replace_class', action: 'handle_element_classes', oldClass: 'default,disabled-mode-cell' },
 					];
 				}
 			},
+
 			// Selecting TG #
 			{
 				regex: /^(.+?): (\S+): Selecting TG #(\d+)/,
 				handler: (match) => {
 					const device = match[2];
 					const talkgroup = match[3];
+					
 					if (talkgroup === "0") {
 						return [];
 					}
+					
 					return [
+						// удалить дочерние элементы, кроме постоянно мониторящихся групп или группы по умолчанию
+						{ id: `logic_${device}_GroupsTableBody`, action: 'remove_child', ignoreClass: 'default,monitored', },
+						// сбросить активную группу всех дочерних элементов
+						{ id: `logic_${device}_GroupsTableBody`, class: 'disabled-mode-cell', operation: 'replace_class', action: 'handle_child_classes', oldClass: 'active-mode-cell' },
+						
+						// Добавить группу как активную
 						{
-							parent_id: `logic_${device}_GroupsTableBody`,
-							id: `logic_${device}_Group_${talkgroup}`,
-							payload: `<div" class="mode_flex column active-mode-cell" title="${talkgroup}" style="border: .5px solid #3c3f47;">${talkgroup}</div>`,
-							action: 'add_parent_content'
+							id: `logic_${device}_GroupsTableBody`,
+							action: "add_child",
+							payload: `<div id="logic_${device}_Group_${talkgroup}" class="mode_flex column active-mode-cell" title="${talkgroup}" style="border: .5px solid #3c3f47;">${talkgroup}</div>`
 						},
-						{ id: `logic_${device}_GroupsTableBody`, class: 'disabled-mode-cell', operation: 'replace_class', action: 'handle_element_classes', oldClass: 'active-mode-cell', },
-						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'disabled-mode-cell' },
-						{ id: `logic_${device}_Group_${talkgroup}`, action: 'add_class', class: 'active-mode-cell' },
-						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'hidden' }
+						
+						
+				
 					];
 				}
 			},
@@ -177,18 +229,15 @@ class CommandParser {
 					if (talkgroup === "0") {
 						return []; 
 					}
+
 					return [
+						// Добавить группу
 						{
-							parent_id: `logic_${device}_GroupsTableBody`,
-							id: `logic_${device}_Group_${talkgroup}`,
-							payload: `<div" class="mode_flex column paused-mode-cell" title="${talkgroup}" style="border: .5px solid #3c3f47;">${talkgroup}</div>`,
-							action: 'add_parent_content'
+							id: `logic_${device}_GroupsTableBody`,
+							action: 'add_child',
+							payload: `<div id = "logic_${device}_Group_${talkgroup}" class="mode_flex column paused-mode-cell" title="${talkgroup}" style="border: .5px solid #3c3f47;">${talkgroup}</div>`,
 						},
-						{
-							id: `logic_${device}_GroupsTableBody`, payload: `<div id="logic_${device}_Group_${talkgroup}" class="mode_flex column paused-mode-cell" title="${talkgroup}" style="border: .5px solid #3c3f47;">${talkgroup}</div>`, action: 'add_content'},
-						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'disabled-mode-cell' },
-						{ id: `logic_${device}_Group_${talkgroup}`, action: 'add_class', class: 'paused-mode-cell' },
-						
+
 					];
 				}
 			},
@@ -200,23 +249,30 @@ class CommandParser {
 					const device = match[2];
 					const talkgroup = match[3];
 					return [
-						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'disabled-mode-cell' },
-						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'active-mode-cell' },
-						{ id: `logic_${device}_Group_${talkgroup}`, action: 'add_class', class: 'paused-mode-cell' },
+						// Добавить группу
+						{
+							id: `logic_${device}_GroupsTableBody`,
+							action: 'add_child',
+							payload: `<div id = "logic_${device}_Group_${talkgroup}" class="mode_flex column paused-mode-cell" title="${talkgroup}" style="border: .5px solid #3c3f47;">${talkgroup}</div>`,
+						},
 
 					];
 				}
 			},	
+
 			// Temporary monitor timeout for TG #
 			{
 				regex: /^(.+?): (\S+): Temporary monitor timeout for TG #(\d+)/,
 				handler: (match) => {
 					const device = match[2];
 					const talkgroup = match[3];
+				
 					return [
-						{ id: `logic_${device}_Group_${talkgroup}`, action: 'add_class', class: 'hidden' },
-						{ id: `logic_${device}_Group_${talkgroup}`, action: 'remove_class', class: 'paused-mode-cell' },
-						{ id: `logic_${device}_Group_${talkgroup}`, action: 'add_class', class: 'disabled-mode-cell' },
+						// Удалить группу
+						{
+							id: `logic_${device}_Group_${talkgroup}`,
+							action: 'remove_element',
+						},
 						
 					];
 				}
@@ -743,6 +799,9 @@ class StatefulWebSocketServerV4 {
 					const details = [];
 
 					if (cmd.class) details.push(`class: ${cmd.class}`);
+					
+					if (cmd.ignoreClass) details.push(`ignoreClass: ${cmd.ignoreClass}`);
+					
 					if (cmd.payload !== undefined) {
 						if (Array.isArray(cmd.payload)) {
 							details.push(`payload: [${cmd.payload.map(p => `"${p}"`).join(', ')}]`);

@@ -262,17 +262,33 @@ function buildLogicData(array $lp_status): array
 
 							foreach ($allGroups as $group) {
 								$groupStyle = 'disabled-mode-cell';
+
+								// Проверяем по приоритету:
+								// 1. Выбранная группа (selected) - самая высокая приоритетность
 								if (isset($tg['selected']) && $group == $tg['selected']) {
 									$groupStyle = 'active-mode-cell';
-								} elseif (!empty($tg['temp_monitoring']) && in_array($group, $tg['temp_monitoring'])) {
+								}
+								// 2. Временно мониторируемая (temp_monitoring)
+								elseif (!empty($tg['temp_monitoring']) && in_array($group, $tg['temp_monitoring'])) {
 									$groupStyle = 'paused-mode-cell';
 								}
+								
+								// 3. Постоянно мониторируемая (monitoring)
+								if (isset($tg['monitoring']) && in_array($group, $tg['monitoring'])) {
+									$groupStyle .= ' monitored';
+								}
+								// 4. Группа по умолчанию (default) - если не является selected/monitoring
+								if (isset($tg['default']) && $group == $tg['default']) {
+									$groupStyle .= ' default'; // или оставить disabled-mode-cell
+								}
+
 
 								$talkGroups[] = [
 									'name' => $group,
 									'style' => $groupStyle,
 									'title' => $group,
-									'default' =>$default,
+									'default' => $default,
+									'is_monitored' => isset($tg['monitoring']) && in_array($group, $tg['monitoring']), // Добавляем флаг
 								];
 							}
 

@@ -47,10 +47,10 @@ class DashboardWebSocketClientV4 {
 		this.init();
 	}
 
-	// ==================== ИНИЦИАЛИЗАЦИЯ ====================
+	// @bookmark ИНИЦИАЛИЗАЦИЯ
 
 	init() {
-		this.log('INFO', 'Dashboard WebSocket Client v4.0 initialized');
+		this.log('INFO', 'Dashboard WebSocket Client v0.4.0 initialized');
 
 		// Создаём кнопку статуса
 		this.createStatusButton();
@@ -61,7 +61,7 @@ class DashboardWebSocketClientV4 {
 		}
 	}
 
-	// ==================== КНОПКА СТАТУСА ====================
+	// @bookmark  КНОПКА СТАТУСА
 
 	createStatusButton() {
 		// Удаляем старую кнопку если есть
@@ -131,7 +131,7 @@ class DashboardWebSocketClientV4 {
 		}, 300);
 	}
 
-	// ==================== УПРАВЛЕНИЕ СОЕДИНЕНИЕМ ====================
+	// @bookmark УПРАВЛЕНИЕ СОЕДИНЕНИЕМ
 
 	connect() {
 		this.isManualDisconnect = false;
@@ -212,7 +212,7 @@ class DashboardWebSocketClientV4 {
 		}
 	}
 
-	// ==================== ОБРАБОТЧИКИ СОБЫТИЙ WS ====================
+	// @bookmark ОБРАБОТЧИКИ СОБЫТИЙ WS
 
 	handleOpen(event) {
 		this.log('INFO', 'WebSocket connected successfully');
@@ -271,7 +271,7 @@ class DashboardWebSocketClientV4 {
 		this.updateStatus('error', 'Connection error');
 	}
 
-	// ==================== ОБРАБОТКА КОМАНД ====================
+	// @bookmark ОБРАБОТКА КОМАНД
 
 	processCommands(commands, chunkNum = null, totalChunks = null) {
 		if (!Array.isArray(commands)) {
@@ -310,41 +310,59 @@ class DashboardWebSocketClientV4 {
 			this.log('ERROR', 'Invalid command: missing id', cmd);
 			return false;
 		}
-
+		//@bookmark Селектор методов
 		switch (cmd.action) {
+			
+			// Действия над элементом DOM
 			case 'add_class':
 				return this.handleAddClass(cmd);
-
+			
 			case 'remove_class':
 				return this.handleRemoveClass(cmd);
-
+			
+			case 'remove_element':
+				return this.handleRemoveElement(cmd);
+			
 			case 'set_content':
 				return this.handleSetContent(cmd);
-
-			case 'replace_content':
-				return this.handleReplaceContent(cmd);
 			
 			case 'add_content':  
 				return this.handleAddContent(cmd);
 			
+			case 'remove_content':
+				return this.handleRemoveContent(cmd);
+					
+			case 'replace_content':
+				return this.handleReplaceContent(cmd);
+			
+			
+			
 
+			// Действие с родительским элементом
 			case 'add_parent_class':
 				return this.handleParentClass(cmd, 'add');
 			
-			case 'add_parent_content':
-				return this.handleAddParentContent(cmd, 'add');
-
 			case 'remove_parent_class':
 				return this.handleParentClass(cmd, 'remove');
+			
+			case 'add_parent_content':
+				return this.handleParentContent(cmd, 'add');
 
 			case 'replace_parent_content':
-				return this.handleReplaceParentContent(cmd);
-				
+				return this.handleParentContent(cmd, 'replace');
+
+			// Действие с дочерними элементами
+			case 'add_child':
+				return this.addChild(cmd);
 			
-			case 'handle_element_classes':
-				return this.handleElementClasses(cmd);
+			case 'remove_child':
+				return this.removeChild(cmd);		
 			
+			case 'handle_child_classes':
+				return this.handleChildClasses(cmd);
 			
+
+			// Специальные действия			
 			case 'set_checkbox_state':
 				return this.handleSetCheckboxState(cmd);
 			
@@ -354,7 +372,7 @@ class DashboardWebSocketClientV4 {
 		}
 	}
 
-	// ==================== DOM ОПЕРАЦИИ ====================
+	// @bookmark DOM ОПЕРАЦИИ
 
 	getElement(id) {
 		const element = document.getElementById(id);
@@ -393,7 +411,7 @@ class DashboardWebSocketClientV4 {
 		}
 	}
 
-	// ==================== ОБРАБОТКА КОНКРЕТНЫХ ДЕЙСТВИЙ ====================
+	// @bookmark ОБРАБОТКА КОНКРЕТНЫХ ДЕЙСТВИЙ
 
 	handleAddClass(cmd) {
 		if (!cmd.class) {
@@ -436,19 +454,7 @@ class DashboardWebSocketClientV4 {
 		if (!element) return false;
 
 		try {
-			if (cmd.class === 'mode-classes') {
-				// Специальный случай: удаляем все mode-классы
-				element.classList.remove(
-					'active-mode-cell',
-					'inactive-mode-cell',
-					'paused-mode-cell',
-					'disabled-mode-cell'
-				);
-				if (this.config.debugLevel >= 3) {
-					this.log('DEBUG', `Removed mode-classes from ${cmd.id}`);
-				}
-
-			} else if (cmd.class.includes(',')) {
+			if (cmd.class.includes(',')) {
 				// Несколько классов через запятую
 				cmd.class.split(',').forEach(cls => {
 					element.classList.remove(cls.trim());
@@ -472,6 +478,7 @@ class DashboardWebSocketClientV4 {
 			return false;
 		}
 	}
+
 	handleAddContent(cmd) {
 		if (cmd.payload === undefined) {
 			this.log('ERROR', 'add_content missing payload', cmd);
@@ -482,7 +489,7 @@ class DashboardWebSocketClientV4 {
 		if (!element) return false;
 
 		try {
-			// Всегда добавляем в конец (append)
+
 			element.insertAdjacentHTML('beforeend', cmd.payload);
 
 			if (this.config.debugLevel >= 3) {
@@ -496,6 +503,7 @@ class DashboardWebSocketClientV4 {
 		}
 
 	}
+
 	handleAddParentContent(cmd) {
 		if (cmd.payload === undefined) {
 			this.log('ERROR', 'add_content missing payload', cmd);
@@ -591,6 +599,7 @@ class DashboardWebSocketClientV4 {
 			return false;
 		}
 	}
+	
 	handleSetContent(cmd) {
 		if (cmd.payload === undefined) {
 			this.log('ERROR', 'set_content missing payload', cmd);
@@ -601,17 +610,9 @@ class DashboardWebSocketClientV4 {
 		if (!element) return false;
 
 		try {
-			// Проверяем, содержит ли payload HTML
-			const hasHtml = /<[a-z][\s\S]*>/i.test(cmd.payload);
-
-			if (hasHtml) {
-				// Вставляем как HTML (только для доверенного сервера)
+		
 				element.innerHTML = cmd.payload;
-			} else {
-				// Вставляем как текстовое содержимое
-				element.textContent = cmd.payload;
-			}
-
+			
 			if (this.config.debugLevel >= 3) {
 				this.log('DEBUG', `Set content of ${cmd.id} to "${cmd.payload.substring(0, 50)}${cmd.payload.length > 50 ? '...' : ''}"`);
 			}
@@ -624,6 +625,7 @@ class DashboardWebSocketClientV4 {
 	}
 
 	handleReplaceContent(cmd) {
+		
 		if (!Array.isArray(cmd.payload) || cmd.payload.length !== 3) {
 			this.log('ERROR', 'replace_content requires payload array of 3 items', cmd);
 			return false;
@@ -665,6 +667,19 @@ class DashboardWebSocketClientV4 {
 			this.log('ERROR', `Error replacing content for ${cmd.id}: ${error.message}`, cmd);
 			return false;
 		}
+	}
+
+	handleRemoveContent(cmd) {
+		if (!cmd.id) {
+			this.log('ERROR', 'remove_content missing id', cmd);
+			return false;
+		}
+
+		const element = document.getElementById(cmd.id);
+		if (!element) return false;
+
+		element.innerHTML = '';
+		return true;
 	}
 
 	handleParentClass(cmd, operation) {
@@ -761,8 +776,119 @@ class DashboardWebSocketClientV4 {
 			return false;
 		}
 	}
+	
+	handleRemoveElement(cmd) {
+		if (!cmd.id) {
+			this.log('ERROR', 'remove_element missing id', cmd);
+			return false;
+		}
 
-	handleElementClasses(cmd) {
+		const element = document.getElementById(cmd.id);
+		if (!element) return false;
+
+		element.remove();
+
+		if (this.config.debugLevel >= 3) {
+			this.log('DEBUG', `Removed element ${cmd.id}`);
+		}
+
+		return true;
+	}
+	
+	// @bookmark ДЛЯ ДОЧЕРНИХ ЭЛЕМЕНТОВ
+
+	addChild(cmd) {
+		if (!cmd.payload) {
+			this.log('ERROR', 'add_child missing payload', cmd);
+			return false;
+		}
+
+		if (!cmd.id) {
+			this.log('ERROR', 'add_child missing id (parent element)', cmd);
+			return false;
+		}
+
+		// Проверяем, существует ли элемент с таким ID в payload
+		// Извлекаем ID из payload если он есть
+		let targetId = cmd.new_id; // ID конкретного элемента для обновления/добавления
+		let payloadHtml = cmd.payload;
+
+		// Если в payload есть элемент с ID, используем его
+		if (!targetId) {
+			const idMatch = payloadHtml.match(/id=["']([^"']+)["']/);
+			if (idMatch) {
+				targetId = idMatch[1];
+			}
+		}
+
+		const parent = document.getElementById(cmd.id);
+		if (!parent) return false;
+
+		try {
+			// Если targetId существует в DOM - обновляем его
+			if (targetId) {
+				const existingElement = document.getElementById(targetId);
+				if (existingElement) {
+					// Проверяем, что элемент находится внутри нашего родителя
+					if (existingElement.parentElement === parent) {
+						// Обновляем существующий элемент
+						existingElement.outerHTML = payloadHtml;
+						return true;
+					}
+				}
+			}
+
+			// Добавляем ID в payload если targetId указан
+			if (targetId && !payloadHtml.includes('id=')) {
+				// Находим первый тег div и добавляем в него id
+				payloadHtml = payloadHtml.replace(/<div\s*/, `<div id="${targetId}" `);
+			} else if (targetId && payloadHtml.includes('id=') &&
+				!payloadHtml.includes(`id="${targetId}"`) &&
+				!payloadHtml.includes(`id='${targetId}'`)) {
+				// ID есть, но не совпадает - заменяем
+				payloadHtml = payloadHtml.replace(/id=["'][^"']*["']/, `id="${targetId}"`);
+			}
+
+			// Добавляем как новый элемент
+			parent.insertAdjacentHTML('beforeend', payloadHtml);
+			return true;
+
+		} catch (error) {
+			this.log('ERROR', `Error in add_child: ${error.message}`, cmd);
+			return false;
+		}
+	}
+
+	// Удаляет все дочерние элементы id, если у них нет классов перечисленных в ignoreClass
+	removeChild(cmd) {
+		if (!cmd.id) return false;
+
+		const parent = document.getElementById(cmd.id);
+		if (!parent) return false;
+
+		// Получаем все дочерние элементы
+		const children = Array.from(parent.new_id);
+
+		// Преобразуем ignoreClass в массив классов
+		const ignoreClasses = cmd.ignoreClass
+			? cmd.ignoreClass.split(',').map(cls => cls.trim())
+			: [];
+
+		// Удаляем только те элементы, у которых НЕТ НИ ОДНОГО из ignoreClasses
+		children.forEach(child => {
+			const hasIgnoreClass = ignoreClasses.some(ignoreClass =>
+				child.classList.contains(ignoreClass)
+			);
+
+			if (!hasIgnoreClass) {
+				child.remove();
+			}
+		});
+
+		return true;
+	}
+
+	handleChildClasses(cmd) {
 		if (!cmd.class) {
 			this.log('ERROR', `${cmd.action} missing class parameter`, cmd);
 			return false;
@@ -861,7 +987,7 @@ class DashboardWebSocketClientV4 {
 							}
 							break;
 						default:
-							this.log('ERROR', `Unknown operation in handleElementClasses: ${operation}`, cmd);
+							this.log('ERROR', `Unknown operation in handleChildClasses: ${operation}`, cmd);
 					}
 				});
 			});
@@ -881,7 +1007,7 @@ class DashboardWebSocketClientV4 {
 			return elementsModified > 0;
 
 		} catch (error) {
-			this.log('ERROR', `Error in handleElementClasses for ${cmd.id}: ${error.message}`, cmd);
+			this.log('ERROR', `Error in handleChildClasses for ${cmd.id}: ${error.message}`, cmd);
 			return false;
 		}
 	}
@@ -899,7 +1025,9 @@ class DashboardWebSocketClientV4 {
 		// this.log('DEBUG', `Checkbox ${cmd.id} synced to: ${shouldBeChecked ? 'ON' : 'OFF'}`);
 		return true;
 	}
-	// ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
+	
+	
+	// @bookmark ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
 
 	startPingTimer() {
 		if (this.pingTimer) {
@@ -932,7 +1060,7 @@ class DashboardWebSocketClientV4 {
 		}
 	}
 
-	// ==================== ОБНОВЛЕНИЕ СТАТУСА ====================
+	// @bookmark ОБНОВЛЕНИЕ СТАТУСА
 
 	updateStatus(status, message) {
 		this.status = status;
@@ -994,7 +1122,7 @@ class DashboardWebSocketClientV4 {
 		}
 	}
 
-	// ==================== ЛОГИРОВАНИЕ ====================
+	// @bookmark ЛОГИРОВАНИЕ
 
 	log(level, message, data = null) {
 		const levels = {
@@ -1081,7 +1209,7 @@ class DashboardWebSocketClientV4 {
 		return div.innerHTML;
 	}
 
-	// ==================== PUBLIC API ====================
+	// @bookmark PUBLIC API
 
 	getStatus() {
 		return {
@@ -1100,7 +1228,7 @@ class DashboardWebSocketClientV4 {
 	}
 }
 
-// ==================== ГЛОБАЛЬНАЯ ИНИЦИАЛИЗАЦИЯ ====================
+// @bookmark ИНИЦИАЛИЗАЦИЯ
 
 document.addEventListener('DOMContentLoaded', () => {
 	// Берем конфигурацию ТОЛЬКО из PHP, без резервного варианта
