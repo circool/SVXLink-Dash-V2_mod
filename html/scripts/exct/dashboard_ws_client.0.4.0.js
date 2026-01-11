@@ -95,6 +95,7 @@ class DashboardWebSocketClientV4 {
 	}
 
 	handleStatusButton() {
+			
 		switch (this.status) {
 			case 'connected':
 				this.disconnect();
@@ -305,11 +306,16 @@ class DashboardWebSocketClientV4 {
 			this.log('ERROR', 'Invalid command: missing action', cmd);
 			return false;
 		}
-
-		if (!cmd.id) {
+		// Если action set_content_by_class и есть targetClass, то ID не обязателен
+		if (cmd.action !== 'set_content_by_class' && !cmd.id) {
 			this.log('ERROR', 'Invalid command: missing id', cmd);
 			return false;
 		}
+
+		// if (!cmd.id) {
+		// 	this.log('ERROR', 'Invalid command: missing id', cmd);
+		// 	return false;
+		// }
 		//@bookmark Селектор методов
 		switch (cmd.action) {
 			
@@ -335,7 +341,8 @@ class DashboardWebSocketClientV4 {
 			case 'replace_content':
 				return this.handleReplaceContent(cmd);
 			
-			
+			case 'set_content_by_class':
+				return this.handleSetContentByClass(cmd);
 			
 
 			// Действие с родительским элементом
@@ -408,6 +415,85 @@ class DashboardWebSocketClientV4 {
 			this.parentCache.delete(childId);
 		} else {
 			this.parentCache.clear();
+		}
+	}
+
+	// @bookmark установка содержимого по классу
+	handleSetContentByClass(cmd) {
+		if (cmd.payload === undefined) {
+			this.log('ERROR', 'set_content_by_class missing payload', cmd);
+			return false;
+		}
+
+		if (!cmd.targetClass) {
+			this.log('ERROR', 'set_content_by_class missing targetClass parameter', cmd);
+			return false;
+		}
+
+		try {
+			// Поиск всех элементов с указанным классом
+			const selector = `.${cmd.targetClass}`;
+			const elements = document.querySelectorAll(selector);
+
+			if (!elements || elements.length === 0) {
+				if (this.config.debugLevel >= 2) {
+					this.log('WARNING', `No elements found with class "${cmd.targetClass}"`);
+				}
+				return false;
+			}
+
+			// Определяем, как обрабатывать multipleElements (по умолчанию: false)
+			const multipleElements = cmd.multipleElements === true;
+
+			// Определяем индекс элемента (если указан)
+			const elementIndex = cmd.elementIndex !== undefined ? parseInt(cmd.elementIndex) : 0;
+
+			let elementsProcessed = 0;
+
+			if (multipleElements) {
+				// Обрабатываем все элементы
+				elements.forEach((element, index) => {
+					try {
+						element.innerHTML = cmd.payload;
+						elementsProcessed++;
+
+						if (this.config.debugLevel >= 4) {
+							this.log('DEBUG', `Set content for element #${index} with class "${cmd.targetClass}"`);
+						}
+					} catch (error) {
+						this.log('ERROR', `Error setting content for element #${index} with class "${cmd.targetClass}": ${error.message}`);
+					}
+				});
+			} else {
+				// Обрабатываем конкретный элемент по индексу
+				if (elementIndex < 0 || elementIndex >= elements.length) {
+					this.log('ERROR', `Element index ${elementIndex} out of range (0-${elements.length - 1}) for class "${cmd.targetClass}"`);
+					return false;
+				}
+
+				const element = elements[elementIndex];
+				element.innerHTML = cmd.payload;
+				elementsProcessed = 1;
+
+				if (this.config.debugLevel >= 3) {
+					this.log('DEBUG', `Set content for element #${elementIndex} with class "${cmd.targetClass}"`);
+				}
+			}
+
+			if (elementsProcessed > 0) {
+				const countText = multipleElements ? `${elementsProcessed} elements` : `element #${elementIndex}`;
+				const payloadPreview = cmd.payload.length > 50 ?
+					cmd.payload.substring(0, 50) + '...' : cmd.payload;
+
+				this.log('INFO', `Set content "${payloadPreview}" for ${countText} with class "${cmd.targetClass}"`);
+				return true;
+			}
+
+			return false;
+
+		} catch (error) {
+			this.log('ERROR', `Error in set_content_by_class for class "${cmd.targetClass}": ${error.message}`, cmd);
+			return false;
 		}
 	}
 

@@ -130,7 +130,7 @@ function renderRadioActivityTable()
 		$html .= '<div class="divTableRow ' . $rowClass .  '">';
 
 		// Logic
-		$html .= '<div class="divTableCell cell_content middle"' . $rowStyle .  '>' . $rowDevice . '</div>';
+		$html .= '<div id="' . $rowDevice . '" class="divTableCell cell_content middle"' . $rowStyle .  '>' . $rowDevice . '</div>';
 		// RX Device
 		$html .= '<div id="' . $row_rxDevice . '" class="divTableCell cell_content middle"' . $rowStyle . '>' . $rxDeviceHtml . '</div>';
 		// Status RX
@@ -140,9 +140,9 @@ function renderRadioActivityTable()
 		// Status TX
 		$html .= '<div id="' . $row_txDevice . '_StatusTX" class="divTableCell cell_content middle"' . $rowStyle . '>' . $row_text . '</div>';
 		// Callsign
-		$html .= '<div id="' . $logicName . 'Callsign" class="divTableCell cell_content middle"' . $rowStyle . '>' . htmlspecialchars($callsign) . '</div>';
+		$html .= '<div id="' . $logicName . 'Callsign" class="divTableCell cell_content middle callsign"' . $rowStyle . '>' . htmlspecialchars($callsign) . '</div>';
 		// Destination
-		$html .= '<div id="' . $logicName . 'Destination"class="divTableCell cell_content middle"' . $rowStyle . '>' . htmlspecialchars($destination) . '</div>';
+		$html .= '<div id="' . $logicName . 'Destination"class="divTableCell cell_content middle destination"' . $rowStyle . '>' . htmlspecialchars($destination) . '</div>';
 
 		$html .= '</div>';
 	}

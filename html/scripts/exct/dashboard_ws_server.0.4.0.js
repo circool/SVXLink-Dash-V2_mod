@@ -2,7 +2,7 @@
  * @filesource /scripts/exct/dashboard_ws_server.4.0.js
  * @version 4.0
  * @date 2026.01.09
- * @description Stateful WebSocket сервер для SvxLink Dashboard с новой системой команд DOM
+ * @description Stateful WebSocket сервер для SvxLink Dashboard
  */
 
 const WebSocket = require('ws');
@@ -10,8 +10,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-// ==================== КОНСТАНТЫ И КОНФИГУРАЦИЯ ====================
-
+// @bookmark  КОНСТАНТЫ И КОНФИГУРАЦИЯ
 const CONFIG = {
 	version: '4.0',
 	ws: {
@@ -29,8 +28,7 @@ const CONFIG = {
 	}
 };
 
-// ==================== СЕРВИС ЛОГИРОВАНИЯ ====================
-
+// @bookmark СЕРВИС ЛОГИРОВАНИЯ
 function getTimestamp() {
 	const now = new Date();
 	return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
@@ -42,8 +40,7 @@ function log(message, level = 'INFO') {
 	console.log(logMessage);
 }
 
-// ==================== МЕНЕДЖЕР СОСТОЯНИЙ ====================
-
+// @bookmark  МЕНЕДЖЕР СОСТОЯНИЙ
 class StateManager {
 	constructor() {
 		this.timers = new Map(); // key -> {startTime, lastUpdate, metadata}
@@ -93,7 +90,7 @@ class StateManager {
 		return existed;
 	}
 
-	// Получить данные об активных таймерах для обновления
+	// Получить данные об активных таймерах
 	getTimerUpdates() {
 		const now = Date.now();
 		const updates = [];
@@ -121,8 +118,7 @@ class StateManager {
 	}
 }
 
-// ==================== ОБРАБОТЧИК СВЯЗЕЙ МОДУЛЬ-ЛОГИКА ====================
-
+// @bookmark  ОБРАБОТЧИК СВЯЗЕЙ МОДУЛЬ-ЛОГИКА
 class ModuleLogicHandler {
 	constructor() {
 		this.moduleToLogics = new Map(); // moduleName -> Set(logicName)
@@ -154,15 +150,20 @@ class ModuleLogicHandler {
 	}
 }
 
-// ==================== ПАРСЕР КОМАНД ====================
-
+// @bookmark ПАРСЕР КОМАНД
 class CommandParser {
 	constructor(stateManager) {
 		this.sm = stateManager;
-		const moduleHandler = new ModuleLogicHandler();
+		this.moduleHandler = new ModuleLogicHandler();
+
+		// Состояние для пакетного режима
+		this.packetActive = false;
+		this.packetType = null; // 'EchoLink' | 'Frn'
+		this.packetBuffer = [];
+		this.packetStartTime = null;
+		this.packetMetadata = {};
 
 		this.patterns = [
-
 			// @bookmark Transmitter ON/OFF
 			{
 				regex: /^(.+?): (\w+): Turning the transmitter (ON|OFF)$/,
@@ -171,7 +172,6 @@ class CommandParser {
 					const state = match[3];
 
 					if (state === 'ON') {
-						// Запускаем таймер для TX
 						this.sm.startTimer(`${device}_TX`, {
 							elementId: `${device}_StatusTX`,
 							replaceStart: '( ',
@@ -180,16 +180,16 @@ class CommandParser {
 						});
 
 						return [
-							{ id: `${device}_StatusTX`, action: 'set_content', payload: 'TRANSMIT ( 00:00:00 )' },
+							{ id: `${device}_StatusTX`, action: 'set_content', payload: 'TRANSMIT ( 0 s )' },
 							{ id: `${device}_StatusTX`, action: 'add_class', class: 'inactive-mode-cell' },
 						];
 					} else {
-						// Останавливаем таймер для TX
 						this.sm.stopTimer(`${device}_TX`);
 
 						return [
 							{ id: `${device}_StatusTX`, action: 'set_content', payload: 'STANDBY' },
 							{ id: `${device}_StatusTX`, action: 'remove_class', class: 'inactive-mode-cell' },
+							// { id: `${device}Destination`, action: 'set_content', payload: '' },
 						];
 					}
 				}
@@ -203,7 +203,6 @@ class CommandParser {
 					const state = match[3];
 
 					if (state === 'OPEN') {
-						// Запускаем таймер для RX
 						this.sm.startTimer(`${device}_RX`, {
 							elementId: `${device}_StatusRX`,
 							replaceStart: '( ',
@@ -212,16 +211,16 @@ class CommandParser {
 						});
 
 						return [
-							{ id: `${device}_StatusRX`, action: 'set_content', payload: 'RECEIVE ( 00:00:00 )' },
+							{ id: `${device}_StatusRX`, action: 'set_content', payload: 'RECEIVE ( 0 s )' },
 							{ id: `${device}_StatusRX`, action: 'add_class', class: 'active-mode-cell' },
 						];
 					} else {
-						// Останавливаем таймер для RX
 						this.sm.stopTimer(`${device}_RX`);
 
 						return [
 							{ id: `${device}_StatusRX`, action: 'set_content', payload: 'STANDBY' },
 							{ id: `${device}_StatusRX`, action: 'remove_class', class: 'active-mode-cell' },
+							// { id: `${device}Destination`, action: 'set_content', payload: '' },
 						];
 					}
 				}
@@ -268,7 +267,6 @@ class CommandParser {
 					const device = match[2];
 					const callsign = match[3];
 
-					// Останавливаем таймер для узла
 					this.sm.stopTimer(`node_${device}_${callsign}`);
 
 					return [
@@ -287,7 +285,6 @@ class CommandParser {
 					const device = match[2];
 					const callsign = match[3];
 
-					// Запускаем таймер для узла
 					this.sm.startTimer(`node_${device}_${callsign}`, {
 						elementId: `logic_${device}_node_${callsign}`,
 						replaceStart: '<b>Uptime:</b>',
@@ -313,11 +310,8 @@ class CommandParser {
 					const device = match[2];
 
 					return [
-						// удалить дочерние элементы, кроме постоянно мониторящихся групп или группы по умолчанию
 						{ id: `logic_${device}_GroupsTableBody`, action: 'remove_child', ignoreClass: 'default,monitored' },
-						// сбросить активную группу всех дочерних элементов
 						{ id: `logic_${device}_GroupsTableBody`, class: 'disabled-mode-cell', operation: 'replace_class', action: 'handle_child_classes', oldClass: 'active-mode-cell' },
-						// установить группу по умолчанию как активную
 						{ id: `logic_${device}_GroupsTableBody`, class: 'default,active-mode-cell', operation: 'replace_class', action: 'handle_child_classes', oldClass: 'default,disabled-mode-cell' },
 					];
 				}
@@ -335,12 +329,8 @@ class CommandParser {
 					}
 
 					return [
-						// удалить дочерние элементы, кроме постоянно мониторящихся групп или группы по умолчанию
 						{ id: `logic_${device}_GroupsTableBody`, action: 'remove_child', ignoreClass: 'default,monitored', },
-						// сбросить активную группу всех дочерних элементов
 						{ id: `logic_${device}_GroupsTableBody`, class: 'disabled-mode-cell', operation: 'replace_class', action: 'handle_child_classes', oldClass: 'active-mode-cell' },
-
-						// Добавить группу как активную
 						{
 							id: `logic_${device}_GroupsTableBody`,
 							action: "add_child",
@@ -362,7 +352,6 @@ class CommandParser {
 					}
 
 					return [
-						// Добавить группу
 						{
 							id: `logic_${device}_GroupsTableBody`,
 							action: 'add_child',
@@ -379,7 +368,6 @@ class CommandParser {
 					const device = match[2];
 					const talkgroup = match[3];
 					return [
-						// Добавить группу
 						{
 							id: `logic_${device}_GroupsTableBody`,
 							action: 'add_child',
@@ -397,7 +385,6 @@ class CommandParser {
 					const talkgroup = match[3];
 
 					return [
-						// Удалить группу
 						{
 							id: `logic_${device}_Group_${talkgroup}`,
 							action: 'remove_element',
@@ -412,13 +399,11 @@ class CommandParser {
 				handler: (match) => {
 					const logic = match[2];
 					const module = match[3];
-					moduleHandler.add(module, logic);
+					this.moduleHandler.add(module, logic);
 
-					// HTML с тегом <a> и начальным временем "0 s"
-					const initialTime = this.sm.formatDuration(0); // "0 s"
+					const initialTime = this.sm.formatDuration(0);
 					const activatedHtml = `<a class="tooltip" href="#"><span><b>Uptime:</b>${initialTime}</span>${module}</a>`;
 
-					// Запускаем таймер активности модуля
 					this.sm.startTimer(`${logic}_${module}`, {
 						elementId: `module_${logic}${module}`,
 						replaceStart: '<b>Uptime:</b>',
@@ -437,7 +422,7 @@ class CommandParser {
 							id: `logic_${logic}`,
 							action: 'add_class',
 							class: 'paused-mode-cell'
-						},						
+						},
 						{
 							id: `module_${logic}${module}`,
 							action: 'remove_class',
@@ -448,7 +433,6 @@ class CommandParser {
 							action: 'add_class',
 							class: 'paused-mode-cell'
 						},
-						// Устанавливаем HTML с начальным временем
 						{
 							id: `module_${logic}${module}`,
 							action: 'set_content',
@@ -469,12 +453,10 @@ class CommandParser {
 				handler: (match) => {
 					const logic = match[2];
 					const module = match[3];
-					moduleHandler.remove(module, logic);
+					this.moduleHandler.remove(module, logic);
 
-					// Останавливаем таймер активности модуля
 					this.sm.stopTimer(`${logic}_${module}`);
 
-					// Выясняем, есть ли активный линк
 					let hasActiveLinks = false;
 					for (const [key] of this.sm.timers) {
 						if (key.startsWith('link_')) {
@@ -506,7 +488,6 @@ class CommandParser {
 							action: 'add_class',
 							class: 'disabled-mode-cell'
 						},
-
 						{
 							id: `module_${logic}${module}`,
 							action: 'set_content',
@@ -546,20 +527,15 @@ class CommandParser {
 				regex: /^(.+?): (\S+): EchoLink QSO state changed to (CONNECTED)$/,
 				handler: (match) => {
 					const node = match[2];
-
-					// 1. Получаем ВСЕ логики для EchoLink
-					const allLogics = moduleHandler.getAll('EchoLink');
+					const allLogics = this.moduleHandler.getAll('EchoLink');
 					const resultCommands = [];
 
-					// 2. Если нет связей - возвращаем пустой массив
 					if (allLogics.length === 0) {
-						log(`[WARNING] EchoLink event but no logic links found!`, 'WARNING');
+						console.log(`[WARNING] EchoLink event but no logic links found!`);
 						return [];
 					}
 
-					// 3. Для каждой связанной логики генерируем команды
 					for (const logic of allLogics) {
-						// Таймер соединения: модуль_узел
 						this.sm.startTimer(`EchoLink_${node}`, {
 							elementId: `module_${logic}_Status_Content`,
 							replaceStart: '<b>Uptime:</b>',
@@ -567,7 +543,7 @@ class CommandParser {
 							type: 'module_connection',
 							module: 'EchoLink',
 							node: node,
-							logic: logic  // Для связи с DOM элементом
+							logic: logic
 						});
 
 						resultCommands.push(
@@ -592,20 +568,15 @@ class CommandParser {
 				regex: /^(.+?): (\S+): EchoLink QSO state changed to (DISCONNECTED)$/,
 				handler: (match) => {
 					const node = match[2];
-
-					// Получаем ВСЕ логики для EchoLink
-					const allLogics = moduleHandler.getAll('EchoLink');
+					const allLogics = this.moduleHandler.getAll('EchoLink');
 					const resultCommands = [];
 
-					// Если нет связей - ничего не делаем
 					if (allLogics.length === 0) {
-						log(`[WARNING] EchoLink DISCONNECTED event but no logic links found!`, 'WARNING');
+						console.log(`[WARNING] EchoLink DISCONNECTED event but no logic links found!`);
 						return [];
 					}
 
-					// Для каждой связанной логики генерируем команды отключения
 					for (const logic of allLogics) {
-						// Останавливаем таймер соединения: модуль_узел
 						this.sm.stopTimer(`EchoLink_${node}`);
 
 						resultCommands.push(
@@ -625,6 +596,27 @@ class CommandParser {
 				}
 			},
 
+			// @bookmark EchoLink: --- EchoLink chat message received from ... ---
+			{
+				regex: /^(.+?): --- EchoLink chat message received from (\S+) ---$/,
+				handler: (match) => {
+					const timestamp = match[1];
+					const node = match[2];
+
+					// Начинаем пакетный режим
+					this.startPacket('EchoLink', timestamp, { node });
+					const commands = [];
+					commands.push({
+						targetClass: 'callsign',
+						action: 'set_content_by_class',
+						payload: ''  
+					});
+
+
+					return commands;
+				}
+			},
+
 			// @bookmark Frn: login stage 2 completed
 			{
 				regex: /^(.+?): login stage 2 completed: (.+)$/,
@@ -636,17 +628,15 @@ class CommandParser {
 						serverName = bnMatch[1];
 					}
 
-					// Получаем ВСЕ логики для Frn
-					const allLogics = moduleHandler.getAll('Frn');
+					const allLogics = this.moduleHandler.getAll('Frn');
 					const resultCommands = [];
 
 					if (allLogics.length === 0) {
-						log(`[WARNING] Frn event but no logic links found!`, 'WARNING');
+						console.log(`[WARNING] Frn event but no logic links found!`);
 						return [];
 					}
 
 					for (const logic of allLogics) {
-						// Запускаем таймер для модуля Frn
 						this.sm.startTimer(`Frn_${logic}`, {
 							elementId: `module_${logic}_Status_Content`,
 							replaceStart: '<b>Uptime:</b>',
@@ -671,17 +661,59 @@ class CommandParser {
 				}
 			},
 
+			// @bookmark Frn: voice started
+			{
+				regex: /^(.+?): voice started: (.+)$/,
+				handler: (match) => {
+					const xml = match[2];
+					const onMatch = xml.match(/<ON>(.*?)<\/ON>/);
+					const nodeCallsign = onMatch ? onMatch[1].trim() : 'Unknown Frn node';
+
+					const allLogics = this.moduleHandler.getAll('Frn');
+					const commands = [];
+
+					if (allLogics.length === 0) {
+						console.log(`[WARNING] Frn voice started event but no logic links found!`);
+						return [];
+					}
+
+					allLogics.forEach(logic => {
+						commands.push({
+							id: `${logic}Callsign`,
+							action: 'set_content',
+							payload: `${nodeCallsign}`
+						});
+					});
+
+					console.log(`Frn voice started: Updated ${allLogics.length} logics with node ${nodeCallsign}`);
+					return commands;
+				}
+			},
+
+			// @bookmark Frn: FRN list received:
+			{
+				regex: /^(.+?): FRN list received:$/,
+				handler: (match) => {
+					const timestamp = match[1];
+
+					// Начинаем пакетный режим
+					this.startPacket('Frn', timestamp);
+
+					// Возвращаем пустой результат
+					return [];
+				}
+			},
+
 			// @bookmark Активация линка
 			{
 				regex: /^(.+?): Activating link (\S+)$/,
 				handler: (match) => {
 					const link = match[2];
 
-					// Запускаем таймер для линка
 					this.sm.startTimer(`link_${link}`, {
 						elementId: `link_${link}`,
 						replaceStart: '<b>Uptime:</b>',
-						replaceEnd: '</span>',
+						replaceEnd: '<br>',
 						type: 'link'
 					});
 
@@ -700,7 +732,6 @@ class CommandParser {
 				handler: (match) => {
 					const link = match[2];
 
-					// Останавливаем таймер для линка
 					this.sm.stopTimer(`link_${link}`);
 
 					return [
@@ -714,34 +745,158 @@ class CommandParser {
 		];
 	}
 
-	// Парсинг строки лога
-	parse(line) {
-		const trimmed = line.trim();
-		if (!trimmed) return null;
+	// Начало пакетного режима
+	startPacket(type, timestamp, metadata = {}) {
+		// Завершаем предыдущий пакет если был
+		this.finalizePacket();
 
-		for (const pattern of this.patterns) {
-			const match = trimmed.match(pattern.regex);
-			if (match) {
-				const commands = pattern.handler(match);
-				return {
-					commands: commands,
-					raw: match[0],
-					timestamp: match[1]
-				};
+		// Начинаем новый
+		this.packetActive = true;
+		this.packetType = type;
+		this.packetBuffer = [];
+		this.packetStartTime = timestamp;
+		this.packetMetadata = metadata;
+
+		console.log(`[DEBUG] Packet mode started: ${type} at ${timestamp}, node: ${metadata.node || 'unknown'}`);
+	}
+
+	// Завершение пакетного режима и обработка накопленных данных
+	finalizePacket() {
+		if (!this.packetActive) return null;
+
+		console.log(`[DEBUG] Finalizing ${this.packetType} packet with ${this.packetBuffer.length} lines`);
+		console.log(`[DEBUG] Finalizing ${this.packetType} packet with ${this.packetBuffer.length} lines`);
+		let commands = [];
+
+		if (this.packetType === 'EchoLink') {
+			// Ищем передающий позывной в пакете
+			for (const line of this.packetBuffer) {
+				// Убираем timestamp
+				const content = line.replace(/^.+?: /, '');
+
+				// Передающий позывной отмечен '->'
+				if (content.startsWith('->')) {
+					const match = content.match(/^->(\S+)/);
+					if (match) {
+						const transmittingCallsign = match[1];
+						const conferenceNode = this.packetMetadata.node;
+						// Получаем все логики, связанные с EchoLink
+						// const allLogics = this.moduleHandler.getAll('EchoLink');
+
+						
+						// Обновляем позывной и назначение для логики
+						commands.push({
+							targetClass: 'callsign',
+							action: 'set_content_by_class',
+							payload: transmittingCallsign
+						});
+						commands.push({
+							targetClass: 'destination',
+							action: 'set_content_by_class',
+							payload: conferenceNode
+						});
+
+						
+
+						console.log(`[DEBUG] Found EchoLink transmitting callsign: ${transmittingCallsign} for ${conferenceNode}`);
+						break;
+					}
+				}
 			}
+		} else if (this.packetType === 'Frn') {
+			// Заглушка для Frn
+			console.log(`[DEBUG] Frn packet: ${this.packetBuffer.length} lines (not processed)`);
+			// Не возвращаем команд для DOM
+		}
+
+		// Сбрасываем состояние
+		this.packetActive = false;
+		this.packetBuffer = [];
+		this.packetType = null;
+		this.packetMetadata = {};
+
+		if (commands.length > 0) {
+			return {
+				commands: commands,
+				raw: `[${this.packetType} packet: ${this.packetBuffer.length} lines]`,
+				timestamp: this.packetStartTime
+			};
 		}
 
 		return null;
 	}
 
-	// Преобразование обновлений таймеров в DOM команды
+	// Основной метод парсинга
+	parse(line) {
+		const trimmed = line.trim();
+
+		// Пустая строка может означать конец пакета
+		// if (trimmed === '') {
+		// 	if (this.packetActive) {
+		// 		const packetResult = this.finalizePacket();
+		// 		return packetResult;
+		// 	}
+		// 	return null;
+		// }
+
+		// 1. Сначала пробуем распознать как обычную команду
+		for (const pattern of this.patterns) {
+			const match = trimmed.match(pattern.regex);
+			if (match) {
+				// Если нашли команду - завершаем текущий пакет (если есть)
+				const packetResult = this.finalizePacket();
+
+				// Выполняем обработчик команды
+				const commandResult = pattern.handler(match);
+
+				// Подготавливаем результат
+				const result = {
+					commands: commandResult,
+					raw: match[0],
+					timestamp: match[1]
+				};
+
+				// Если были команды от пакета - объединяем их
+				if (packetResult && packetResult.commands && packetResult.commands.length > 0) {
+					result.commands = [...packetResult.commands, ...commandResult];
+					result.raw = `${packetResult.raw} + ${result.raw}`;
+				}
+
+				return result;
+			}
+		}
+
+		// 2. Если не распознали как команду, проверяем пакетный режим
+		if (this.packetActive) {
+			// Накопление строк в пакете
+			this.packetBuffer.push(trimmed);
+
+			// Проверяем особые условия конца пакета (для EchoLink)
+			if (this.packetType === 'EchoLink' && trimmed.includes('Trailing chat data:')) {
+				return this.finalizePacket();
+			}
+
+			// Проверяем, не является ли это началом нового пакета (по timestamp)
+			// Простая проверка: если строка имеет timestamp и мы уже накопили данные
+			if (this.packetBuffer.length > 1 && trimmed.match(/^\d+ \w+ \d{4} \d{2}:\d{2}:\d{2}\.\d{3}: /)) {
+				// Это новое событие - завершаем текущий пакет
+				return this.finalizePacket();
+			}
+
+			// Пакет продолжается, не возвращаем команды
+			return null;
+		}
+
+		// 3. Ничего не распознали и не в пакетном режиме
+		return null;
+	}
+
+	// Метод для обновления времени (существующий)
 	timerUpdatesToCommands(timerUpdates) {
 		const commands = [];
 
 		for (const update of timerUpdates) {
 			const duration = this.sm.formatDuration(update.durationMs);
-
-			// Получаем конфигурацию элемента из метаданных
 			const metadata = update.metadata || {};
 
 			if (metadata.elementId && metadata.replaceStart !== undefined && metadata.replaceEnd !== undefined) {
@@ -757,8 +912,7 @@ class CommandParser {
 	}
 }
 
-// ==================== ОСНОВНОЙ КЛАСС СЕРВЕРА ====================
-
+// @bookmark ОСНОВНОЙ КЛАСС СЕРВЕРА
 class StatefulWebSocketServerV4 {
 	constructor(config = {}) {
 		this.config = { ...CONFIG, ...config };
@@ -1218,8 +1372,7 @@ class StatefulWebSocketServerV4 {
 	}
 }
 
-// ==================== ТОЧКА ВХОДА ====================
-
+// @bookmark ТОЧКА ВХОДА
 function main() {
 	// Обработка сигналов
 	process.on('SIGINT', () => {
@@ -1256,7 +1409,7 @@ if (require.main === module) {
 	main();
 }
 
-// Экспорт для тестирования
+// @bookmark Экспорт для тестирования
 module.exports = {
 	StatefulWebSocketServerV4,
 	StateManager,

@@ -333,6 +333,7 @@ function buildLogicData(array $lp_status): array
 
 					// Формируем содержимое tooltip для линка
 					$tooltipParts = [];
+					// if($link['duration'] > 0) $tooltipParts[] = '<b>Uptime:</b>' . formatDuration($link['duration']) . '<br>';
 					if (!empty($link['timeout'])) $tooltipParts[] = 'Timeout: ' . $link['timeout'] . " s.";
 					if (!empty($link['source']['announcement_name'])) $tooltipParts[] = 'Source: ' . $link['source']['announcement_name'];
 					if (!empty($link['destination']['announcement_name'])) $tooltipParts[] = 'Destination: ' . $link['destination']['announcement_name'];
