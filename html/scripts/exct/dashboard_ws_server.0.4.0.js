@@ -607,10 +607,18 @@ class CommandParser {
 					this.startPacket('EchoLink', timestamp, { node });
 					const commands = [];
 					commands.push({
+						id: 'EchoLink_chat_message_received',
 						targetClass: 'callsign',
 						action: 'set_content_by_class',
 						payload: ''  
-					});
+					},
+					{
+						id: 'EchoLink_chat_message_received',
+						targetClass: 'destination',
+						action: 'set_content_by_class',
+						payload: `EchoLink: Conference: ${node}`,
+					}
+					);
 
 
 					return commands;
