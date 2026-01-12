@@ -45,10 +45,10 @@ $displayData = buildLogicData($lp_status);
 
 
 // @bookmark Сервис
-echo '<div class="mode_flex" id="rptInfoTable">';
+echo '<div class="mode_flex">';
 echo '<div class="mode_flex row">';
 echo '<div class="mode_flex column"> ';
-echo '<div class="divTableHead">' . getTranslation('Service ') . '</div>';
+echo '<div class="divTableHead">' . getTranslation('Service') . '</div>';
 echo '</div></div>';
 
 echo '<div class="mode_flex row">';
@@ -186,7 +186,7 @@ if (!empty($displayData['logics'])){
 				}
 				echo '<br>';
 
-				echo '</div> <!-- Конец блока логики -->';
+				echo '</div>';
 			}
 		
 	}; 

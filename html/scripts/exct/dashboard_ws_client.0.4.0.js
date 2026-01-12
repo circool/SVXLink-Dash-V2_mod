@@ -1279,8 +1279,8 @@ class DashboardWebSocketClientV4 {
 
 		// Ограничиваем количество сообщений
 		const entries = debugConsole.querySelectorAll('.debug-entry');
-		if (entries.length > 100) {
-			for (let i = 100; i < entries.length; i++) {
+		if (entries.length > 500) {
+			for (let i = 500; i < entries.length; i++) {
 				entries[i].remove();
 			}
 		}

@@ -13,12 +13,12 @@ header('Pragma: no-cache');
 header('Expires: 0');
 
 // 2. Разрешаем только localhost
-$allowed_ips = ['127.0.0.1', '::1', 'localhost'];
-if (!in_array($_SERVER['REMOTE_ADDR'], $allowed_ips)) {
-	http_response_code(403);
-	echo json_encode(['error' => 'Access denied. Only localhost allowed.']);
-	exit;
-}
+// $allowed_ips = ['127.0.0.1', '::1', 'localhost'];
+// if (!in_array($_SERVER['REMOTE_ADDR'], $allowed_ips)) {
+// 	http_response_code(403);
+// 	echo json_encode(['error' => 'Access denied. Only localhost allowed.']);
+// 	exit;
+// }
 
 // 3. Начинаем сессию
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/session_header.php';
@@ -26,6 +26,7 @@ require_once $_SERVER["DOCUMENT_ROOT"] . '/include/session_header.php';
 // 4. Основная логика
 try {
 	$status = $_SESSION['status'] ?? [];
+	
 	$response = [
 		'timestamp' => time(),
 		'data' => [
@@ -40,7 +41,7 @@ try {
 
 	// 4. Обработка сервиса
 	if (isset($status['service']) && is_array($status['service'])) {
-		$serviceName = $status['service']['name'] ?? 'SvxLink';
+		$serviceName = $status['service']['name'] ?? 'Unnamed';
 		$isActive = $status['service']['is_active'] ?? false;
 		$startTime = $status['service']['start'] ?? 0;
 
@@ -133,6 +134,26 @@ try {
 									'type' => 'module_node'
 								];
 							}
+						}
+					}
+
+					if (isset($status['logic']) && is_array($status['logic'])) {
+						foreach ($status['logic'] as $logicName => $logic) {
+							if (!is_array($logic)) continue;
+
+							$logicStart = isset($logic['start']) ? (int)$logic['start'] : 0;
+							$isActive = $logic['is_active'] ?? false;
+
+							// Добавляем логику в ответ
+							$logicKey = 'logic_' . $logicName;
+							$response['data']['logics'][$logicKey] = [
+								'start' => $logicStart,
+								'is_active' => $isActive,
+								'name' => $logicName,
+								'type' => $logic['type'] ?? 'Unknown'
+							];
+
+							// Также добавляем в devices если нужно (уже есть)
 						}
 					}
 				}
