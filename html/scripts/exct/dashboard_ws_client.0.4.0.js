@@ -911,15 +911,17 @@ class DashboardWebSocketClientV4 {
 		if (!parent) return false;
 
 		try {
-			// Если targetId существует в DOM - обновляем его
+			// Если targetId существует в DOM - проверяем, находится ли он внутри родителя
 			if (targetId) {
 				const existingElement = document.getElementById(targetId);
 				if (existingElement) {
 					// Проверяем, что элемент находится внутри нашего родителя
 					if (existingElement.parentElement === parent) {
-						// Обновляем существующий элемент
-						existingElement.outerHTML = payloadHtml;
-						return true;
+						// Элемент уже существует внутри родителя - ИГНОРИРУЕМ команду
+						if (this.config.debugLevel >= 2) {
+							this.log('WARNING', `Element with id "${targetId}" already exists inside parent "${cmd.id}". Ignoring add_child command.`, cmd);
+						}
+						return false; // ИГНОРИРУЕМ - не добавляем дубликат
 					}
 				}
 			}
@@ -953,7 +955,7 @@ class DashboardWebSocketClientV4 {
 		if (!parent) return false;
 
 		// Получаем все дочерние элементы
-		const children = Array.from(parent.new_id);
+		const children = Array.from(parent.children); // ИЗМЕНЕНО: используем parent.children вместо parent.new_id
 
 		// Преобразуем ignoreClass в массив классов
 		const ignoreClasses = cmd.ignoreClass
