@@ -1,8 +1,9 @@
 <?php
 
 /**
- * WebSocket State Provider - ВЕРСИЯ 1.4
- * С учетом реальной структуры connected_nodes
+ * WebSocket State Provider - ВЕРСИЯ 0.4
+ * Поставщик начального состояния для WebSocket-системы v4.0, 
+ * обеспечивающий синхронизацию между PHP-сессией и Node.js WebSocket сервером
  */
 
 // 1. Заголовки
@@ -32,18 +33,22 @@ try {
 			'modules' => [],
 			'links' => [],
 			'nodes' => [],
-			'module_logic' => []
+			'module_logic' => [], // Связи логика - модуль
+			'service' => [], 
 		]
 	];
 
-	// 5. Обработка сервиса
+	// 4. Обработка сервиса
 	if (isset($status['service']) && is_array($status['service'])) {
-		if (($status['service']['is_active'] ?? false) && isset($status['service']['start'])) {
-			$response['data']['service'] = [
-				'start' => (int)$status['service']['start'],
-				'name' => $status['service']['name'] ?? 'SvxLink'
-			];
-		}
+		$serviceName = $status['service']['name'] ?? 'SvxLink';
+		$isActive = $status['service']['is_active'] ?? false;
+		$startTime = $status['service']['start'] ?? 0;
+
+		$response['data']['service'] = [
+			'name' => $serviceName,
+			'is_active' => $isActive,
+			'start' => $startTime
+		];
 	}
 
 	// 6. Обработка логик и устройств
@@ -133,13 +138,13 @@ try {
 				}
 			}
 
-			// Узлы рефлектора (теперь с правильной структурой!)
+			// Узлы рефлектора
 			if (($logic['type'] ?? '') === 'Reflector') {
 				if (isset($logic['connected_nodes']) && is_array($logic['connected_nodes'])) {
 					foreach ($logic['connected_nodes'] as $nodeName => $nodeData) {
 						$nodeKey = 'logic_' . $logicName . '_node_' . $nodeName;
 
-						// РЕАЛЬНАЯ СТРУКТУРА: массив с callsign и timestamp
+						// массив с callsign и timestamp
 						if (is_array($nodeData) && isset($nodeData['timestamp'])) {
 							$response['data']['nodes'][$nodeKey] = [
 								'start' => (int)$nodeData['timestamp'],
@@ -175,6 +180,7 @@ try {
 			];
 		}
 	}
+	
 
 	// 8. Статистика (для отладки WebSocket сервера)
 	$response['meta'] = [

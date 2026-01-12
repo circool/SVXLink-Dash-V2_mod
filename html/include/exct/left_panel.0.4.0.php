@@ -54,7 +54,7 @@ echo '</div></div>';
 echo '<div class="mode_flex row">';
 echo '<div class="mode_flex column">';
 echo '<div class="divTableCell white-space:normal">';
-echo '<div id="logic_' . $displayData['service']['name'] .'" class="' . $displayData['service']['style'] . '">';
+echo '<div id="service_' . $displayData['service']['name'] .'" class="' . $displayData['service']['style'] . '">';
 echo $displayData['service']['tooltip_start'] . $displayData['service']['name'] . $displayData['service']['tooltip_end'];
 echo '</div></div></div></div></div><br>';
 
