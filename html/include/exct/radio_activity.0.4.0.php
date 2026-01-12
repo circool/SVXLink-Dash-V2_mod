@@ -75,22 +75,23 @@ function renderRadioActivityTable()
 
 
 		// Форматируем ячейки для логик с устройствами 
-
+		$rowDevice = $logicName;
+		
 		if ($logic['type'] !== 'Reflector') {
 			$rowClass = '';
 			$rowStyle = ' style = "font-size:1.3em; text-align: center;" ';
 			$row_rxDevice = htmlspecialchars($rxDevice);
 			$row_txDevice = htmlspecialchars($txDevice);
 			$row_text = "STANDBY";
-			$rowDevice = $logic['name'];
+
 			$callsign = $logic['callsign'] ?? '';
 		} else {
 			$rowClass = 'hidden';
 			$rowStyle = ' style = "padding: 0px; margin: 0px" ';
+
 			$row_rxDevice = htmlspecialchars($logicName);
 			$row_txDevice = htmlspecialchars($logicName);
 			$row_text = '';
-			$rowDevice = '';
 			$callsign = '';
 		}
 
@@ -132,13 +133,13 @@ function renderRadioActivityTable()
 		// Logic
 		$html .= '<div id="radio_logic_' . $rowDevice . '" class="divTableCell cell_content middle"' . $rowStyle .  '>' . $rowDevice . '</div>';
 		// RX Device
-		$html .= '<div id="device_' . $row_rxDevice . '" class="divTableCell cell_content middle"' . $rowStyle . '>' . $rxDeviceHtml . '</div>';
+		$html .= '<div id="device_' . $row_rxDevice . '_rx" class="divTableCell cell_content middle"' . $rowStyle . '>' . $rxDeviceHtml . '</div>';
 		// Status RX
-		$html .= '<div id="device_' . $row_rxDevice . '_status"class="divTableCell cell_content middle" ' . $rowStyle . '>' . $row_text . '</div>';
+		$html .= '<div id="device_' . $row_rxDevice . '_rx_status"class="divTableCell cell_content middle" ' . $rowStyle . '>' . $row_text . '</div>';
 		// TX Device
-		$html .= '<div id="device_' . $row_txDevice . '" class="divTableCell cell_content middle" ' . $rowStyle . '>' . $txDeviceHtml . '</div>';
+		$html .= '<div id="device_' . $row_txDevice . '_tx" class="divTableCell cell_content middle" ' . $rowStyle . '>' . $txDeviceHtml . '</div>';
 		// Status TX
-		$html .= '<div id="device_' . $row_txDevice . '_status" class="divTableCell cell_content middle"' . $rowStyle . '>' . $row_text . '</div>';
+		$html .= '<div id="device_' . $row_txDevice . '_tx_status" class="divTableCell cell_content middle"' . $rowStyle . '>' . $row_text . '</div>';
 		// Callsign
 		$html .= '<div id="radio_logic_' . $logicName . '_callsign" class="callsign divTableCell cell_content middle"' . $rowStyle . '>' . htmlspecialchars($callsign) . '</div>';
 		// Destination

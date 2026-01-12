@@ -30,13 +30,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_keypad'])) {
 	error_log("SESSION DTMF_CTRL_PTY: " . ($_SESSION['DTMF_CTRL_PTY'] ?? 'NOT SET'));
 
 	// Просто возвращаем тестовый JSON
-	echo json_encode([
-		'status' => 'test',
-		'message' => 'AJAX работает',
-		'post' => $_POST,
-		'session_has_dtmf' => isset($_SESSION['DTMF_CTRL_PTY']) ? 'yes' : 'no'
-	]);
-	exit;
+	// echo json_encode([
+	// 	'status' => 'test',
+	// 	'message' => 'AJAX работает',
+	// 	'post' => $_POST,
+	// 	'session_has_dtmf' => isset($_SESSION['DTMF_CTRL_PTY']) ? 'yes' : 'no'
+	// ]);
+	// exit;
 
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/exct/session_header.0.0.1.php';
 	$cmd = $_SESSION['DTMF_CTRL_PTY'];

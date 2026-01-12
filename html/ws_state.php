@@ -5,6 +5,9 @@
  * Поставщик начального состояния для WebSocket-системы v4.0, 
  * обеспечивающий синхронизацию между PHP-сессией и Node.js WebSocket сервером
  */
+// 3. Начинаем сессию
+// require_once $_SERVER["DOCUMENT_ROOT"] . '/include/session_header.php';
+require_once $_SERVER["DOCUMENT_ROOT"] . '/include/init.php';
 
 // 1. Заголовки
 header('Content-Type: application/json');
@@ -20,8 +23,6 @@ header('Expires: 0');
 // 	exit;
 // }
 
-// 3. Начинаем сессию
-require_once $_SERVER["DOCUMENT_ROOT"] . '/include/session_header.php';
 
 // 4. Основная логика
 try {
