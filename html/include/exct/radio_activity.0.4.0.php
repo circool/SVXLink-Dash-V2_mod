@@ -130,19 +130,19 @@ function renderRadioActivityTable()
 		$html .= '<div class="divTableRow ' . $rowClass .  '">';
 
 		// Logic
-		$html .= '<div id="' . $rowDevice . '" class="divTableCell cell_content middle"' . $rowStyle .  '>' . $rowDevice . '</div>';
+		$html .= '<div id="radio_logic_' . $rowDevice . '" class="divTableCell cell_content middle"' . $rowStyle .  '>' . $rowDevice . '</div>';
 		// RX Device
-		$html .= '<div id="' . $row_rxDevice . '" class="divTableCell cell_content middle"' . $rowStyle . '>' . $rxDeviceHtml . '</div>';
+		$html .= '<div id="device_' . $row_rxDevice . '" class="divTableCell cell_content middle"' . $rowStyle . '>' . $rxDeviceHtml . '</div>';
 		// Status RX
-		$html .= '<div id="' . $row_rxDevice . '_StatusRX"class="divTableCell cell_content middle" ' . $rowStyle . '>' . $row_text . '</div>';
+		$html .= '<div id="device_' . $row_rxDevice . '_status"class="divTableCell cell_content middle" ' . $rowStyle . '>' . $row_text . '</div>';
 		// TX Device
-		$html .= '<div id="' . $row_txDevice . '" class="divTableCell cell_content middle" ' . $rowStyle . '>' . $txDeviceHtml . '</div>';
+		$html .= '<div id="device_' . $row_txDevice . '" class="divTableCell cell_content middle" ' . $rowStyle . '>' . $txDeviceHtml . '</div>';
 		// Status TX
-		$html .= '<div id="' . $row_txDevice . '_StatusTX" class="divTableCell cell_content middle"' . $rowStyle . '>' . $row_text . '</div>';
+		$html .= '<div id="device_' . $row_txDevice . '_status" class="divTableCell cell_content middle"' . $rowStyle . '>' . $row_text . '</div>';
 		// Callsign
-		$html .= '<div id="' . $logicName . 'Callsign" class="divTableCell cell_content middle callsign"' . $rowStyle . '>' . htmlspecialchars($callsign) . '</div>';
+		$html .= '<div id="radio_logic_' . $logicName . '_callsign" class="callsign divTableCell cell_content middle"' . $rowStyle . '>' . htmlspecialchars($callsign) . '</div>';
 		// Destination
-		$html .= '<div id="' . $logicName . 'Destination"class="divTableCell cell_content middle destination"' . $rowStyle . '>' . htmlspecialchars($destination) . '</div>';
+		$html .= '<div id="radio_logic_' . $logicName . '_destination" class="destination divTableCell cell_content middle"' . $rowStyle . '>' . htmlspecialchars($destination) . '</div>';
 
 		$html .= '</div>';
 	}

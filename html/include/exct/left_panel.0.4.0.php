@@ -70,7 +70,7 @@ if (!empty($displayData['logics'])){
 				
 		if (!empty($logic['modules'])) {
 			// @bookmark Модули шапка
-			echo '<div class="mode_flex row"><div class="mode_flex column"><div class="divTableHead">';
+			echo '<div id= "logic_' . $logic['name'] . '_modules_header" class="mode_flex row"><div class="mode_flex column"><div class="divTableHead">';
 			echo getTranslation('Modules');		
 			echo $logic['module_count'] > 1 ? ' [' . $logic['module_count'] . ']' : '' ;
 			echo '</div></div></div>';			
@@ -85,7 +85,7 @@ if (!empty($displayData['logics'])){
 				}
 
 				echo '<div class="mode_flex column"><div class="divTableCell">';
-				echo '<div id="module_' . $logic['name'] . $module['name'] . '" class="' . $module['style'] . '" title="">';
+				echo '<div id="logic_' . $logic['name'] . '_module_' . $module['name'] . '" class="' . $module['style'] . '" title="">';
 				echo $module['tooltip_start'] . $module['name'] . $module['tooltip_end'];
 				echo '</div></div></div>';
 
@@ -114,10 +114,10 @@ if (!empty($displayData['logics'])){
 			}
 
 			// @bookmark Всегда создаем пустой каркас для подключенных узлов но скрываем его если нет подключенных узлов
-			echo '<div id="module_' . $logic['name'] . '_Status" class="divTable ' . $nodesTableStyle . '">';
-			echo '<div id="module_' . $logic['name'] . '_Status_Header" class="divTableHead">' . $nodesTableHeader . '</div>';
+			echo '<div id="logic_' . $logic['name'] . '_active" class="divTable ' . $nodesTableStyle . '">';
+			echo '<div id="logic_' . $logic['name'] . '_active_header" class="divTableHead">' . $nodesTableHeader . '</div>';
 			echo '<div class="divTableBody"><div class="mode_flex"><div class="mode_flex row">';
-			echo '<div id="module_' . $logic['name'] . '_Status_Content" class="mode_flex column disabled-mode-cell" style="border: .5px solid #3c3f47;">';
+			echo '<div id="logic_' . $logic['name'] . '_active_content" class="mode_flex column disabled-mode-cell" style="border: .5px solid #3c3f47;">';
 			echo $node['tooltip_start'] . $node['name'] . $node['tooltip_end'];
 			echo '</div></div></div></div></div>';
 
@@ -138,9 +138,9 @@ if (!empty($displayData['logics'])){
 					// @bookmark Линки рефлектора
 					if (!empty($reflector['links'])){
 						foreach ($reflector['links'] as $link) {
-							echo '<div class="divTableRow center">';
+							echo '<div id="logic_' . $reflector['name']  .'_links" class="divTableRow center">';
 							echo '<div class="divTableHeadCell">' . getTranslation('Link') . '</div>';
-							echo '<div id="link_' . $link['name'] .'" class="divTableCell cell_content middle ' . $link['style'] . '" style="border: .5px solid #3c3f47;">';
+							echo '<div id="link_' . $link['name'] . '" class="' . $reflector['name']  . ' divTableCell cell_content middle ' . $link['style'] . '" style="border: .5px solid #3c3f47;">';
 							echo $link['tooltip_start'] . $link['shortname'] . $link['tooltip_end'];
 							echo '</div></div>';
 						}
@@ -152,12 +152,12 @@ if (!empty($displayData['logics'])){
 						echo '<div class="divTable">';
 						echo '<div class="divTableHead">' . getTranslation('Talk Groups') .'</div>';
 						echo '<div class="divTableBody">';
-						echo '<div id="logic_' . $reflector['name'] . '_GroupsTableBody" class="mode_flex row">';
+						echo '<div id="logic_' . $reflector['name'] . '_groups" class="mode_flex row">';
 							
 						$tgIndex = 0;
 						$tgCount = count($reflector['talkgroups']);
 						foreach ($reflector['talkgroups'] as $group) {
-							echo '<div id="logic_' . $reflector['name'] . '_Group_' . $group['name'] .
+							echo '<div id="logic_' . $reflector['name'] . '_group_' . $group['name'] .
 							'" class="mode_flex column ' . $group['style'] .
 								'" title="' . $group['title'] .
 								'" style="border: .5px solid #3c3f47;">' .

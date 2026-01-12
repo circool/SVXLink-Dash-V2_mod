@@ -106,7 +106,7 @@ function buildLogicData(array $lp_status): array
 		'has_duration' => $lp_service['duration'] > 0,
 		'duration' => $lp_service['duration'],
 		'tooltip_start' => $lp_service['duration'] > 0 ?
-			'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . formatDuration($lp_service['duration']) . '</span>' : '',
+			'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . formatDuration($lp_service['duration']) . '<br></span>' : '',
 		'tooltip_end' => $lp_service['duration'] > 0 ? '</a>' : ''
 	];
 
@@ -157,7 +157,7 @@ function buildLogicData(array $lp_status): array
 					'duration' => $module['duration'],
 					'is_active' => $module['is_active'],
 					'tooltip_start' => $module['duration'] > 0 ?
-						'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . formatDuration($module['duration']) . '</span>' : '',
+						'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . formatDuration($module['duration']) . '<br></span>' : '',
 					'tooltip_end' => $module['duration'] > 0 ? '</a>' : ''
 				];
 
@@ -305,7 +305,7 @@ function buildLogicData(array $lp_status): array
 									'has_uptime' => !empty($nodeData['timestamp']),
 									'uptime' => !empty($nodeData['timestamp']) ? time() - $nodeData['timestamp'] : 0,
 									'tooltip_start' => !empty($nodeData['timestamp']) ?
-										'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . formatDuration(time() - $nodeData['timestamp']) . '</span>' : '',
+										'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . formatDuration(time() - $nodeData['timestamp']) . '<br></span>' : '',
 									'tooltip_end' => !empty($nodeData['timestamp']) ? '</a>' : ''
 								];
 
@@ -333,7 +333,7 @@ function buildLogicData(array $lp_status): array
 
 					// Формируем содержимое tooltip для линка
 					$tooltipParts = [];
-					// if($link['duration'] > 0) $tooltipParts[] = '<b>Uptime:</b>' . formatDuration($link['duration']) . '<br>';
+					if($link['duration'] > 0) $tooltipParts[] = '<b>Uptime:</b>' . formatDuration($link['duration']) . '<br>';
 					if (!empty($link['timeout'])) $tooltipParts[] = 'Timeout: ' . $link['timeout'] . " s.";
 					if (!empty($link['source']['announcement_name'])) $tooltipParts[] = 'Source: ' . $link['source']['announcement_name'];
 					if (!empty($link['destination']['announcement_name'])) $tooltipParts[] = 'Destination: ' . $link['destination']['announcement_name'];
@@ -375,7 +375,7 @@ function buildLogicData(array $lp_status): array
 			'has_duration' => $logic['duration'] > 0,
 			'duration' => $logic['duration'],
 			'tooltip_start' => $logic['duration'] > 0 ?
-				'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . formatDuration($logic['duration']) . '</span>' : '',
+				'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . formatDuration($logic['duration']) . '<br></span>' : '',
 			'tooltip_end' => $logic['duration'] > 0 ? '</a>' : '',
 			'modules' => $modules,
 			'module_count' => count($modules),
@@ -449,7 +449,7 @@ function buildLogicData(array $lp_status): array
 						'has_uptime' => !empty($nodeData['timestamp']),
 						'uptime' => !empty($nodeData['timestamp']) ? time() - $nodeData['timestamp'] : 0,
 						'tooltip_start' => !empty($nodeData['timestamp']) ?
-							'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . formatDuration(time() - $nodeData['timestamp']) . '</span>' : '',
+							'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . formatDuration(time() - $nodeData['timestamp']) . '<br></span>' : '',
 						'tooltip_end' => !empty($nodeData['timestamp']) ? '</a>' : ''
 					];
 
