@@ -26,7 +26,7 @@ require_once $_SERVER["DOCUMENT_ROOT"] . '/include/session_header.php';
 // 4. Основная логика
 try {
 	$status = $_SESSION['status'] ?? [];
-	
+
 	$response = [
 		'timestamp' => time(),
 		'data' => [
@@ -35,11 +35,12 @@ try {
 			'links' => [],
 			'nodes' => [],
 			'module_logic' => [], // Связи логика - модуль
-			'service' => [], 
+			'service' => [],
+			'logics' => [],
 		]
 	];
 
-	// 4. Обработка сервиса
+	// 5. Обработка сервиса
 	if (isset($status['service']) && is_array($status['service'])) {
 		$serviceName = $status['service']['name'] ?? 'Unnamed';
 		$isActive = $status['service']['is_active'] ?? false;
@@ -59,7 +60,16 @@ try {
 
 			$logicStart = isset($logic['start']) ? (int)$logic['start'] : 0;
 
-			// Устройства RX/TX
+			// 6.1 Добавляем логику в logics
+			$logicKey = 'logic_' . $logicName;
+			$response['data']['logics'][$logicKey] = [
+				'start' => $logicStart,
+				'is_active' => $logic['is_active'] ?? false,
+				'name' => $logicName,
+				'type' => $logic['type'] ?? 'Unknown'
+			];
+
+			// 6.2 Устройства RX/TX
 			if (!empty($logic['rx'])) {
 				$response['data']['devices'][$logic['rx']] = [
 					'start' => 0,
@@ -76,7 +86,7 @@ try {
 				];
 			}
 
-			// Модули
+			// 6.3 Модули
 			if (isset($logic['module']) && is_array($logic['module'])) {
 				foreach ($logic['module'] as $moduleName => $module) {
 					if (!is_array($module)) continue;
@@ -98,15 +108,15 @@ try {
 						$response['data']['module_logic'][$moduleName][] = $logicName;
 					}
 
-					// Узлы модуля (могут быть в другом формате)
+					// Узлы модуля
 					if (isset($module['connected_nodes']) && is_array($module['connected_nodes'])) {
 						foreach ($module['connected_nodes'] as $nodeName => $nodeData) {
 							$nodeKey = 'logic_' . $logicName . '_node_' . $nodeName;
 
-							// Формат 1: массив с ключами callsign и timestamp
-							if (is_array($nodeData) && isset($nodeData['timestamp'])) {
+							// Формат: массив с ключами callsign и start
+							if (is_array($nodeData) && isset($nodeData['start'])) {
 								$response['data']['nodes'][$nodeKey] = [
-									'start' => (int)$nodeData['timestamp'],
+									'start' => (int)$nodeData['start'],
 									'logic' => $logicName,
 									'module' => $moduleName,
 									'node' => $nodeName,
@@ -114,73 +124,24 @@ try {
 									'type' => 'module_node'
 								];
 							}
-							// Формат 2: просто timestamp
-							else if (is_numeric($nodeData)) {
-								$response['data']['nodes'][$nodeKey] = [
-									'start' => (int)$nodeData,
-									'logic' => $logicName,
-									'module' => $moduleName,
-									'node' => $nodeName,
-									'type' => 'module_node'
-								];
-							}
-							// Формат 3: массив с start
-							else if (is_array($nodeData) && isset($nodeData['start'])) {
-								$response['data']['nodes'][$nodeKey] = [
-									'start' => (int)$nodeData['start'],
-									'logic' => $logicName,
-									'module' => $moduleName,
-									'node' => $nodeName,
-									'type' => 'module_node'
-								];
-							}
-						}
-					}
-
-					if (isset($status['logic']) && is_array($status['logic'])) {
-						foreach ($status['logic'] as $logicName => $logic) {
-							if (!is_array($logic)) continue;
-
-							$logicStart = isset($logic['start']) ? (int)$logic['start'] : 0;
-							$isActive = $logic['is_active'] ?? false;
-
-							// Добавляем логику в ответ
-							$logicKey = 'logic_' . $logicName;
-							$response['data']['logics'][$logicKey] = [
-								'start' => $logicStart,
-								'is_active' => $isActive,
-								'name' => $logicName,
-								'type' => $logic['type'] ?? 'Unknown'
-							];
-
-							// Также добавляем в devices если нужно (уже есть)
 						}
 					}
 				}
 			}
 
-			// Узлы рефлектора
+			// 6.4 Узлы рефлектора
 			if (($logic['type'] ?? '') === 'Reflector') {
 				if (isset($logic['connected_nodes']) && is_array($logic['connected_nodes'])) {
 					foreach ($logic['connected_nodes'] as $nodeName => $nodeData) {
 						$nodeKey = 'logic_' . $logicName . '_node_' . $nodeName;
 
-						// массив с callsign и timestamp
-						if (is_array($nodeData) && isset($nodeData['timestamp'])) {
+						// Формат: массив с callsign и start
+						if (is_array($nodeData) && isset($nodeData['start'])) {
 							$response['data']['nodes'][$nodeKey] = [
-								'start' => (int)$nodeData['timestamp'],
+								'start' => (int)$nodeData['start'],
 								'logic' => $logicName,
 								'node' => $nodeName,
 								'callsign' => $nodeData['callsign'] ?? $nodeName,
-								'type' => 'reflector_node'
-							];
-						}
-						// Резервный вариант
-						else {
-							$response['data']['nodes'][$nodeKey] = [
-								'start' => $logicStart,
-								'logic' => $logicName,
-								'node' => $nodeName,
 								'type' => 'reflector_node'
 							];
 						}
@@ -195,15 +156,29 @@ try {
 		foreach ($status['link'] as $linkName => $link) {
 			if (!is_array($link)) continue;
 
+			$isActive = $link['is_active'] ?? false;
+			$isConnected = $link['is_connected'] ?? false;
+
+			// Определяем время старта
+			$linkStart = 0;
+			if (($isActive || $isConnected) && isset($link['start']) && $link['start'] > 0) {
+				$linkStart = (int)$link['start'];
+			}
+
 			$response['data']['links'][$linkName] = [
-				'start' => isset($link['start']) ? (int)$link['start'] : 0,
-				'is_active' => $link['is_active'] ?? false
+				'is_active' => $isActive,
+				'is_connected' => $isConnected,
+				'start' => $linkStart,
+				'duration' => $link['duration'] ?? 0,
+				'timeout' => $link['timeout'] ?? 0,
+				'default_active' => $link['default_active'] ?? false,
+				'source' => $link['source'] ?? [],
+				'destination' => $link['destination'] ?? []
 			];
 		}
 	}
-	
 
-	// 8. Статистика (для отладки WebSocket сервера)
+	// 8. Статистика
 	$response['meta'] = [
 		'counts' => [
 			'devices' => count($response['data']['devices']),
