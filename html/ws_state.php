@@ -159,11 +159,36 @@ try {
 
 			$isActive = $link['is_active'] ?? false;
 			$isConnected = $link['is_connected'] ?? false;
+			$link_destination = $link['destination']['logic'];
+			$link_source = $link['source']['logic'];
 
 			// Определяем время старта
 			$linkStart = 0;
 			if (($isActive || $isConnected) && isset($link['start']) && $link['start'] > 0) {
 				$linkStart = (int)$link['start'];
+			}
+
+			// Связи линка с логиками (source и destination)
+			// Источник (source)
+			if (isset($link['source']['logic']) && !empty($link['source']['logic'])) {
+				$sourceLogic = $link['source']['logic'];
+				if (!isset($response['data']['link_logic'][$sourceLogic])) {
+					$response['data']['link_logic'][$sourceLogic] = [];
+				}
+				if (!in_array($linkName, $response['data']['link_logic'][$sourceLogic])) {
+					$response['data']['link_logic'][$sourceLogic][] = $linkName;
+				}
+			}
+
+			// Назначение (destination)
+			if (isset($link['destination']['logic']) && !empty($link['destination']['logic'])) {
+				$destLogic = $link['destination']['logic'];
+				if (!isset($response['data']['link_logic'][$destLogic])) {
+					$response['data']['link_logic'][$destLogic] = [];
+				}
+				if (!in_array($linkName, $response['data']['link_logic'][$destLogic])) {
+					$response['data']['link_logic'][$destLogic][] = $linkName;
+				}
 			}
 
 			$response['data']['links'][$linkName] = [

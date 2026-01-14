@@ -25,9 +25,7 @@ if (defined("DEBUG") && DEBUG) {
 }
 
 
-	if (defined('WS_ENABLED') && WS_ENABLED) {
-		include_once $_SERVER["DOCUMENT_ROOT"] . '/include/websocket.php';
-	}
+	
 
 
 // Проверяем авторизацию
@@ -63,6 +61,7 @@ if (!file_exists($auth_file)) {
 	<?php
 	if (!defined("WS_ENABLED") || constant("WS_ENABLED") === true) {
 		echo '<link rel="stylesheet" href="/css/websocket_control.css">';
+		
 	} ?>
 	
 </head>
@@ -243,6 +242,11 @@ if (!file_exists($auth_file)) {
 			// Экспортируем для отладки
 			window.addDebugLog = addDebugLog;
 		</script>
+		<?php
+		if (defined('WS_ENABLED') && WS_ENABLED) {
+			include_once $_SERVER["DOCUMENT_ROOT"] . '/include/websocket.php';
+		}
+		?>
 	</div>
 </body>
 

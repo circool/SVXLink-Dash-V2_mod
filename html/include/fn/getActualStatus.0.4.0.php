@@ -362,7 +362,7 @@ function getActualStatus(bool $forceRebuild = false): array
 	
 	// На этом этапер уже должен быть получен размер журнала
 	
-	// С сервисом разобрались. Получаем количество строк журнала для текущей сессии сервиса
+	// Получаем количество строк журнала для текущей сессии сервиса
 	$logCount = $status['service']['log_line_count'];
 	if (defined("DEBUG") && DEBUG) dlog("$ver: Активных строк в журнале $logCount", 3, "DEBUG");
 
@@ -401,7 +401,8 @@ function getActualStatus(bool $forceRebuild = false): array
 		} else {
 			// Для Симплекса и Дуплекса (Event handler script successfully loaded) говорит о включении логики 
 			// а сообщения Activating/Deactivating говорит о включении/выключении модуля (игнорируем - логика не выключаемая 
-			// @todo Разобраться можно ли выключить логику)
+			
+			// Включенную логику отмечаем как на паузе
 			if (defined("DEBUG") && DEBUG) dlog("$ver: $logicName - обычная логика", 4, "DEBUG");
 			$or_conditions[] = "Event handler script successfully loaded";
 			$or_conditions[] = "ctivating module";
@@ -434,7 +435,7 @@ function getActualStatus(bool $forceRebuild = false): array
 
 		$logic['start'] = $serviceCommandTimestamp > $logic['start'] ? $serviceCommandTimestamp : $logic['start'];
 		$logic['duration'] = time() - $logic['start'];
-		$logic['is_active'] = true;
+		$logic['is_active'] = true; // @since 0.4
 		// Рефлектор подключен если активен линк (еще не проверялся)
 		// Обычная логика активна когда подключается модуль (еще не проверялся)
 		// if (defined("DEBUG") && DEBUG) dlog("$ver: $logicName is active, continue ...", 4, "DEBUG");

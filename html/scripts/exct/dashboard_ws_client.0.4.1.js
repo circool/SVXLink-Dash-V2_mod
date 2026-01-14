@@ -227,17 +227,28 @@ class DashboardWebSocketClientV4 {
 		try {
 			const data = JSON.parse(event.data);
 
-			if (this.config.debugLevel >= 3) {
-				this.log('DEBUG', `Received message:`, data);
-			}
+			// if (this.config.debugLevel >= 3) {
+			// 	this.log('DEBUG', `Received message:`, data);
+			// }
 
 			if (data.type === 'welcome') {
 				this.clientId = data.clientId;
 				this.log('INFO', `Connected to server v${data.version}, client ID: ${this.clientId}`);
+			
 			} else if (data.type === 'pong') {
 				// Игнорируем pong
+			
 			} else if (data.type === 'dom_commands' && Array.isArray(data.commands)) {
 				this.processCommands(data.commands, data.chunk, data.chunks);
+			
+			} else if (data.type === 'log_message') {
+				
+				this.logToWebConsole(
+				    data.timestamp,
+				    data.level,
+				    data.message,
+				    data.source)
+				
 			} else if (Array.isArray(data)) {
 				// Прямой массив команд (для совместимости)
 				this.processCommands(data);
@@ -881,68 +892,97 @@ class DashboardWebSocketClientV4 {
 		return true;
 	}
 	
-	// @bookmark ДЛЯ ДОЧЕРНИХ ЭЛЕМЕНТОВ
+	// @bookmark Операции с дочерними элементами
 
+	/**
+	 * Добавление дочернего элемента в элемент с указанным id.
+	 * Если у родителя уже есть дочерний элемент с таким id,
+	 * игнорировать добавление
+	 * Если родитель не найден - логировать ошибку и возвращать false
+	 * 
+	 * @params
+	 *  target: string <id родителя>
+	 * 	payload: string <содержимое добавляемого блока>	
+	 *  optional type:  string <тип нового элемента, по умолчанию div>
+	 * 	optional id: string <id нового элемента, по умолчанию нет>
+	 * 	optional class: string <class нового элемента, по умолчанию нет>
+	 * 	optional style: string <style нового элемента, по умолчанию нет>
+	 * @returns
+	 * 	bool	<успешность выполнения>
+	 */
 	addChild(cmd) {
+		// Проверяем обязательные параметры
+		if (!cmd.target) {
+			this.log('ERROR', 'add_child: не указан целевой родитель (target)', cmd);
+			return false;
+		}
+
 		if (!cmd.payload) {
-			this.log('ERROR', 'add_child missing payload', cmd);
+			this.log('ERROR', 'add_child: не указано содержимое (payload)', cmd);
 			return false;
 		}
 
-		if (!cmd.id) {
-			this.log('ERROR', 'add_child missing id (parent element)', cmd);
+		// Находим родительский элемент
+		const parent = document.getElementById(cmd.target);
+		if (!parent) {
+			this.log('ERROR', `add_child: родительский элемент "${cmd.target}" не найден`, cmd);
 			return false;
 		}
-
-		// Проверяем, существует ли элемент с таким ID в payload
-		// Извлекаем ID из payload если он есть
-		let targetId = cmd.new_id; // ID конкретного элемента для обновления/добавления
-		let payloadHtml = cmd.payload;
-
-		// Если в payload есть элемент с ID, используем его
-		if (!targetId) {
-			const idMatch = payloadHtml.match(/id=["']([^"']+)["']/);
-			if (idMatch) {
-				targetId = idMatch[1];
-			}
-		}
-
-		const parent = document.getElementById(cmd.id);
-		if (!parent) return false;
 
 		try {
-			// Если targetId существует в DOM - проверяем, находится ли он внутри родителя
-			if (targetId) {
-				const existingElement = document.getElementById(targetId);
-				if (existingElement) {
-					// Проверяем, что элемент находится внутри нашего родителя
-					if (existingElement.parentElement === parent) {
-						// Элемент уже существует внутри родителя - ИГНОРИРУЕМ команду
-						if (this.config.debugLevel >= 2) {
-							this.log('WARNING', `Element with id "${targetId}" already exists inside parent "${cmd.id}". Ignoring add_child command.`, cmd);
-						}
-						return false; // ИГНОРИРУЕМ - не добавляем дубликат
+			// Определяем ID нового элемента
+			const childId = cmd.id || null;
+
+			// Если ID указан, ищем существующий элемент
+			if (childId) {
+				const existingElement = document.getElementById(childId);
+
+				// Если элемент существует и его родитель совпадает с целевым
+				if (existingElement && existingElement.parentElement === parent) {
+					return true;
+					// Обновляем существующий элемент
+					if (cmd.type && existingElement.tagName.toLowerCase() !== cmd.type.toLowerCase()) {
+						const newElement = document.createElement(cmd.type);
+						newElement.id = childId;
+						newElement.className = cmd.class || existingElement.className;
+						newElement.style.cssText = cmd.style || existingElement.style.cssText;
+						newElement.title = cmd.title || existingElement.title;
+						newElement.innerHTML = cmd.payload;
+						existingElement.parentNode.replaceChild(newElement, existingElement);
+					} else {
+						existingElement.innerHTML = cmd.payload;
+						if (cmd.class !== undefined) existingElement.className = cmd.class;
+						if (cmd.style !== undefined) existingElement.style.cssText = cmd.style;
+						if (cmd.title !== undefined) existingElement.title = cmd.title;
 					}
+
+					if (this.config.debugLevel >= 3) {
+						this.log('DEBUG', `Обновлен элемент "${childId}" в родителе "${cmd.target}"`);
+					}
+					return true;
 				}
 			}
 
-			// Добавляем ID в payload если targetId указан
-			if (targetId && !payloadHtml.includes('id=')) {
-				// Находим первый тег div и добавляем в него id
-				payloadHtml = payloadHtml.replace(/<div\s*/, `<div id="${targetId}" `);
-			} else if (targetId && payloadHtml.includes('id=') &&
-				!payloadHtml.includes(`id="${targetId}"`) &&
-				!payloadHtml.includes(`id='${targetId}'`)) {
-				// ID есть, но не совпадает - заменяем
-				payloadHtml = payloadHtml.replace(/id=["'][^"']*["']/, `id="${targetId}"`);
+			// Создаем новый элемент
+			const elementType = cmd.type || 'div';
+			const element = document.createElement(elementType);
+			element.innerHTML = cmd.payload;
+			if (childId) element.id = childId;
+			if (cmd.class !== undefined) element.className = cmd.class;
+			if (cmd.style !== undefined) element.style.cssText = cmd.style;
+			if (cmd.title !== undefined) element.title = cmd.title;
+
+			parent.appendChild(element);
+
+			if (this.config.debugLevel >= 3) {
+				const childInfo = childId ? `"${childId}"` : 'новый элемент';
+				this.log('DEBUG', `Добавлен ${childInfo} (${elementType}) в родителя "${cmd.target}"`);
 			}
 
-			// Добавляем как новый элемент
-			parent.insertAdjacentHTML('beforeend', payloadHtml);
 			return true;
 
 		} catch (error) {
-			this.log('ERROR', `Error in add_child: ${error.message}`, cmd);
+			this.log('ERROR', `Ошибка в add_child: ${error.message}`, cmd);
 			return false;
 		}
 	}
@@ -1232,6 +1272,7 @@ class DashboardWebSocketClientV4 {
 		// Лог в консоль браузера
 		if (this.config.debugConsole) {
 			const prefix = `[WS Client ${level}]`;
+			
 			switch (levelNum) {
 				case 0:
 					console.error(prefix, message, data || '');
@@ -1264,14 +1305,29 @@ class DashboardWebSocketClientV4 {
 		const levelClass = `debug-${level.toLowerCase()}`;
 
 		let fullMessage = message;
-		if (data) {
-			fullMessage += ' ' + (typeof data === 'object' ? JSON.stringify(data) : String(data));
+		let sender = "[WS Client v4]";
+
+		// СНАЧАЛА определяем отправителя
+		if (typeof data === 'string') {
+			sender = `[${data}]`; // например: [WS Server v4]
+			// Если data - это имя отправителя, НЕ добавляем его к сообщению!
+		} else if (data && typeof data === 'object') {
+			if (data.source) {
+				sender = `[${data.source}]`;
+			} else {
+				// Только если это не source, а реальные данные - добавляем к сообщению
+				fullMessage += ' ' + JSON.stringify(data);
+			}
+		} else if (data) {
+			// Любые другие данные добавляем к сообщению (числа, булевы значения и т.д.)
+			fullMessage += ' ' + String(data);
 		}
+
 
 		const messageHtml = `
 			<div class="debug-entry ${levelClass}">
 				<span class="debug-time">[${time}]</span>
-				<span class="debug-source">[WS Client v4]</span>
+				<span class="debug-source">${sender}</span>
 				<span class="debug-level">[${level}]</span>
 				<span class="debug-message">${this.escapeHtml(fullMessage)}</span>
 			</div>

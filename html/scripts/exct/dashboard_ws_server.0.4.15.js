@@ -1,8 +1,9 @@
 /**
- * @filesource /scripts/exct/dashboard_ws_server.4.0.js
- * @version 4.1
- * @date 2026.01.11
+ * @filesource /scripts/exct/dashboard_ws_server.0.4.15.js
+ * @version 0.4.15
+ * @date 2026.01.14
  * @description Stateful WebSocket сервер для SvxLink Dashboard с поддержкой начального состояния
+ * @todo Дописать разбор
  */
 
 const WebSocket = require('ws');
@@ -10,10 +11,11 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const { match } = require('assert');
 
 // @bookmark  КОНСТАНТЫ И КОНФИГУРАЦИЯ
 const CONFIG = {
-	version: '4.1',
+	version: '0.4.15',
 	ws: {
 		host: '0.0.0.0',
 		port: 8080,
@@ -43,15 +45,36 @@ function log(message, level = 'INFO') {
 	const timestamp = getTimestamp();
 	const logMessage = `[${timestamp}] [${level}] ${message}`;
 	console.log(logMessage);
+
+	// Отправка сообщения всем подключенным клиентам
+	if (global.serverInstance && global.serverInstance.clients && global.serverInstance.clients.size > 0) {
+		global.serverInstance.broadcast({
+			type: 'log_message',
+			level: level,
+			message: message,
+			timestamp: new Date().toISOString(),
+			source: 'WS Server v4'
+		});
+	}
+}
+
+// 
+function getTimerTooltip(callsign, uptime = "0 s") {
+	// Форматируем uptime (может приходить как "0 s", "15 s", "01:30" и т.д.)
+	const formattedUptime = uptime || "0 s";
+
+	// Возвращаем HTML-строку
+	return `<a class="tooltip" href="#"><span><b>Uptime:</b>${formattedUptime}<br></span>${callsign}</a>`;
 }
 
 // @bookmark  МЕНЕДЖЕР СОСТОЯНИЙ
 class StateManager {
 	constructor() {
 		this.timers = new Map(); // key -> {startTime, lastUpdate, metadata}
+		// this.lastPacketMs = null; // msec последнего сообщения пакета
 	}
 
-	// Форматирование времени
+	// @bookmark Форматирование времени
 	formatDuration(milliseconds) {
 		const totalSeconds = Math.floor(milliseconds / 1000);
 
@@ -74,40 +97,49 @@ class StateManager {
 		return `${hours}:${minutes}:${seconds}`;
 	}
 
-	// Запустить таймер
+	// @bookmark Запустить таймер
 	startTimer(key, metadata = {}) {
 		const now = Date.now();
+		
+		// Проверяем, нет ли уже таймера с таким же elementId
+		for (const [existingKey, existingTimer] of this.timers) {
+			if (existingTimer.metadata.elementId === metadata.elementId && existingKey !== key) {
+				log(`Таймер  ${metadata.elementId} уже существует с ключом ${existingKey}. Удаляем его.`, 'WARNING');
+				this.timers.delete(existingKey);
+			}
+		}
+		
 		this.timers.set(key, {
 			startTime: now,
 			lastUpdate: now,
 			metadata: metadata
 		});
-		log(`Timer started: ${key}`);
+		log(`Запущен таймер для: ${key}`);
 		return now;
 	}
 
-	// Остановить таймер
+	// @bookmark Остановить таймер
 	stopTimer(key) {
 		const existed = this.timers.delete(key);
 		if (existed) {
-			log(`Timer stopped: ${key}`);
+			log(`Остановлен таймер: ${key}`);
 		}
 		return existed;
 	}
 
-	// Установить время старта таймера (для восстановления из состояния)
+	// @bookmark Установить время старта таймера
 	setTimerStart(key, startTimestamp) {
 		const timer = this.timers.get(key);
 		if (timer) {
 			timer.startTime = startTimestamp;
 			timer.lastUpdate = Date.now();
-			log(`Timer ${key} start time set to: ${new Date(startTimestamp).toISOString()}`);
+			log(`Таймер ${key} установлен на время: ${new Date(startTimestamp).toISOString()}`);
 			return true;
 		}
 		return false;
 	}
 
-	// Получить данные об активных таймерах
+	// @bookmark Получить данные об активных таймерах
 	getTimerUpdates() {
 		const now = Date.now();
 		const updates = [];
@@ -127,7 +159,7 @@ class StateManager {
 		return updates;
 	}
 
-	// Статистика
+	// @bookmark Статистика
 	getStats() {
 		return {
 			activeTimers: this.timers.size
@@ -135,70 +167,253 @@ class StateManager {
 	}
 }
 
-// @bookmark  ОБРАБОТЧИК СВЯЗЕЙ МОДУЛЬ-ЛОГИКА
-class ModuleLogicHandler {
+// @bookmark ОБРАБОТЧИК СВЯЗЕЙ
+class ConnectionHandler {
 	constructor() {
-		this.moduleToLogics = new Map(); // moduleName -> Set(logicName)
+		this.connections = new Map(); // key -> Set(relatedKeys)
 	}
 
 	// Добавить связь
-	add(module, logic) {
-		if (!this.moduleToLogics.has(module)) {
-			this.moduleToLogics.set(module, new Set());
+	add(source, target) {
+		if (!this.connections.has(source)) {
+			this.connections.set(source, new Set());
 		}
-		this.moduleToLogics.get(module).add(logic);
-		log(`Module-Link added: ${module} -> ${logic}`);
+		this.connections.get(source).add(target);
+		log(`Добавлена связка: ${source} -> ${target}`);
 	}
 
 	// Удалить связь
-	remove(module, logic) {
-		const logics = this.moduleToLogics.get(module);
-		if (logics) {
-			logics.delete(logic);
-			if (logics.size === 0) {
-				this.moduleToLogics.delete(module);
+	remove(source, target) {
+		const targets = this.connections.get(source);
+		if (targets) {
+			targets.delete(target);
+			if (targets.size === 0) {
+				this.connections.delete(source);
 			}
-			log(`Module-Link removed: ${module} -> ${logic}`);
+			log(`Удалена связка: ${source} -> ${target}`);
 		}
 	}
 
-	// Получить все логики для модуля
-	getAll(module) {
-		const logics = this.moduleToLogics.get(module);
-		return logics ? Array.from(logics) : [];
+	// Получить все цели для источника
+	getAllFrom(source) {
+		const targets = this.connections.get(source);
+		return targets ? Array.from(targets) : [];
 	}
 
-	// Инициализировать связи из данных
-	initFromData(moduleLogicData) {
-		for (const [moduleName, logics] of Object.entries(moduleLogicData || {})) {
-			for (const logicName of logics) {
-				this.add(moduleName, logicName);
+	// Получить все источники для цели
+	getAllTo(target) {
+		const sources = [];
+		for (const [source, targets] of this.connections.entries()) {
+			if (targets.has(target)) {
+				sources.push(source);
 			}
 		}
-		log(`Module-Link initialized: ${this.moduleToLogics.size} modules`);
+		return sources;
 	}
+
+	// Инициализация
+	initFromData(data, sourceKey, targetKey) {
+		for (const [source, targets] of Object.entries(data || {})) {
+			for (const target of targets) {
+				this.add(source, target);
+			}
+		}
+		log(`Connections initialized: ${this.connections.size} connections from ${sourceKey} to ${targetKey}`);
+	}
+
+	// Быстрый доступ к специфическим связям
+	// getModuleLogics(moduleName) {
+	// 	return this.getAllFrom(moduleName);
+	// }
+
+	// getLinkLogics(linkName) {
+	// 	return this.getAllTo(linkName);
+	// }
+
+	// getLogicModules(logicName) {
+	// 	return this.getAllTo(logicName);
+	// }
+
+	// getLogicLinks(logicName) {
+	// 	return this.getAllFrom(logicName).filter(item =>
+	// 		item.startsWith('Link') || item.startsWith('link_')
+	// 	);
+	// }
+
+	// Проверить, есть ли активные линки у логики
+	// hasActiveLinksForLogic(logicName) {
+	// 	const relatedLinks = this.getAllFrom(logicName).filter(link =>
+	// 		link.startsWith('Link') || link.startsWith('link_')
+	// 	);
+	// 	return relatedLinks.length > 0;
+	// }
 }
 
 // @bookmark ПАРСЕР КОМАНД
 class CommandParser {
 	constructor(stateManager) {
 		this.sm = stateManager;
-		this.moduleHandler = new ModuleLogicHandler();
+		this.connections = new ConnectionHandler();
 
 		// Состояние для пакетного режима
+		this.isPacketMessageMode = false; // <-- НОВОЕ: режим ожидания позывного в пакете
 		this.packetActive = false;
 		this.packetType = null; // 'EchoLink' | 'Frn'
 		this.packetBuffer = [];
 		this.packetStartTime = null;
 		this.packetMetadata = {};
 
+		// @bookmark Разбор паттернов
 		this.patterns = [
-		
-			
+			// @bookmark Сервис
+			// [timestamp]: [SvxLink] v1.8.0@24.02-3-gcde00792 Copyright (C) 2003-2023 Tobias Blomberg / SM0SVX
+			{
+				regex: /^(.+?): (\S+) (.+?) Copyright \(C\) .+ Tobias Blomberg \/ SM0SVX$/,
+				handler: (match) => {
+					const service = match[2];
 
+					this.sm.startTimer('service', {
+						elementId: 'service',
+						replaceStart: ':</b>',
+						replaceEnd: '<br>',
+					});
 
+					return [
+						{
+							id: 'service',
+							action: 'set_content',
+							payload: getTimerTooltip(service, this.sm.formatDuration(0))
+						},
+						{
+							id: 'service',
+							action: 'remove_class',
+							class: 'inactive-mode-cell,disabled-mode-cell,paused-mode-cell'
+						},
+						{
+							id: 'service',
+							action: 'add_class',
+							class: 'active-mode-cell'
+						}
+					]
+				}
+			},
 
-			// @bookmark Transmitter ON/OFF
+			// [timestamp]: SIGTERM received. Shutting down application...
+			{
+				regex: /^(.+?): SIGTERM received\. Shutting down application\.\.\.$/,
+				handler: (match) => {
+					this.sm.stopTimer('service');
+					return [
+						{
+							id: 'service',
+							action: 'remove_class',
+							class: 'active-mode-cell,disabled-mode-cell,paused-mode-cell'
+						},
+						{
+							id: 'service',
+							action: 'add_class',
+							class: 'inactive-mode-cell'
+						},
+						{
+							id: 'service',
+							action: 'set_content',
+							payload: 'OFF'
+						}
+					]
+				}
+			},
+
+			// @bookmark Логика
+			// [timestamp]: Starting logic: [SimplexLogic]
+			{
+				regex: /^(.+?): Starting logic: (\S+)$/,
+				handler: (match) => {
+					const timestamp = match[1];
+					const logic = match[2];
+
+					return [
+						{
+							id: `logic_${logic}`,
+							action: 'remove_class',
+							class: 'paused-mode-cell,active-mode-cell,inactive-mode-cell'
+						},
+						{
+							id: `logic_${logic}`,
+							action: 'add_class',
+							class: 'disabled-mode-cell'
+						},
+					]
+				}
+			},
+
+			// [timestamp]: SimplexLogic: Event handler script successfully loaded.
+			{
+				regex: /^(.+?): (\S+): Event handler script successfully loaded.$/,
+				handler: (match) => {
+					const timestamp = match[1];
+					const logic = match[2];
+					this.sm.startTimer(`logic_${logic}`, {
+						elementId: `logic_${logic}`,
+						replaceStart: ':</b>',
+						replaceEnd: '<br>',
+						logic: logic
+					});
+
+					return [
+						{
+							id: `logic_${logic}`,
+							action: 'set_content',
+							payload: getTimerTooltip(logic, this.sm.formatDuration(0))
+						},
+						{
+							id: `logic_${logic}`,
+							action: 'remove_class',
+							class: 'disabled-mode-cell,active-mode-cell,inactive-mode-cell'
+						},
+						{
+							id: `logic_${logic}`,
+							action: 'add_class',
+							class: 'paused-mode-cell'
+						},
+					]
+				}
+			},
+
+			// @bookmark Инициализация
+			// [timestamp]: SimplexLogic: Loading RX "Rx1"
+			{
+				regex: /^(.+?): (\S+): Loading (RX|TX) "(\S+)"$/,
+				handler: (match) => {
+					const timestamp = match[1];
+					const logic = match[2];
+					const deviceType = match[3];  // "RX" или "TX"
+					const deviceName = match[4];  // "Rx1", "MultiTx"
+
+					log(`${logic}: Loading ${deviceType} device "${deviceName}"`, 'DEBUG');
+
+					// 1. Добавляем связь устройство-логика
+					// Формат: device -> logic 
+					this.connections.add(deviceName, logic);
+					return [];
+				}
+			},
+
+			// [timestamp]: SimplexLogic: Loading module "ModuleHelp"
+			{
+				regex: /^(.+?): (\S+): Loading module "(\S+)"$/,
+				handler: (match) => {
+					const logic = match[2];
+					const module = match[3];
+
+					// Добавляем связь модуль -> логика
+					this.connections.add(module, logic);
+					log(`Добавил связку: ${module} -> ${logic}`, 'DEBUG');
+					return [];
+				}
+			},
+
+			// @bookmark TX/RX
+			// Transmitter [ON/OFF]
 			{
 				regex: /^(.+?): (\w+): Turning the transmitter (ON|OFF)$/,
 				handler: (match) => {
@@ -217,7 +432,7 @@ class CommandParser {
 							{ id: `device_${device}_tx_status`, action: 'set_content', payload: 'TRANSMIT ( 0 s )' },
 							{ id: `device_${device}_tx_status`, action: 'add_class', class: 'inactive-mode-cell' },
 						];
-					
+
 					} else {
 						this.sm.stopTimer(`device_${device}`);
 
@@ -229,7 +444,7 @@ class CommandParser {
 				}
 			},
 
-			// @bookmark Squelch OPEN/CLOSED
+			// Squelch OPEN/CLOSED
 			{
 				regex: /^(.+?): (\w+): The squelch is (OPEN|CLOSED)$/,
 				handler: (match) => {
@@ -259,7 +474,105 @@ class CommandParser {
 				}
 			},
 
-			// @bookmark Talker start
+			// @bookmark Рефлектор
+
+			// [timestamp]: ReflectorLogic: Disconnected from 255.255.255.255:5300: Host not found
+			{
+				regex: /^(.+?): (\S+): Disconnected/,
+				handler: (match) => {
+					const logic = match[2];
+					this.sm.stopTimer(`logic_${logic}`);
+					return [
+						{ id: `logic_${logic}`, action: 'remove_class', class: 'active-mode-cell,paused-mode-cell,disabled-mode-cell' },
+						{ id: `logic_${logic}`, action: 'add_class', class: 'inactive-mode-cell' },
+						{ id: `logic_${logic}_nodes_header`, action: 'set_content', payload: 'Nodes' },
+						{ id: `logic_${logic}_nodes`, action: 'remove_child' },
+						{ id: `logic_${logic}_groups`, action: 'remove_child', ignoreClass: 'monitored,default' },
+					];
+				}
+			},
+
+			// @bookmark ReflectorLogic: Connected nodes
+			// Пример: "12 Jan 2026 04:30:15.123: ReflectorLogicKAVKAZ: Connected nodes: RY6HAB-1, UB6LPY-1, R2ADU-1"
+			{
+				regex: /^(.+?): (\S+): Connected nodes: (.+)$/,
+				handler: (match) => {
+					const timestamp = match[1];
+					const logic = match[2];
+					const nodesString = match[3];  // "RY6HAB-1, UB6LPY-1, R2ADU-1"
+
+					// Разбиваем строку узлов
+					const nodes = nodesString.split(',').map(node => node.trim());
+
+					// Извлекаем позывные (убираем суффиксы -1, -T и т.д.)
+					const callsigns = nodes.map(node => {
+						// Убираем всё после дефиса
+						return node.split('-')[0];
+					});
+
+					log(`${logic}: ${nodes.length} connected nodes`, 'INFO');
+
+					const commands = [];
+
+					// 1. Обновляем состояние логики
+					commands.push(
+						{
+							id: `logic_${logic}`,
+							action: 'remove_class',
+							class: 'inactive-mode-cell,disabled-mode-cell,active-mode-cell'
+						},
+						{
+							id: `logic_${logic}`,
+							action: 'add_class',
+							class: 'paused-mode-cell'
+						}
+					);
+
+					// 2. Очищаем старые узлы
+					commands.push(
+						{
+							id: `logic_${logic}_nodes`,
+							action: 'set_content',
+							payload: ''  
+						},
+						{
+							id: `logic_${logic}_nodes_header`,
+							action: 'set_content',
+							payload: `Nodes [${callsigns.length}]`  
+						}
+					);
+
+					// 3. Добавляем каждый узел
+					for (let i = 0; i < nodes.length; i++) {
+						const fullNodeName = nodes[i];      // "RY6HAB-1"
+						const callsign = callsigns[i];      // "RY6HAB"
+
+						// Запускаем таймер для узла
+						this.sm.startTimer(`logic_${logic}_node_${fullNodeName}`, {
+							elementId: `logic_${logic}_node_${fullNodeName}`,
+							replaceStart: ':</b>',
+							replaceEnd: '<br>',
+							logic: logic,
+							node: fullNodeName
+						});
+
+						// Добавляем HTML для узла
+						commands.push(
+							{
+								target: `logic_${logic}_nodes`,
+								action: 'add_child',
+								id: `logic_${logic}_node_${fullNodeName}`,
+								class: 'mode_flex column disabled-mode-cell',
+								style: 'border: .5px solid #3c3f47;',
+								payload: `${getTimerTooltip(fullNodeName, "0 s")}`
+							});
+					}
+
+					return commands;
+				}
+			},
+
+			// Talker start
 			{
 				regex: /^(.+?): (\S+): Talker start on TG #(\d*): (\S+)$/,
 				handler: (match) => {
@@ -277,7 +590,7 @@ class CommandParser {
 				}
 			},
 
-			// @bookmark Talker stop
+			// Talker stop
 			{
 				regex: /^(.+?): (\S+): Talker stop on TG #(\d+): (\S+)$/,
 				handler: (match) => {
@@ -293,7 +606,7 @@ class CommandParser {
 				}
 			},
 
-			// @bookmark Node left
+			// Node left
 			{
 				regex: /^(.+?): (\S+): Node left: (\S+)$/,
 				handler: (match) => {
@@ -311,7 +624,7 @@ class CommandParser {
 				}
 			},
 
-			// @bookmark Node joined
+			// Node joined
 			{
 				regex: /^(.+?): (\S+): Node joined: (\S+)$/,
 				handler: (match) => {
@@ -320,30 +633,31 @@ class CommandParser {
 
 					this.sm.startTimer(`logic_${logic}_node_${callsign}`, {
 						elementId: `logic_${logic}_node_${callsign}`,
-						replaceStart: '<b>Uptime:</b>',
+						replaceStart: ':</b>',
 						replaceEnd: '<br>',
 						type: 'node'
 					});
 
 					return [
 						{
-							id: `logic_${logic}_nodes`,
+							target: `logic_${logic}_nodes`,
 							action: 'add_child',
-							new_id: `logic_${logic}_node_${callsign}`,
-							payload: `<div class="mode_flex column disabled-mode-cell" title="${callsign}" style="border: .5px solid #3c3f47;"><a class="tooltip" href="#"><span><b>Uptime:</b>00:00:00<br></span>${callsign}</a></div>`,
+							id: `logic_${logic}_node_${callsign}`,
+							class: 'mode_flex column disabled-mode-cell',
+							style: 'border: .5px solid #3c3f47;',
+							title: callsign,
+							payload: getTimerTooltip(callsign, this.sm.formatDuration(0)),
 						},
 					]
 				}
 			},
 
-			// @bookmark Selecting TG #0
+			// Selecting TG #0
 			{
 				regex: /^(.+?): (\S+): Selecting TG #0/,
 				handler: (match) => {
-					
-					const logic = match[1];
+					const logic = match[2];
 					return [
-						
 						{ id: `logic_${logic}_groups`, action: 'remove_child', ignoreClass: 'default,monitored' },
 						{ id: `logic_${logic}_groups`, class: 'disabled-mode-cell', operation: 'replace_class', action: 'handle_child_classes', oldClass: 'active-mode-cell' },
 						{ id: `logic_${logic}_groups`, class: 'default,active-mode-cell', operation: 'replace_class', action: 'handle_child_classes', oldClass: 'default,disabled-mode-cell' },
@@ -351,7 +665,7 @@ class CommandParser {
 				}
 			},
 
-			// @bookmark Selecting TG #
+			// Selecting TG #
 			{
 				regex: /^(.+?): (\S+): Selecting TG #(\d+)/,
 				handler: (match) => {
@@ -363,19 +677,37 @@ class CommandParser {
 					}
 
 					return [
-						{ id: `logic_${logic}_groups`, action: 'remove_child', ignoreClass: 'default,monitored', },
-						{ id: `logic_${logic}_groups`, class: 'disabled-mode-cell', operation: 'replace_class', action: 'handle_child_classes', oldClass: 'active-mode-cell' },
 						{
 							id: `logic_${logic}_groups`,
-							action: "add_child",
-							payload: `<div id="logic_${logic}_group_${group}" class="mode_flex column active-mode-cell" title="${group}" style="border: .5px solid #3c3f47;">${group}</div>`
+							action: 'remove_child',
+							ignoreClass: 'default,monitored',
 						},
-						{ id: `logic_${logic}_group_${group}`, class: 'active-mode-cell', operation: 'add_class', action: 'add_class'},
+						{
+							id: `logic_${logic}_groups`,
+							action: 'handle_child_classes',
+							operation: 'replace_class',
+							oldClass: 'active-mode-cell',
+							class: 'disabled-mode-cell',					
+						},
+						{
+							action: "add_child",
+							target: `logic_${logic}_groups`,
+							id: `logic_${logic}_group_${group}`,
+							class: 'mode_flex column',
+							style: 'border: .5px solid #3c3f47;',
+							title: group,
+							payload: group,						
+						},
+						{
+							id: `logic_${logic}_group_${group}`,
+							action: "add_class",
+							class: 'active-mode-cell',
+						}
 					];
 				}
 			},
 
-			// @bookmark Add temporary monitor for TG #
+			// Add temporary monitor for TG #
 			{
 				regex: /^(.+?): (\S+): Add temporary monitor for TG #(\d+)/,
 				handler: (match) => {
@@ -388,31 +720,39 @@ class CommandParser {
 
 					return [
 						{
-							id: `logic_${logic}_groups`,
 							action: 'add_child',
-							payload: `<div id = "logic_${logic}_group_${group}" class="mode_flex column paused-mode-cell" title="${group}" style="border: .5px solid #3c3f47;">${group}</div>`,
+							target: `logic_${logic}_groups`,							
+							id: `logic_${logic}_group_${group}`,
+							class: 'mode_flex column paused-mode-cell monitored',
+							style: 'border: .5px solid #3c3f47;',
+							title: group,
+							payload: group,
 						},
 					];
 				}
 			},
 
-			// @bookmark Refresh temporary monitor for TG #
+			// Refresh temporary monitor for TG #
 			{
 				regex: /^(.+?): (\S+): Refresh temporary monitor for TG #(\d+)/,
 				handler: (match) => {
 					const logic = match[2];
 					const group = match[3];
 					return [
-						{
-							id: `logic_${logic}_groups`,
+						{							
 							action: 'add_child',
-							payload: `<div id = "logic_${logic}_group_${group}" class="mode_flex column paused-mode-cell" title="${group}" style="border: .5px solid #3c3f47;">${group}</div>`,
+							target: `logic_${logic}_groups`,
+							id: `logic_${logic}_group_${group}`,
+							class: 'mode_flex column paused-mode-cell monitored',
+							style: 'border: .5px solid #3c3f47;',
+							title: group,
+							payload: group,
 						},
 					];
 				}
 			},
 
-			// @bookmark Temporary monitor timeout for TG #
+			// Temporary monitor timeout for TG #
 			{
 				regex: /^(.+?): (\S+): Temporary monitor timeout for TG #(\d+)/,
 				handler: (match) => {
@@ -428,24 +768,23 @@ class CommandParser {
 				}
 			},
 
-			// @bookmark Активация модуля
+			// @bookmark Модуль
+
+			// Активация
 			{
 				regex: /^(.+?): (\S+): Activating module (\S+)\.\.\.$/,
 				handler: (match) => {
 					const logic = match[2];
 					const module = match[3];
-					this.moduleHandler.add(module, logic);
 
-					const initialTime = this.sm.formatDuration(0);
-					const activatedHtml = `<a class="tooltip" href="#"><span><b>Uptime:</b>${initialTime}<br></span>${module}</a>`;
-
-					this.sm.startTimer(`${logic}_${module}`, {
+					this.sm.startTimer(`logic_${logic}_module_${module}`, {
 						elementId: `logic_${logic}_module_${module}`,
-						replaceStart: '<b>Uptime:</b>',
+						replaceStart: ':</b>',
 						replaceEnd: '<br>',
 						logic: logic,
 						module: module
 					});
+
 
 					return [
 						{
@@ -454,12 +793,13 @@ class CommandParser {
 							action: 'remove_class',
 							class: 'disabled-mode-cell,inactive-mode-cell,active-mode-cell'
 						},
+
 						{
 							id: `logic_${logic}`,
 							action: 'add_class',
-							class: 'paused-mode-cell'
+							class: 'active-mode-cell'
 						},
-						
+
 						// Сам модуль
 						{
 							id: `logic_${logic}_module_${module}`,
@@ -474,9 +814,9 @@ class CommandParser {
 						{
 							id: `logic_${logic}_module_${module}`,
 							action: 'set_content',
-							payload: activatedHtml
+							payload: getTimerTooltip(module, this.sm.formatDuration(0))
 						},
-						
+
 						// Поле  destination на radio_activity
 						{
 							id: `radio_logic_${logic}_destination`,
@@ -487,70 +827,83 @@ class CommandParser {
 				}
 			},
 
-			// @bookmark Деактивация модуля
+			// Деактивация
 			{
 				regex: /^(.+?): (\S+): Deactivating module (\S+)\.\.\.$/,
 				handler: (match) => {
 					const logic = match[2];
 					const module = match[3];
-					this.moduleHandler.remove(module, logic);
 
-					this.sm.stopTimer(`${logic}_${module}`);
+					this.sm.stopTimer(`logic_${logic}_module_${module}`);
+					this.sm.stopTimer(`logic_${logic}_active_content`);
 
+					log(`Получаю связки для модуля ${module}`, 'INFO');
+					const allLogicsForModule = this.connections.getAllFrom(module);
+					// Для каждой логики находим связанные линки
 					let hasActiveLinks = false;
-					for (const [key] of this.sm.timers) {
-						if (key.startsWith('link_')) {
-							hasActiveLinks = true;
-							break;
-						}
-					}
-					let newClass = 'disabled-mode-cell';
-					if (hasActiveLinks) newClass = 'active-mode-cell';
 
-					return [
-						
-						// Логика модуля выключается если нет линков
-						{
-							id: `logic_${logic}`,
-							action: 'remove_class',
-							class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell,active-mode-cell'
-						},
-						{
-							id: `logic_${logic}`,
-							action: 'add_class',
-							class: newClass
-						},
-						
+					for (const relatedLogic of allLogicsForModule) {
+						log(`Проверяю связку ${relatedLogic}`, 'DEBUG');
+						const linksForLogic = this.connections.getAllFrom(relatedLogic)
+						for (const link of linksForLogic) {
+							log(`Проверяю связку ${link}`, 'DEBUG');
+							if (this.sm.timers.has(`link_${link}`)) {
+								hasActiveLinks = true;
+								log(`Линк ${link} активен!`, 'DEBUG');
+								break;
+							}
+						}
+						if (hasActiveLinks) break;
+					}
+
+					// НЕТ активных линков - меняем класс логики на disabled
+					const commands = [];
+
+					if (!hasActiveLinks) {
+
+						log(`Ставлю логику ${logic} на паузу.`, 'DEBUG');
+						commands.push(
+							{
+								id: `logic_${logic}`,
+								action: 'remove_class',
+								class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell,active-mode-cell'
+							},
+							{
+								id: `logic_${logic}`,
+								action: 'add_class',
+								class: 'paused-mode-cell'
+							}
+						);
+					}
+
+					commands.push(
 						// Сам модуль
 						{
 							id: `logic_${logic}_module_${module}`,
 							action: 'remove_class',
 							class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell'
 						},
-						
+
 						{
 							id: `logic_${logic}_module_${module}`,
 							action: 'add_class',
 							class: 'disabled-mode-cell'
 						},
-						// Удалить тултип 
+
+						// Удалить тултип
 						{
 							id: `logic_${logic}_module_${module}`,
 							action: 'set_content',
 							payload: module
 						},
-						
+
 						// Подключенные узлы модуля
 						{
 							id: `logic_${logic}_active`,
 							action: 'add_class',
 							class: 'hidden'
 						},
-						{
-							id: `logic_${logic}_active`,
-							action: 'remove_parent_class',
-							class: 'module-active'
-						},
+
 						{
 							id: `logic_${logic}_active_header`,
 							action: 'set_content',
@@ -561,34 +914,38 @@ class CommandParser {
 							action: 'set_content',
 							payload: ''
 						},
-						
+
 						// Поле  destination на radio_activity
 						{
 							id: `radio_logic_${logic}_destination`,
 							action: 'set_content',
 							payload: ''
 						},
-					];
+					);
+					return commands;
 				}
 			},
 
-			// @bookmark EchoLink: QSO state changed to CONNECTED
+			// @bookmark EchoLink: 
+
+			// Соединение
+			// QSO state changed to CONNECTED
 			{
 				regex: /^(.+?): (\S+): EchoLink QSO state changed to (CONNECTED)$/,
 				handler: (match) => {
 					const node = match[2];
-					const allLogics = this.moduleHandler.getAll('EchoLink');
-					const resultCommands = [];
+					const allLogics = this.connections.getAllFrom('EchoLink');
 
 					if (allLogics.length === 0) {
-						console.log(`[WARNING] EchoLink event but no logic links found!`);
+						log(`[WARNING] EchoLink не имеет связей с логикой!`, 'DEBUG');
 						return [];
 					}
 
+					const resultCommands = [];
 					for (const logic of allLogics) {
 						this.sm.startTimer(`EchoLink_${node}`, {
 							elementId: `logic_${logic}_active_content`,
-							replaceStart: '<b>Uptime:</b>',
+							replaceStart: ':</b>',
 							replaceEnd: '<br>',
 							type: 'module_connection',
 							module: 'EchoLink',
@@ -613,19 +970,20 @@ class CommandParser {
 				}
 			},
 
-			// @bookmark EchoLink: QSO state changed to DISCONNECTED
+			// Разъединение
+			// EchoLink: QSO state changed to DISCONNECTED
 			{
 				regex: /^(.+?): (\S+): EchoLink QSO state changed to (DISCONNECTED)$/,
 				handler: (match) => {
 					const node = match[2];
-					const allLogics = this.moduleHandler.getAll('EchoLink');
-					const resultCommands = [];
+					const allLogics = this.connections.getAllFrom('EchoLink');
 
 					if (allLogics.length === 0) {
-						console.log(`[WARNING] EchoLink DISCONNECTED event but no logic links found!`);
+						log(`EchoLink DISCONNECTED event but no logic links found!`, 'WARNING');
 						return [];
 					}
 
+					const resultCommands = [];
 					for (const logic of allLogics) {
 						this.sm.stopTimer(`EchoLink_${node}`);
 
@@ -635,10 +993,10 @@ class CommandParser {
 							{ id: `logic_${logic}_module_EchoLink`, action: 'remove_class', class: 'active-mode-cell,inactive-mode-cell,disabled-mode-cell' },
 							{ id: `logic_${logic}_module_EchoLink`, action: 'add_class', class: 'paused-mode-cell' },
 							{ id: `logic_${logic}_active`, action: 'add_class', class: 'hidden' },
-							// { id: `logic_${logic}_active`, action: 'remove_parent_class', class: 'module-connected' },
-							{ id: `logic_${ logic }_active_header`, action: 'set_content', payload: '' },
-							{ id: `logic_${logic }_active_content`, action: 'set_content', payload: '' },
+							{ id: `logic_${logic}_active_header`, action: 'set_content', payload: '' },
+							{ id: `logic_${logic}_active_content`, action: 'set_content', payload: '' },
 							{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: `EchoLink` },
+							{ id: 'ElDisconnect', targetClass: 'callsign', action: 'set_content_by_class', payload: '' },
 						);
 					}
 
@@ -646,71 +1004,76 @@ class CommandParser {
 				}
 			},
 
-			// @bookmark EchoLink: --- EchoLink chat message received from ... ---
+			// Конференция и позывной передающего
+			// EchoLink: --- EchoLink chat message received from ... ---
 			{
 				regex: /^(.+?): --- EchoLink chat message received from (\S+) ---$/,
 				handler: (match) => {
 					const timestamp = match[1];
 					const node = match[2];
 
-					// Начинаем пакетный режим
-					this.startPacket('EchoLink', timestamp, { node });
+					// Включаем режим ожидания позывного
+					this.isPacketMessageMode = true; // <-- НОВОЕ
+
 					const commands = [];
-					commands.push({
-						id: 'EchoLink_chat_message_received',
-						targetClass: 'callsign',
-						action: 'set_content_by_class',
-						payload: ''
-					},
+					commands.push(
 						{
-							id: 'EchoLink_chat_message_received',
+							targetClass: 'callsign',
+							action: 'set_content_by_class',
+							payload: "",
+							id: "ElChatStart"
+						},
+						{
 							targetClass: 'destination',
 							action: 'set_content_by_class',
 							payload: `EchoLink: Conference: ${node}`,
+							id: "ElChatStart"
 						}
 					);
-
 
 					return commands;
 				}
 			},
 
-			// @bookmark Frn: login stage 2 completed
+			// @bookmark Frn
+
+			// Соединение
+			// Акт : login stage 2 completed
 			{
 				regex: /^(.+?): login stage 2 completed: (.+)$/,
 				handler: (match) => {
-					let serverName = 'Frn Server';
+					log(`Получена команда подключения Frn`, 'DEBUG');
+
+					let serverName = 'Unknown Server';
 					const xml = match[2];
 					const bnMatch = xml.match(/<BN>(.*?)<\/BN>/);
 					if (bnMatch && bnMatch[1]) {
 						serverName = bnMatch[1];
 					}
 
-					const allLogics = this.moduleHandler.getAll('Frn');
+					const allLogics = this.connections.getAllFrom('Frn');
 					const resultCommands = [];
 
 					if (allLogics.length === 0) {
-						console.log(`[WARNING] Frn event but no logic links found!`);
+						log(`Frn event but no logic links found!`, 'WARNING');
 						return [];
 					}
 
 					for (const logic of allLogics) {
-						this.sm.startTimer(`Frn_${logic}`, {
-							elementId: `logic_${logic}_module_Frn`,
-							replaceStart: '<b>Uptime:</b>',
+						this.sm.startTimer(`logic_${logic}_active_content`, {
+							elementId: `logic_${logic}_active_content`,
+							replaceStart: ':</b>',
 							replaceEnd: '<br>',
 							type: 'module_frn',
 							logic: logic,
 							server: serverName
 						});
-
 						resultCommands.push(
 							{ id: `logic_${logic}_module_Frn`, action: 'remove_class', class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell,disabled-mode-cell' },
 							{ id: `logic_${logic}_module_Frn`, action: 'add_class', class: 'active-mode-cell' },
 							{ id: `logic_${logic}_active`, action: 'remove_class', class: 'hidden' },
-							// { id: `logic_${logic}_active`, action: 'add_parent_class', class: 'module-connected' },
 							{ id: `logic_${logic}_active_header`, action: 'set_content', payload: 'Frn' },
-							{ id: `logic_${logic}_active_content`, action: 'set_content', payload: `<a class="tooltip" href="#"><span><b>Uptime:</b>00:00:00<br>Server ${serverName}</span>${serverName}</a>` },
+							{ id: `logic_${logic}_active_content`, action: 'set_content', payload: `<a class="tooltip" href="#"><span><b>Uptime:</b><br>Server ${serverName}</span>${serverName}</a>` },
 							{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: `Frn: ${serverName}` },
 						);
 					}
@@ -719,7 +1082,7 @@ class CommandParser {
 				}
 			},
 
-			// @bookmark Frn: voice started
+			// Frn: voice started
 			{
 				regex: /^(.+?): voice started: (.+)$/,
 				handler: (match) => {
@@ -727,11 +1090,11 @@ class CommandParser {
 					const onMatch = xml.match(/<ON>(.*?)<\/ON>/);
 					const nodeCallsign = onMatch ? onMatch[1].trim() : 'Unknown Frn node';
 
-					const allLogics = this.moduleHandler.getAll('Frn');
+					const allLogics = this.connections.getAllFrom('Frn');
 					const commands = [];
 
 					if (allLogics.length === 0) {
-						console.log(`[WARNING] Frn voice started event but no logic links found!`);
+						log(`Frn voice started event but no logic links found!`, 'WARNING');
 						return [];
 					}
 
@@ -743,178 +1106,235 @@ class CommandParser {
 						});
 					});
 
-					console.log(`Frn voice started: Updated ${allLogics.length} logics with node ${nodeCallsign}`);
+					log(`Frn voice started: Обновил ${allLogics.length} логик узла ${nodeCallsign}`, "DEBUG");
 					return commands;
 				}
 			},
 
-			// @bookmark Frn: FRN list received:
+			// Frn: FRN list received:
+			// Узлы или разговорные группы
 			{
 				regex: /^(.+?): FRN list received:$/,
 				handler: (match) => {
 					const timestamp = match[1];
 
-					// Начинаем пакетный режим
-					this.startPacket('Frn', timestamp);
+					// Начинаем пакетный режим (для Frn)
+					this.packetActive = true;
+					this.packetType = 'Frn';
+					this.packetBuffer = [];
+					this.packetStartTime = timestamp;
 
-					// Возвращаем пустой результат
 					return [];
 				}
 			},
 
-			// @bookmark Активация линка
+			// @bookmark Линки
+
+			// Активация линка
 			{
 				regex: /^(.+?): Activating link (\S+)$/,
 				handler: (match) => {
 					const link = match[2];
+					const relatedLogics = this.connections.getAllTo(link);
 
 					this.sm.startTimer(`link_${link}`, {
 						elementId: `link_${link}`,
-						replaceStart: '<b>Uptime:</b>',
+						replaceStart: ':</b>',
 						replaceEnd: '<br>',
 						type: 'link'
 					});
 
-					return [
+					const commands = [
 						{ id: `link_${link}`, action: 'remove_class', class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell,disabled-mode-cell' },
 						{ id: `link_${link}`, action: 'add_class', class: 'active-mode-cell' },
-						{ id: `link_${link}`, action: 'add_parent_class', class: 'link-active' },
+						// { id: `link_${link}`, action: 'add_parent_class', class: 'link-active' },
 						{ id: `toggle-link-state-${link}`, action: "set_checkbox_state", state: "on" }
 					];
+
+					// Добавляем команды для связанных логик
+					for (const logic of relatedLogics) {
+						commands.push(
+							{ id: `logic_${logic}`, action: 'remove_class', class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell' },
+							{ id: `logic_${logic}`, action: 'add_class', class: 'active-mode-cell' }
+						);
+					}
+
+					return commands;
 				}
 			},
 
-			// @bookmark Деактивация линка
+			// Деактивация линка
 			{
 				regex: /^(.+?): Deactivating link (\S+)$/,
 				handler: (match) => {
 					const link = match[2];
+					const relatedLogics = this.connections.getAllTo(link);
 
 					this.sm.stopTimer(`link_${link}`);
 
-					return [
-						{ id: `link_${link}`, action: 'remove_class', class: 'active-mode-cell,paused-mode-cell,disabled-mode-cell' },
-						{ id: `link_${link}`, action: 'add_class', class: 'inactive-mode-cell' },
-						{ id: `link_${link}`, action: 'remove_parent_class', class: 'link-active' },
+					const commands = [
+						{ id: `link_${link}`, action: 'remove_class', class: 'active-mode-cell,paused-mode-cell,inactive-mode-cell,disabled-mode-cell' },
+						{ id: `link_${link}`, action: 'add_class', class: 'disabled-mode-cell' },
+						// { id: `link_${link}`, action: 'remove_parent_class', class: 'link-active' },
 						{ id: `toggle-link-state-${link}`, action: "set_checkbox_state", state: "off" }
 					];
+
+					// Обновляем связанные логики
+					for (const logic of relatedLogics) {
+						// Проверяем, есть ли у логики активные модули или другие линки
+						let hasActiveConnections = false;
+						const allConnections = this.connections.getAllTo(logic);
+
+						for (const conn of allConnections) {
+							if (conn === link) continue; // Пропускаем текущий линк
+
+							if (conn.startsWith('Link') || conn.startsWith('link_')) {
+								// Проверяем таймеры других линков
+								if (this.sm.timers.has(`link_${conn}`)) {
+									hasActiveConnections = true;
+									break;
+								}
+							} else {
+								// Проверяем таймеры модулей
+								if (this.sm.timers.has(`${logic}_${conn}`) || this.sm.timers.has(`logic_${logic}_module_${conn}`)) {
+									hasActiveConnections = true;
+									break;
+								}
+							}
+						}
+
+						if (!hasActiveConnections) {
+							// Устанавливаем связанную логику на паузу
+							commands.push(
+								{ id: `logic_${logic}`, action: 'remove_class', class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell' },
+								{ id: `logic_${logic}`, action: 'add_class', class: 'paused-mode-cell' }
+							);
+						}
+					}
+
+					return commands;
 				}
 			},
 		];
 	}
 
-	// Начало пакетного режима
-	startPacket(type, timestamp, metadata = {}) {
-		// Завершаем предыдущий пакет если был
-		this.finalizePacket();
-
-		// Начинаем новый
-		this.packetActive = true;
-		this.packetType = type;
-		this.packetBuffer = [];
-		this.packetStartTime = timestamp;
-		this.packetMetadata = metadata;
-
-		console.log(`[DEBUG] Packet mode started: ${type} at ${timestamp}, node: ${metadata.node || 'unknown'}`);
-	}
-
-	// Завершение пакетного режима и обработка накопленных данных
-	finalizePacket() {
-		if (!this.packetActive) return null;
-
-		console.log(`[DEBUG] Finalizing ${this.packetType} packet with ${this.packetBuffer.length} lines`);
-		let commands = [];
-
-		if (this.packetType === 'EchoLink') {
-			// Ищем передающий позывной в пакете
-			for (const line of this.packetBuffer) {
-				// Убираем timestamp
-				const content = line.replace(/^.+?: /, '');
-
-				// Передающий позывной отмечен '->'
-				if (content.startsWith('->')) {
-					const match = content.match(/^->(\S+)/);
-					if (match) {
-						const transmittingCallsign = match[1];
-						const conferenceNode = this.packetMetadata.node;
-
-						commands.push({
-							targetClass: 'callsign',
-							action: 'set_content_by_class',
-							payload: transmittingCallsign
-						});
-						commands.push({
-							targetClass: 'destination',
-							action: 'set_content_by_class',
-							payload: conferenceNode
-						});
-
-						console.log(`[DEBUG] Found EchoLink transmitting callsign: ${transmittingCallsign} for ${conferenceNode}`);
-						break;
-					}
-				}
-			}
-		} else if (this.packetType === 'Frn') {
-			console.log(`[DEBUG] TODO Frn packet: ${this.packetBuffer.length} lines (not processed)`);
-		}
-
-		// Сбрасываем состояние
-		this.packetActive = false;
-		this.packetBuffer = [];
-		this.packetType = null;
-		this.packetMetadata = {};
-
-		if (commands.length > 0) {
-			return {
-				commands: commands,
-				raw: `[${this.packetType} packet: ${this.packetBuffer.length} lines]`,
-				timestamp: this.packetStartTime
-			};
-		}
-
-		return null;
-	}
-
-	// Основной метод парсинга
+	// @bookmark Основной метод парсинга
 	parse(line) {
 		const trimmed = line.trim();
 
-		for (const pattern of this.patterns) {
-			const match = trimmed.match(pattern.regex);
-			if (match) {
-				const packetResult = this.finalizePacket();
-				const commandResult = pattern.handler(match);
+		// 1. Если в режиме ожидания позывного (пакетный режим)
+		// Добавить разбор строк
+		// 14 Jan 2026 05:02:41.016: ->R2ADU-L Moscow 145.4625 #88.5
+		// 14 Jan 2026 05:02:51.749: R2ADU>test
+		// Нужно оменять формат вывода - для сообщений с позывным обрамлять его <b> </b>
 
-				const result = {
-					commands: commandResult,
-					raw: match[0],
-					timestamp: match[1]
-				};
+		if (this.isPacketMessageMode) {
+			
+			
+			// Проверяем на известные признаки окончания пакетов
+			// SMS в Echolink завершается [TIMESTAMP]: Trailing chat data: {различные варианты, напр <0c><11><ce>+}
+			if (trimmed.includes('Trailing chat data:')) { 
+				this.isPacketMessageMode = false;
+			}
+			// Искать > в строке, но только если нет <
+			if (trimmed.includes('>') && !trimmed.includes('<')) {
+				let processedPayload = trimmed;
 
-				if (packetResult && packetResult.commands && packetResult.commands.length > 0) {
-					result.commands = [...packetResult.commands, ...commandResult];
-					result.raw = `${packetResult.raw} + ${result.raw}`;
+				// Удаляем лидирующий timestamp (все до первого ": ", включая ": ")
+				const firstColonSpaceIndex = processedPayload.indexOf(': ');
+				if (firstColonSpaceIndex !== -1) {
+					// Удаляем все до ": " включительно
+					processedPayload = processedPayload.substring(firstColonSpaceIndex + 2);
 				}
 
-				return result;
+				// Если это строка с ->, поменять -> на >
+				if (processedPayload.includes('->')) {
+					processedPayload = processedPayload.replace('->', '>');
+				}
+
+				// Проверяем первый символ после обработки ->
+				if (processedPayload.startsWith('>')) {
+					// Если > начинает строку, поменять ее на <b>
+					processedPayload = '<b>' + processedPayload.substring(1);
+
+					// Найти первый пробел после <b>
+					const firstSpaceIndex = processedPayload.indexOf(' ', 3); // 3 - длина "<b>"
+					if (firstSpaceIndex !== -1) {
+						// Вставить </b> перед пробелом
+						processedPayload = processedPayload.substring(0, firstSpaceIndex) +
+							'</b>' +
+							processedPayload.substring(firstSpaceIndex);
+					} else {
+						// Если пробела нет, добавляем </b> в конец
+						processedPayload += '</b>';
+					}
+				} else if (processedPayload.includes('>') && !trimmed.includes('->')) {
+					// Если > не первый символ и это не строка с ->, поменять ее на "</b>: " и добавить первым в начало строки "SMS from <b>"
+					const gtIndex = processedPayload.indexOf('>');
+					const beforeGt = processedPayload.substring(0, gtIndex);
+					const afterGt = processedPayload.substring(gtIndex + 1);
+					processedPayload = `SMS from <b>${beforeGt}</b>: ${afterGt}`;
+				}
+
+				// Отправляем обработанную строку
+				return {
+					commands: [{
+						id: 'elPacketMode',
+						targetClass: 'callsign',
+						action: 'set_content_by_class',
+						payload: processedPayload
+					}],
+					raw: trimmed,
+					timestamp: this.extractTimestamp(trimmed) || new Date().toISOString()
+				};
 			}
-		}
+			
 
-		if (this.packetActive) {
-			this.packetBuffer.push(trimmed);
+			// Если -> не нашли - проверяем основные паттерны
+			for (const pattern of this.patterns) {
+				const match = trimmed.match(pattern.regex);
+				if (match) {
+					// Нашли основной паттерн - выключаем режим ожидания
+					this.isPacketMessageMode = false;
 
-			if (this.packetType === 'EchoLink' && trimmed.includes('Trailing chat data:')) {
-				return this.finalizePacket();
+					// Обрабатываем эту строку как обычную команду
+					const commands = pattern.handler(match);
+					return {
+						commands: commands,
+						raw: match[0],
+						timestamp: match[1]
+					};
+				}
 			}
 
-			if (this.packetBuffer.length > 1 && trimmed.match(/^\d+ \w+ \d{4} \d{2}:\d{2}:\d{2}\.\d{3}: /)) {
-				return this.finalizePacket();
-			}
-
+			// Если не -> и не основной паттерн - остаёмся в режиме ожидания
 			return null;
 		}
 
+		// 2. Обычный режим парсинга (не в ожидании)
+		for (const pattern of this.patterns) {
+			const match = trimmed.match(pattern.regex);
+			if (match) {
+				const commands = pattern.handler(match);
+
+				// Если это начало EchoLink пакета - режим уже включен в обработчике
+				// (в паттерне "EchoLink: --- EchoLink chat message received from")
+
+				return {
+					commands: commands,
+					raw: match[0],
+					timestamp: match[1]
+				};
+			}
+		}
+
 		return null;
+	}
+
+	// Вспомогательный метод для извлечения timestamp
+	extractTimestamp(line) {
+		const match = line.match(/^(.+?):/);
+		return match ? match[1] : null;
 	}
 
 	// Метод для обновления времени
@@ -941,9 +1361,15 @@ class CommandParser {
 	initFromWsData(wsData) {
 		// Инициализируем связи модуль-логика
 		if (wsData.module_logic) {
-			this.moduleHandler.initFromData(wsData.module_logic);
+			this.connections.initFromData(wsData.module_logic, 'module', 'logic');
 		}
-		log(`CommandParser initialized from WS data: ${this.moduleHandler.moduleToLogics.size} module links`);
+
+		// Инициализируем связи линк-логика
+		if (wsData.link_logic) {
+			this.connections.initFromData(wsData.link_logic, 'link', 'logic');
+		}
+
+		log(`CommandParser initialized: ${this.connections.connections.size} total connections`, 'DEBUG');
 	}
 }
 
@@ -990,7 +1416,7 @@ class StatefulWebSocketServerV4 {
 	// Загрузка состояния из PHP endpoint
 	async loadWsState() {
 		try {
-			log('Loading WS state from PHP...');
+			log('Получаю текущие данные...', 'DEBUG');
 
 			const controller = new AbortController();
 			const timeout = setTimeout(() => controller.abort(), this.config.php.timeout);
@@ -1040,6 +1466,7 @@ class StatefulWebSocketServerV4 {
 				links: wsData.links || {},
 				nodes: wsData.nodes || {},
 				module_logic: wsData.module_logic || {},
+				link_logic: wsData.link_logic || {},
 				logics: wsData.logics || {},
 				service: wsData.service || {}
 			};
@@ -1049,7 +1476,7 @@ class StatefulWebSocketServerV4 {
 			// Восстанавливаем состояние
 			this.restoreFromWsState();
 
-			log(`WS state loaded: ${Object.keys(this.wsState.devices).length} devices, ${Object.keys(this.wsState.modules).length} modules`);
+			log(`WS статус загружен: ${Object.keys(this.wsState.devices).length} devices, ${Object.keys(this.wsState.modules).length} modules, ${Object.keys(this.wsState.link_logic || {}).length} link-logic connections`, 'INFO');
 			return true;
 
 		} catch (error) {
@@ -1062,6 +1489,8 @@ class StatefulWebSocketServerV4 {
 				modules: {},
 				links: {},
 				nodes: {},
+				module_logic: {},
+				link_logic: {},
 				logics: {},
 				service: {}
 			};
@@ -1072,111 +1501,108 @@ class StatefulWebSocketServerV4 {
 
 	// Восстановление состояния из полученных данных
 	restoreFromWsState() {
-		
 		const devices = this.wsState.devices || {};
 		const modules = this.wsState.modules || {};
 		const links = this.wsState.links || {};
 		const nodes = this.wsState.nodes || {};
-		
 		const service = this.wsState.service || {};
+		const logics = this.wsState.logics || {};
 
 		let restoredCount = 0;
 
-		const logics = this.wsState.logics || {};
+		// 1. Инициализируем ВСЕ связи через CommandParser
+		if (this.wsState.module_logic || this.wsState.link_logic) {
+			this.commandParser.initFromWsData(this.wsState);
+		}
+
+		// 2. Восстанавливаем таймеры логик
 		for (const [logicKey, info] of Object.entries(logics)) {
 			if (info && info.start && info.start > 0 && info.is_active) {
 				const startTime = info.start * 1000;
 				const logicName = info.name || logicKey.replace('logic_', '');
 
-				// Создаем таймер для логики
 				this.stateManager.startTimer(`logic_${logicName}`, {
 					elementId: `logic_${logicName}`,
-					replaceStart: '<b>Uptime:</b>',
+					replaceStart: ':</b>',
 					replaceEnd: '<br>',
 					type: 'logic',
 					logicName: logicName
 				});
 
-				// Устанавливаем правильное время начала
 				this.stateManager.setTimerStart(`logic_${logicName}`, startTime);
-
 				restoredCount++;
-				log(`Logic timer restored: ${logicName}, start: ${new Date(startTime).toISOString()}`);
+				log(`Logic timer restored: ${logicName}`, 'DEBUG');
 			}
 		}
 
-		// 1. Восстанавливаем таймеры устройств
+		// 3. Восстанавливаем таймеры устройств
 		for (const [device, info] of Object.entries(devices)) {
 			if (info && info.start && info.start > 0) {
-				const startTime = info.start * 1000; // Конвертируем в миллисекунды
+				const startTime = info.start * 1000;
 
-				// TX таймер
-				this.stateManager.startTimer(`${device}_TX`, {
+				this.stateManager.startTimer(`device_${device}_TX`, {
 					elementId: `device_${device}tx_status`,
 					replaceStart: '( ',
 					replaceEnd: ' )',
 					type: 'device_TX'
 				});
-				this.stateManager.setTimerStart(`${device}_TX`, startTime);
+				this.stateManager.setTimerStart(`device_${device}_TX`, startTime);
 
-				// RX таймер
-				this.stateManager.startTimer(`${device}_RX`, {
+				this.stateManager.startTimer(`device_${device}_RX`, {
 					elementId: `device_${device}rx_status`,
 					replaceStart: '( ',
 					replaceEnd: ' )',
 					type: 'device_RX'
 				});
-				this.stateManager.setTimerStart(`${device}_RX`, startTime);
+				this.stateManager.setTimerStart(`device_${device}_RX`, startTime);
 
 				restoredCount++;
 			}
 		}
 
-		// Восстанавливаем таймеры модулей
+		// 4. Восстанавливаем таймеры модулей
 		for (const [moduleKey, info] of Object.entries(modules)) {
 			if (info && info.logic && info.module) {
 				const logicName = info.logic;
 				const moduleName = info.module;
 				const startTime = info.start * 1000;
 
-				// 1. ВСЕГДА добавляем связь модуль-логика (даже если start = 0)
-				this.commandParser.moduleHandler.add(moduleName, logicName);
+				// Добавляем связь модуль-логика
+				// this.commandParser.connections.add(moduleName, logicName);
 
-				// 2. Таймер запускаем только если модуль активен (start > 0)
+				// Таймер запускаем только если модуль активен (start > 0)
 				if (startTime > 0) {
-					this.stateManager.startTimer(`${logicName}_${moduleName}`, {
+					this.stateManager.startTimer(`logic_${logicName}_module_${moduleName}`, {
 						elementId: `logic_${logicName}_module_${moduleName}`,
-						replaceStart: '<b>Uptime:</b>',
+						replaceStart: ':</b>',
 						replaceEnd: '<br>',
 						logic: logicName,
 						module: moduleName
 					});
-					this.stateManager.setTimerStart(`${logicName}_${moduleName}`, startTime);
+					this.stateManager.setTimerStart(`logic_${logicName}_module_${moduleName}`, startTime);
+					restoredCount++;
 				}
-
-				restoredCount++;
 			}
 		}
-		
 
-		// 3. Восстанавливаем таймеры линков
+
+		// 5. Восстанавливаем таймеры линков
 		for (const [linkName, info] of Object.entries(links)) {
 			if (info && info.start && info.start > 0) {
 				const startTime = info.start * 1000;
 
 				this.stateManager.startTimer(`link_${linkName}`, {
 					elementId: `link_${linkName}`,
-					replaceStart: '<b>Uptime:</b>',
+					replaceStart: ':</b>',
 					replaceEnd: '<br>',
 					type: 'link'
 				});
 				this.stateManager.setTimerStart(`link_${linkName}`, startTime);
-
 				restoredCount++;
 			}
 		}
 
-		// 4. Восстанавливаем таймеры узлов
+		// 6. Восстанавливаем таймеры узлов
 		for (const [nodeKey, info] of Object.entries(nodes)) {
 			if (info && info.start && info.start > 0) {
 				const match = nodeKey.match(/^logic_(.+?)_node_(.+)$/);
@@ -1189,60 +1615,47 @@ class StatefulWebSocketServerV4 {
 
 					// УЗЛЫ МОДУЛЕЙ (Frn, EchoLink)
 					if (info.type === 'module_node' && info.module) {
-						// Для узлов модулей - элемент в active_content
-						timerKey = `${info.module}_${nodeName}`; // Например: "Frn_frn3.radiocult.su"
+						timerKey = `${info.module}_${nodeName}`;
 						elementId = `logic_${logicName}_active_content`;
-
-						log(`Module node timer: ${timerKey} for element ${elementId}`);
 					}
 					// УЗЛЫ РЕФЛЕКТОРА (старый формат)
 					else {
-						// Старый формат для рефлекторов
 						timerKey = `logic_${logicName}_node_${nodeName}`;
 						elementId = `logic_${logicName}_node_${nodeName}`;
 					}
 
 					this.stateManager.startTimer(timerKey, {
 						elementId: elementId,
-						replaceStart: '<b>Uptime:</b>',
+						replaceStart: ':</b>',
 						replaceEnd: '<br>',
 						type: info.type || 'node',
 						module: info.module,
 						logic: logicName
 					});
 					this.stateManager.setTimerStart(timerKey, startTime);
-
 					restoredCount++;
 				}
 			}
 		}
 
-		// 5. Восстанавливаем таймер сервиса
+		// 7. Восстанавливаем таймер сервиса
 		if (this.wsState.service && this.wsState.service.start && this.wsState.service.start > 0 && this.wsState.service.is_active) {
 			const serviceStart = this.wsState.service.start * 1000;
 			const serviceName = this.wsState.service.name || 'SvxLink';
 
-			// Запускаем таймер сервиса с правильными метаданными
-			this.stateManager.startTimer(`service_${serviceName}`, {
-				elementId: `service_${serviceName}`, 
-				replaceStart: '<b>Uptime:</b>',    
-				replaceEnd: '<br>',                 
+			this.stateManager.startTimer(`service`, {
+				elementId: `service`,
+				replaceStart: ':</b>',
+				replaceEnd: '<br>',
 				type: 'service',
 				name: serviceName
 			});
-
-			// Устанавливаем правильное время начала
-			this.stateManager.setTimerStart(`service_${serviceName}`, serviceStart);
-
-			log(`Service timer restored: ${serviceName}, start: ${new Date(serviceStart).toISOString()}`);
+			this.stateManager.setTimerStart(`service`, serviceStart);
+			restoredCount++;
+			log(`Service timer restored: ${serviceName}`, 'DEBUG');
 		}
 
-		// 6. Инициализируем CommandParser
-		if (this.wsState.module_logic) {
-			this.commandParser.initFromWsData(this.wsState);
-		}
-
-		log(`State restored: ${restoredCount} items, ${this.stateManager.timers.size} timers active`);
+		log(`State restored: ${restoredCount} items, ${this.stateManager.timers.size} timers active, connections: ${this.commandParser.connections.connections.size}`, 'DEBUG');
 	}
 
 	/// Отправка начальных команд новому клиенту
@@ -1251,9 +1664,6 @@ class StatefulWebSocketServerV4 {
 
 		// Безопасный доступ к данным
 		const devices = this.wsState.devices || {};
-		const modules = this.wsState.modules || {};
-		const links = this.wsState.links || {};
-		const logics = this.wsState.logics || {};
 		const service = this.wsState.service || {};
 
 		// 1. Команды для устройств
@@ -1293,9 +1703,10 @@ class StatefulWebSocketServerV4 {
 			const serviceDurationText = this.stateManager.formatDuration(serviceDurationMs);
 
 			// Формируем HTML как в DOM
-			const serviceHtml = `<a class="tooltip" href="#"><span><b>Uptime:</b>${serviceDurationText}<br></span>${service.name}</a>`;
+			const serviceHtml = getTimerTooltip(service.name, serviceDurationText);
+			
 			commands.push({
-				id: `service_${service.name}`,
+				id: `service`,
 				action: 'set_content',
 				payload: serviceHtml
 			});
@@ -1303,27 +1714,27 @@ class StatefulWebSocketServerV4 {
 			// Устанавливаем класс активности
 			if (service.is_active) {
 				commands.push({
-					id: `service_${service.name}`,
+					id: `service`,
 					action: 'add_class',
 					class: 'active-mode-cell'
 				});
 				commands.push({
-					id: `service_${service.name}`,
+					id: `service`,
 					action: 'remove_class',
 					class: 'inactive-mode-cell,paused-mode-cell,disabled-mode-cell'
 				});
 			}
 
 			// ЗАПУСКАЕМ ТАЙМЕР СЕРВИСА
-			this.stateManager.startTimer(`service_${service.name}`, {
-				elementId: `service_${service.name}`,
-				replaceStart: '<b>Uptime:</b>',
+			this.stateManager.startTimer(`service`, {
+				elementId: `service`,
+				replaceStart: ':</b>',
 				replaceEnd: '<br>',
 				type: 'service'
 			});
 
 			// Устанавливаем правильное время начала
-			this.stateManager.setTimerStart(`service_${service.name}`, service.start * 1000);
+			this.stateManager.setTimerStart(`service`, service.start * 1000);
 
 		}
 		// Отправляем команды если есть
@@ -1336,7 +1747,7 @@ class StatefulWebSocketServerV4 {
 					subtype: 'initial_state'
 				}));
 
-				log(`Sent ${commands.length} initial commands to new client`);
+				log(`Sent ${commands.length} initial commands to new client`, 'DEBUG');
 			} catch (error) {
 				log(`Failed to send initial commands: ${error.message}`, 'ERROR');
 			}
@@ -1346,8 +1757,8 @@ class StatefulWebSocketServerV4 {
 	// ==================== УПРАВЛЕНИЕ СЕРВЕРОМ ====================
 
 	async start() {
-		log(`Starting Stateful WebSocket Server v${this.config.version} with state support`);
-		log(`WebSocket: ${this.config.ws.host}:${this.config.ws.port}`);
+		log(`Запущен WebSocket Server v${this.config.version}`, 'INFO');
+		log(`WebSocket: ${this.config.ws.host}:${this.config.ws.port}`, 'DEBUG');
 
 		try {
 			// Проверка файла лога
@@ -1361,7 +1772,7 @@ class StatefulWebSocketServerV4 {
 			// Таймер выключения при отсутствии клиентов
 			this.startShutdownTimer();
 
-			log('Server v4.1 started successfully', 'INFO');
+			log('Server v4.14 успешно запущен', 'INFO');
 
 		} catch (error) {
 			log(`Failed to start server: ${error.message}`, 'ERROR');
@@ -1383,7 +1794,7 @@ class StatefulWebSocketServerV4 {
 			log(`WebSocket server error: ${error.message}`, 'ERROR');
 		});
 
-		log(`WebSocket server listening on ${this.config.ws.host}:${this.config.ws.port}`);
+		log(`WebSocket server listening on ${this.config.ws.host}:${this.config.ws.port}`, 'DEBUG');
 	}
 
 	// ==================== УПРАВЛЕНИЕ КЛИЕНТАМИ ====================
@@ -1400,8 +1811,8 @@ class StatefulWebSocketServerV4 {
 		});
 
 		this.stats.clientsConnected++;
-
-		log(`Client ${clientId} connected from ${clientIp} (total: ${this.clients.size})`);
+		
+		log(`Сервер v${this.config.version}: Клиент ${clientId} подключен с ${clientIp} (всего: ${this.clients.size})`, 'DEBUG');
 
 		// 1. Отправка приветственного сообщения
 		this.sendWelcome(ws, clientId);
@@ -1449,7 +1860,7 @@ class StatefulWebSocketServerV4 {
 			this.clients.delete(disconnectedClient);
 			this.stats.clientsDisconnected++;
 
-			log(`Client ${clientId} disconnected (remaining: ${this.clients.size})`);
+			log(`Client ${clientId} disconnected (remaining: ${this.clients.size})`, 'DEBUG');
 
 			// Останавливаем мониторинг если клиентов не осталось
 			if (this.clients.size === 0) {
@@ -1482,7 +1893,7 @@ class StatefulWebSocketServerV4 {
 			version: this.config.version,
 			clientId: clientId,
 			serverTime: Date.now(),
-			message: 'Connected to Stateful WebSocket Server 4.1 with state support',
+			message: 'Сервер Stateful WebSocket Server с поддержкой состояний счетчиков',
 			system: 'dom_commands_v4_state',
 			initialState: Object.keys(this.wsState.devices).length > 0
 		}));
@@ -1521,7 +1932,7 @@ class StatefulWebSocketServerV4 {
 			return;
 		}
 
-		log('Starting log monitoring...');
+		log('Starting log monitoring...', 'INFO');
 
 		this.tailProcess = spawn('tail', ['-F', '-n', '0', this.config.log.path]);
 		this.isMonitoring = true;
@@ -1567,12 +1978,12 @@ class StatefulWebSocketServerV4 {
 			}
 		});
 
-		log('Log monitoring started', 'INFO');
+		log('Log monitoring started', 'DEBUG');
 	}
 
 	stopLogMonitoring() {
 		if (this.tailProcess && this.isMonitoring) {
-			log('Stopping log monitoring...');
+			log('Stopping log monitoring...', 'DEBUG');
 
 			this.tailProcess.kill('SIGTERM');
 			this.tailProcess = null;
@@ -1594,7 +2005,7 @@ class StatefulWebSocketServerV4 {
 				this.stats.eventsProcessed++;
 				this.stats.commandsGenerated += result.commands.length;
 
-				log(`Processed event: ${result.commands.length} commands generated`);
+				log(`Processed event: ${result.commands.length} commands generated`, 'DEBUG');
 
 				result.commands.forEach((cmd, index) => {
 					const cmdInfo = `  [${index + 1}] ${cmd.id} -> ${cmd.action}`;
@@ -1611,9 +2022,9 @@ class StatefulWebSocketServerV4 {
 					}
 
 					if (details.length > 0) {
-						log(`${cmdInfo} (${details.join(', ')})`);
+						log(`${cmdInfo} (${details.join(', ')})`, 'DEBUG');
 					} else {
-						log(cmdInfo);
+						log(cmdInfo, 'DEBUG');
 					}
 				});
 			}
@@ -1636,7 +2047,7 @@ class StatefulWebSocketServerV4 {
 				const sentCount = this.broadcast(message);
 
 				if (sentCount > 0) {
-					log(`Sent ${chunk.length} DOM commands to ${sentCount} clients (chunk ${message.chunk}/${message.chunks})`);
+					log(`Отправил ${chunk.length} DOM команд для ${sentCount} клиентов (чанк ${message.chunk}/${message.chunks})`, 'DEBUG');
 				}
 			}
 		}
@@ -1667,21 +2078,21 @@ class StatefulWebSocketServerV4 {
 						const sentCount = this.broadcast(message);
 
 						if (sentCount > 0) {
-							log(`Sent ${timeCommands.length} time update commands`);
+							// log(`Отправил ${timeCommands.length} команд обновления времени`);
 						}
 					}
 				}
 			}
 		}, this.config.duration.updateInterval);
 
-		log(`Duration timer started (${this.config.duration.updateInterval}ms interval)`);
+		log(`Запущен отсчет длительности с интервалом (${this.config.duration.updateInterval}ms)`, 'DEBUG');
 	}
 
 	stopDurationTimer() {
 		if (this.durationTimer) {
 			clearInterval(this.durationTimer);
 			this.durationTimer = null;
-			log('Duration timer stopped');
+			log('Duration timer stopped', 'DEBUG');
 		}
 	}
 
@@ -1699,14 +2110,14 @@ class StatefulWebSocketServerV4 {
 			}
 		}, this.config.ws.clientTimeout);
 
-		log(`Shutdown timer set for ${this.config.ws.clientTimeout}ms`);
+		log(`Shutdown timer set for ${this.config.ws.clientTimeout}ms`, 'DEBUG');
 	}
 
 	clearShutdownTimer() {
 		if (this.shutdownTimer) {
 			clearTimeout(this.shutdownTimer);
 			this.shutdownTimer = null;
-			log('Shutdown timer cleared');
+			log('Shutdown timer cleared', 'DEBUG');
 		}
 	}
 
@@ -1729,7 +2140,7 @@ class StatefulWebSocketServerV4 {
 				const uptime = Math.floor((Date.now() - this.stats.startedAt) / 1000);
 				const stateStats = this.stateManager.getStats();
 
-				log(`Server v4.1 Statistics:`);
+				log(`Server v4.14 Statistics:`);
 				log(`  Uptime: ${uptime}s`);
 				log(`  Clients connected: ${this.stats.clientsConnected}`);
 				log(`  Clients disconnected: ${this.stats.clientsDisconnected}`);
@@ -1739,6 +2150,7 @@ class StatefulWebSocketServerV4 {
 				log(`  State loads: ${this.stats.stateLoads}`);
 				log(`  State load errors: ${this.stats.stateLoadErrors}`);
 				log(`  Active timers: ${stateStats.activeTimers}`);
+				log(`  Connections: ${this.commandParser.connections.connections.size}`);
 				log(`  Errors: ${this.stats.errors}`);
 
 				log('Server shutdown complete', 'INFO');
@@ -1770,7 +2182,8 @@ class StatefulWebSocketServerV4 {
 				devices: Object.keys(this.wsState.devices).length,
 				modules: Object.keys(this.wsState.modules).length,
 				links: Object.keys(this.wsState.links).length,
-				nodes: Object.keys(this.wsState.nodes).length
+				nodes: Object.keys(this.wsState.nodes).length,
+				connections: this.commandParser.connections.connections.size
 			},
 			serverStats: this.stats,
 			stateStats: stateStats
@@ -1803,7 +2216,7 @@ async function main() {
 		}
 	});
 
-	// Запуск сервера v4.1
+	// Запуск сервера
 	const server = new StatefulWebSocketServerV4();
 	global.serverInstance = server;
 
@@ -1823,5 +2236,5 @@ module.exports = {
 	StatefulWebSocketServerV4,
 	StateManager,
 	CommandParser,
-	ModuleLogicHandler
+	ConnectionHandler
 };
