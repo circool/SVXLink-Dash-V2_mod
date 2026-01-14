@@ -1,6 +1,6 @@
 /**
- * @filesource /scripts/exct/dashboard_ws_client.4.0.js
- * @version 4.0
+ * @filesource /scripts/exct/dashboard_ws_client.0.4.1.js
+ * @version 0.4.1
  * @date 2026.01.09
  * @author vladimir@tsurkanenko.ru
  * @description WebSocket клиент с полной поддержкой системы команд DOM v4.0
@@ -11,12 +11,14 @@
  * - Добавлены: add_parent_class, remove_parent_class, replace_parent_content
  * - Поддержка массивов ID
  * - Совместимость с сервером dashboard_ws_server.4.0.js
+ * @since 0.4.1
  * @todo Неиспользуемые методы клиента:
- * @todo Удалить `handleAddContent` - `add_content`
- * @todo Удалить `handleRemoveContent` - `remove_content`
- * @todo Удалить `handleParentContent` (оба варианта) - `add_parent_content` и `replace_parent_content`
- * @todo Удалить `handleAddParentContent` - специальная логика для `add_content` с parent_id
- * @todo Удалить `toggle_class` и `set_class` в `handleChildClasses`
+ * Удален `handleAddContent` - `add_content`
+ * Удален `handleRemoveContent` - `remove_content`
+ * Удален  `handleParentContent` (оба варианта) - `add_parent_content` и `replace_parent_content`
+ * Удален  `handleAddParentContent` - специальная логика для `add_content` с parent_id
+ * Удален  `handleChildClasses`
+ * Добавлен `replaceChildClasses`
  */
 
 class DashboardWebSocketClientV4 {
@@ -349,12 +351,10 @@ class DashboardWebSocketClientV4 {
 			case 'set_content':
 				return this.handleSetContent(cmd);
 			
-			case 'add_content':  
-				return this.handleAddContent(cmd);
+			// case 'add_content':  
+			// 	return this.handleAddContent(cmd);
 			
-			case 'remove_content':
-				return this.handleRemoveContent(cmd);
-					
+							
 			case 'replace_content':
 				return this.handleReplaceContent(cmd);
 			
@@ -369,12 +369,9 @@ class DashboardWebSocketClientV4 {
 			case 'remove_parent_class':
 				return this.handleParentClass(cmd, 'remove');
 			
-			case 'add_parent_content':
-				return this.handleParentContent(cmd, 'add');
+			
 
-			case 'replace_parent_content':
-				return this.handleParentContent(cmd, 'replace');
-
+			
 			// Действие с дочерними элементами
 			case 'add_child':
 				return this.addChild(cmd);
@@ -382,8 +379,9 @@ class DashboardWebSocketClientV4 {
 			case 'remove_child':
 				return this.removeChild(cmd);		
 			
-			case 'handle_child_classes':
-				return this.handleChildClasses(cmd);
+			case 'replace_child_classes':
+
+				return this.replaceChildClasses(cmd);
 			
 
 			// Специальные действия			
@@ -582,126 +580,32 @@ class DashboardWebSocketClientV4 {
 		}
 	}
 
-	handleAddContent(cmd) {
-		if (cmd.payload === undefined) {
-			this.log('ERROR', 'add_content missing payload', cmd);
-			return false;
-		}
+	// @deprecated Не используется
+	// handleAddContent(cmd) {
+	// 	if (cmd.payload === undefined) {
+	// 		this.log('ERROR', 'add_content missing payload', cmd);
+	// 		return false;
+	// 	}
 
-		const element = this.getElement(cmd.id);
-		if (!element) return false;
+	// 	const element = this.getElement(cmd.id);
+	// 	if (!element) return false;
 
-		try {
+	// 	try {
 
-			element.insertAdjacentHTML('beforeend', cmd.payload);
+	// 		element.insertAdjacentHTML('beforeend', cmd.payload);
 
-			if (this.config.debugLevel >= 3) {
-				this.log('DEBUG', `Appended to ${cmd.id}: "${cmd.payload.substring(0, 50)}${cmd.payload.length > 50 ? '...' : ''}"`);
-			}
-			return true;
+	// 		if (this.config.debugLevel >= 3) {
+	// 			this.log('DEBUG', `Appended to ${cmd.id}: "${cmd.payload.substring(0, 50)}${cmd.payload.length > 50 ? '...' : ''}"`);
+	// 		}
+	// 		return true;
 
-		} catch (error) {
-			this.log('ERROR', `Error adding content to ${cmd.id}: ${error.message}`, cmd);
-			return false;
-		}
+	// 	} catch (error) {
+	// 		this.log('ERROR', `Error adding content to ${cmd.id}: ${error.message}`, cmd);
+	// 		return false;
+	// 	}
 
-	}
+	// }
 
-	handleAddParentContent(cmd) {
-		if (cmd.payload === undefined) {
-			this.log('ERROR', 'add_content missing payload', cmd);
-			return false;
-		}
-
-		if (!cmd.parent_id && !cmd.id) {
-			this.log('ERROR', 'add_content requires either parent_id or id', cmd);
-			return false;
-		}
-
-		try {
-			const elementId = cmd.id;
-			let element = elementId ? this.getElement(elementId) : null;
-			const parentElement = cmd.parent_id ? this.getElement(cmd.parent_id) : null;
-
-			// Проверяем, существует ли элемент
-			if (element) {
-				// Элемент уже существует - обновляем его
-				if (this.config.debugLevel >= 3) {
-					this.log('DEBUG', `Element ${elementId} already exists, updating`);
-				}
-
-				// Создаем временный div для извлечения данных из payload
-				const tempDiv = document.createElement('div');
-				tempDiv.innerHTML = cmd.payload;
-				const payloadDiv = tempDiv.firstElementChild;
-
-				if (payloadDiv) {
-					// Обновляем классы из payload
-					if (payloadDiv.className) {
-						element.className = payloadDiv.className;
-					}
-
-					// Обновляем title
-					if (payloadDiv.title) {
-						element.title = payloadDiv.title;
-					}
-
-					// Обновляем стиль
-					if (payloadDiv.style && payloadDiv.style.cssText) {
-						element.style.cssText = payloadDiv.style.cssText;
-					}
-
-					// Обновляем текст содержимого
-					element.textContent = payloadDiv.textContent || payloadDiv.innerHTML;
-
-					if (this.config.debugLevel >= 3) {
-						this.log('DEBUG', `Updated element ${elementId}`);
-					}
-				}
-
-				return true;
-
-			} else if (parentElement && elementId) {
-				// Элемента нет, но есть parent_id и id - создаем новый элемент внутри родителя
-
-				// Добавляем ID в payload если его там нет
-				let payloadHtml = cmd.payload;
-				if (!payloadHtml.includes('id=')) {
-					// Находим первый тег div и добавляем в него id
-					payloadHtml = payloadHtml.replace(/<div\s*/, `<div id="${elementId}" `);
-				} else if (!payloadHtml.includes(`id="${elementId}"`) && !payloadHtml.includes(`id='${elementId}'`)) {
-					// ID есть, но не совпадает - заменяем
-					payloadHtml = payloadHtml.replace(/id=["'][^"']*["']/, `id="${elementId}"`);
-				}
-
-				// Добавляем в конец родительского элемента
-				parentElement.insertAdjacentHTML('beforeend', payloadHtml);
-
-				if (this.config.debugLevel >= 3) {
-					this.log('DEBUG', `Added new element ${elementId} to parent ${cmd.parent_id}`);
-				}
-				return true;
-
-			} else if (parentElement && !elementId) {
-				// Только parent_id без id - просто добавляем HTML в конец
-				parentElement.insertAdjacentHTML('beforeend', cmd.payload);
-
-				if (this.config.debugLevel >= 3) {
-					this.log('DEBUG', `Added content to parent ${cmd.parent_id}`);
-				}
-				return true;
-
-			} else {
-				// Нет ни существующего элемента, ни родителя
-				this.log('ERROR', `Cannot add content: element ${elementId} not found and no parent_id provided`, cmd);
-				return false;
-			}
-
-		} catch (error) {
-			this.log('ERROR', `Error in add_content: ${error.message}`, cmd);
-			return false;
-		}
-	}
 	
 	handleSetContent(cmd) {
 		if (cmd.payload === undefined) {
@@ -772,18 +676,7 @@ class DashboardWebSocketClientV4 {
 		}
 	}
 
-	handleRemoveContent(cmd) {
-		if (!cmd.id) {
-			this.log('ERROR', 'remove_content missing id', cmd);
-			return false;
-		}
-
-		const element = document.getElementById(cmd.id);
-		if (!element) return false;
-
-		element.innerHTML = '';
-		return true;
-	}
+	
 
 	handleParentClass(cmd, operation) {
 		if (!cmd.class) {
@@ -1022,9 +915,24 @@ class DashboardWebSocketClientV4 {
 		return true;
 	}
 
-	handleChildClasses(cmd) {
+	/**
+ * Заменяет существующие классы у всех дочерних элементов (первого уровня вложенности)
+ * При отсутствии исходных классов операция игнорируется
+ * @param cmd 
+ *  id: string <id элемента-родителя>
+ *  class: string <классы которые нужно установить (значения разделенные запятыми)>
+ *  oldClass: string <классы которые нужно заменить (значения разделенные запятыми)>
+ * @returns 
+ *  bool <успешность выполнения>
+ */
+	replaceChildClasses(cmd) {
 		if (!cmd.class) {
-			this.log('ERROR', `${cmd.action} missing class parameter`, cmd);
+			this.log('ERROR', 'replaceChildClasses missing class parameter', cmd);
+			return false;
+		}
+
+		if (!cmd.oldClass) {
+			this.log('ERROR', 'replaceChildClasses missing oldClass parameter', cmd);
 			return false;
 		}
 
@@ -1037,114 +945,56 @@ class DashboardWebSocketClientV4 {
 		}
 
 		try {
-			const classesToProcess = cmd.class.includes(',')
-				? cmd.class.split(',').map(cls => cls.trim())
+			// Подготавливаем массивы старых и новых классов
+			const oldClasses = cmd.oldClass.includes(',')
+				? cmd.oldClass.split(',').map(oldCls => oldCls.trim())
+				: [cmd.oldClass];
+
+			const newClasses = cmd.class.includes(',')
+				? cmd.class.split(',').map(newCls => newCls.trim())
 				: [cmd.class];
-
-			// Определяем operation из cmd.action или cmd.operation
-			const operation = cmd.operation || cmd.action;
-
-			// Обрабатываем все дочерние элементы
-			const allElements = [element, ...Array.from(element.querySelectorAll('*'))];
 
 			let elementsModified = 0;
 
-			allElements.forEach(el => {
-				classesToProcess.forEach(cls => {
-					switch (operation) {
-						case 'add_class':
-							el.classList.add(cls);
-							elementsModified++;
-							break;
+			// Обрабатываем только дочерние элементы первого уровня
+			const childElements = Array.from(element.children);
 
-						case 'remove_class':
-							if (el.classList.contains(cls)) {
-								el.classList.remove(cls);
-								elementsModified++;
-							}
-							break;
-
-						case 'set_class':
-							// Для set_class: удаляем все модальные классы, добавляем новый
-							const modeClasses = ['active-mode-cell', 'inactive-mode-cell', 'paused-mode-cell', 'disabled-mode-cell'];
-							let hasModeClass = false;
-
-							modeClasses.forEach(modeCls => {
-								if (el.classList.contains(modeCls)) {
-									el.classList.remove(modeCls);
-									hasModeClass = true;
-								}
-							});
-
-							if (hasModeClass) {
-								el.classList.add(cls);
-								elementsModified++;
-							}
-							break;
-
-						case 'toggle_class':
-							el.classList.toggle(cls);
-							elementsModified++;
-							break;
-
-						case 'replace_class':
-							if (cmd.oldClass && cmd.class) {
-								const oldClasses = cmd.oldClass.includes(',')
-									? cmd.oldClass.split(',').map(oldCls => oldCls.trim())
-									: [cmd.oldClass];
-
-								const newClasses = cmd.class.includes(',')
-									? cmd.class.split(',').map(newCls => newCls.trim())
-									: [cmd.class];
-
-								// Проверяем, есть ли ВСЕ старые классы (а не хотя бы один!)
-								let hasAllOldClasses = true;
-								oldClasses.forEach(oldCls => {
-									if (!el.classList.contains(oldCls)) {
-										hasAllOldClasses = false;
-									}
-								});
-
-								if (hasAllOldClasses) {
-									// Удаляем ВСЕ старые классы
-									oldClasses.forEach(oldCls => {
-										el.classList.remove(oldCls);
-									});
-
-									// Добавляем ВСЕ новые классы
-									newClasses.forEach(newCls => {
-										el.classList.add(newCls);
-									});
-
-									elementsModified++;
-								}
-							}
-							break;
-						default:
-							this.log('ERROR', `Unknown operation in handleChildClasses: ${operation}`, cmd);
+			childElements.forEach(el => {
+				// Проверяем, есть ли ВСЕ старые классы
+				let hasAllOldClasses = true;
+				oldClasses.forEach(oldCls => {
+					if (!el.classList.contains(oldCls)) {
+						hasAllOldClasses = false;
 					}
 				});
+
+				if (hasAllOldClasses) {
+					// Удаляем ВСЕ старые классы
+					oldClasses.forEach(oldCls => {
+						el.classList.remove(oldCls);
+					});
+
+					// Добавляем ВСЕ новые классы
+					newClasses.forEach(newCls => {
+						el.classList.add(newCls);
+					});
+
+					elementsModified++;
+				}
 			});
 
 			if (this.config.debugLevel >= 3) {
-				const actionText = {
-					'add_class': 'Added',
-					'remove_class': 'Removed',
-					'set_class': 'Set',
-					'toggle_class': 'Toggled',
-					'replace_class': 'Replaced'
-				}[operation] || operation;
-
-				this.log('DEBUG', `${actionText} class(es) "${cmd.class}" for ${elementsModified} elements (total: ${allElements.length})`);
+				this.log('DEBUG', `Replaced class(es) "${cmd.oldClass}" with "${cmd.class}" for ${elementsModified} child elements of "${cmd.id}" (total: ${childElements.length})`);
 			}
 
 			return elementsModified > 0;
 
 		} catch (error) {
-			this.log('ERROR', `Error in handleChildClasses for ${cmd.id}: ${error.message}`, cmd);
+			this.log('ERROR', `Error in replaceChildClasses for ${cmd.id}: ${error.message}`, cmd);
 			return false;
 		}
 	}
+	
 
 	handleSetCheckboxState(cmd) {
 

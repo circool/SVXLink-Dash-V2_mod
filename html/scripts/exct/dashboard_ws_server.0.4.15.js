@@ -659,8 +659,8 @@ class CommandParser {
 					const logic = match[2];
 					return [
 						{ id: `logic_${logic}_groups`, action: 'remove_child', ignoreClass: 'default,monitored' },
-						{ id: `logic_${logic}_groups`, class: 'disabled-mode-cell', operation: 'replace_class', action: 'handle_child_classes', oldClass: 'active-mode-cell' },
-						{ id: `logic_${logic}_groups`, class: 'default,active-mode-cell', operation: 'replace_class', action: 'handle_child_classes', oldClass: 'default,disabled-mode-cell' },
+						{ id: `logic_${logic}_groups`, class: 'disabled-mode-cell', action: 'replace_child_classes', oldClass: 'active-mode-cell' },
+						{ id: `logic_${logic}_groups`, class: 'default,active-mode-cell', action: 'replace_child_classes', oldClass: 'default,disabled-mode-cell' },
 					];
 				}
 			},
@@ -684,8 +684,7 @@ class CommandParser {
 						},
 						{
 							id: `logic_${logic}_groups`,
-							action: 'handle_child_classes',
-							operation: 'replace_class',
+							action: 'replace_child_classes',
 							oldClass: 'active-mode-cell',
 							class: 'disabled-mode-cell',					
 						},
