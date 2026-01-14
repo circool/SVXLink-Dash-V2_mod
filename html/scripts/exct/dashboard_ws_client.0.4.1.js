@@ -11,6 +11,12 @@
  * - Добавлены: add_parent_class, remove_parent_class, replace_parent_content
  * - Поддержка массивов ID
  * - Совместимость с сервером dashboard_ws_server.4.0.js
+ * @todo Неиспользуемые методы клиента:
+ * @todo Удалить `handleAddContent` - `add_content`
+ * @todo Удалить `handleRemoveContent` - `remove_content`
+ * @todo Удалить `handleParentContent` (оба варианта) - `add_parent_content` и `replace_parent_content`
+ * @todo Удалить `handleAddParentContent` - специальная логика для `add_content` с parent_id
+ * @todo Удалить `toggle_class` и `set_class` в `handleChildClasses`
  */
 
 class DashboardWebSocketClientV4 {
