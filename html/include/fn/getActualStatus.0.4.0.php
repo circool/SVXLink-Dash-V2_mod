@@ -499,10 +499,10 @@ function getActualStatus(bool $forceRebuild = false): array
 
 				foreach ($logLineTM as $index => $line) {
 					if (empty($line)) {
-						dlog("$ver: пропускаю запись  $index как пустую", 2, "WARNING");
+						if (defined("DEBUG") && DEBUG) dlog("$ver: пропускаю запись  $index как пустую", 2, "WARNING");
 						continue;
 					}
-					dlog("$ver: работаю с  $index : $line", 2, "WARNING");
+					if (defined("DEBUG") && DEBUG) dlog("$ver: работаю с  $index : $line", 2, "WARNING");
 
 
 					if (preg_match('/#(\d+)$/', $line, $matches)) {

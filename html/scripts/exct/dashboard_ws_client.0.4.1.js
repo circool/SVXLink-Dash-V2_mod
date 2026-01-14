@@ -19,17 +19,18 @@
  * Удален  `handleAddParentContent` - специальная логика для `add_content` с parent_id
  * Удален  `handleChildClasses`
  * Добавлен `replaceChildClasses`
+ * * @todo Вернуть получение конфига из вызывающего скрипта
  */
 
 class DashboardWebSocketClientV4 {
 	constructor(config = {}) {
-		// Конфигурация
-		this.config = {
-			host: window.location.hostname,
-			port: 8080,
-			autoConnect: true,
-			reconnectDelay: 3000,
-			debugLevel: 2,  // 1=ERROR, 2=WARNING, 3=INFO, 4=DEBUG
+			// Конфигурация
+			this.config = {
+				host: window.location.hostname,
+				port: 8080,
+				autoConnect: true,
+				reconnectDelay: 3000,
+				debugLevel: 2,  // 1=ERROR, 2=WARNING, 3=INFO, 4=DEBUG
 			debugWebConsole: true,
 			debugConsole: false,
 			maxReconnectAttempts: 5,
@@ -58,7 +59,7 @@ class DashboardWebSocketClientV4 {
 	// @bookmark ИНИЦИАЛИЗАЦИЯ
 
 	init() {
-		this.log('INFO', 'Dashboard WebSocket Client v0.4.0 initialized');
+		this.log('INFO', 'Dashboard WebSocket Client v0.4.1 initialized');
 
 		// Создаём кнопку статуса
 		this.createStatusButton();
@@ -250,12 +251,26 @@ class DashboardWebSocketClientV4 {
 				this.processCommands(data.commands, data.chunk, data.chunks);
 			
 			} else if (data.type === 'log_message') {
+				const logLevels = {
+					'ERROR': 1,
+					'WARNING': 2,
+					'INFO': 3,
+					'DEBUG': 4
+				};
+				const messageLevel = logLevels[data.level] || 3;
+				// Получаем уровень отладки клиента
+				const clientDebugLevel = this.config.debugLevel || 2;
+
+				// Выводим только если уровень сообщения <= уровню клиента
+				if (messageLevel <= clientDebugLevel) {
+					this.logToWebConsole(
+						data.timestamp,
+						data.level,
+						data.message,
+						data.source
+					);
+				}
 				
-				this.logToWebConsole(
-				    data.timestamp,
-				    data.level,
-				    data.message,
-				    data.source)
 				
 			} else if (Array.isArray(data)) {
 				// Прямой массив команд (для совместимости)
@@ -300,7 +315,7 @@ class DashboardWebSocketClientV4 {
 		}
 
 		const chunkInfo = chunkNum ? ` (chunk ${chunkNum}/${totalChunks})` : '';
-		this.log('DEBUG', `Processing ${commands.length} commands${chunkInfo}`);
+		this.log('DEBUG', `Обработка ${commands.length} команд${chunkInfo}`);
 
 		let successCount = 0;
 		let errorCount = 0;
@@ -314,9 +329,9 @@ class DashboardWebSocketClientV4 {
 		});
 
 		if (errorCount === 0) {
-			this.log('INFO', `Processed ${commands.length} commands${chunkInfo}: ${successCount} OK`);
+			this.log('INFO', `Обработал ${commands.length} команд ${chunkInfo}: ${successCount} успешно`);
 		} else {
-			this.log('WARNING', `Processed ${commands.length} commands${chunkInfo}: ${successCount} OK, ${errorCount} errors`);
+			this.log('WARNING', `Обработал ${commands.length} команд${chunkInfo}: ${successCount} успешно, ${errorCount} с ошибкой`);
 		}
 	}
 
@@ -400,7 +415,7 @@ class DashboardWebSocketClientV4 {
 		const element = document.getElementById(id);
 		if (!element) {
 			if (this.config.debugLevel >= 2) {
-				this.log('WARNING', `Element not found: ${id}`);
+				this.log('WARNING', `Элемент ${id} не найден`);
 			}
 		}
 		return element;
@@ -490,7 +505,7 @@ class DashboardWebSocketClientV4 {
 				element.innerHTML = cmd.payload;
 				elementsProcessed = 1;
 
-				if (this.config.debugLevel >= 3) {
+				if (this.config.debugLevel >= 4) {
 					this.log('DEBUG', `Set content for element #${elementIndex} with class "${cmd.targetClass}"`);
 				}
 			}
@@ -534,8 +549,8 @@ class DashboardWebSocketClientV4 {
 				element.classList.add(cmd.class);
 			}
 
-			if (this.config.debugLevel >= 3) {
-				this.log('DEBUG', `Added class "${cmd.class}" to ${cmd.id}`);
+			if (this.config.debugLevel >= 4) {
+				this.log('DEBUG', `В ${cmd.id} добавлен класс "${cmd.class}"`);
 			}
 			return true;
 
@@ -560,15 +575,15 @@ class DashboardWebSocketClientV4 {
 				cmd.class.split(',').forEach(cls => {
 					element.classList.remove(cls.trim());
 				});
-				if (this.config.debugLevel >= 3) {
-					this.log('DEBUG', `Removed classes "${cmd.class}" from ${cmd.id}`);
+				if (this.config.debugLevel >= 4) {
+					this.log('DEBUG', `Из ${cmd.id} удалены классы ${cmd.class}`);
 				}
 
 			} else {
 				// Один класс
 				element.classList.remove(cmd.class);
-				if (this.config.debugLevel >= 3) {
-					this.log('DEBUG', `Removed class "${cmd.class}" from ${cmd.id}`);
+				if (this.config.debugLevel >= 4) {
+					this.log('DEBUG', `Из ${cmd.id} удален класс ${cmd.class}`);
 				}
 			}
 
@@ -580,33 +595,7 @@ class DashboardWebSocketClientV4 {
 		}
 	}
 
-	// @deprecated Не используется
-	// handleAddContent(cmd) {
-	// 	if (cmd.payload === undefined) {
-	// 		this.log('ERROR', 'add_content missing payload', cmd);
-	// 		return false;
-	// 	}
-
-	// 	const element = this.getElement(cmd.id);
-	// 	if (!element) return false;
-
-	// 	try {
-
-	// 		element.insertAdjacentHTML('beforeend', cmd.payload);
-
-	// 		if (this.config.debugLevel >= 3) {
-	// 			this.log('DEBUG', `Appended to ${cmd.id}: "${cmd.payload.substring(0, 50)}${cmd.payload.length > 50 ? '...' : ''}"`);
-	// 		}
-	// 		return true;
-
-	// 	} catch (error) {
-	// 		this.log('ERROR', `Error adding content to ${cmd.id}: ${error.message}`, cmd);
-	// 		return false;
-	// 	}
-
-	// }
-
-	
+		
 	handleSetContent(cmd) {
 		if (cmd.payload === undefined) {
 			this.log('ERROR', 'set_content missing payload', cmd);
@@ -620,8 +609,8 @@ class DashboardWebSocketClientV4 {
 		
 				element.innerHTML = cmd.payload;
 			
-			if (this.config.debugLevel >= 3) {
-				this.log('DEBUG', `Set content of ${cmd.id} to "${cmd.payload.substring(0, 50)}${cmd.payload.length > 50 ? '...' : ''}"`);
+			if (this.config.debugLevel >= 4) {
+				this.log('DEBUG', `В ${cmd.id} установлено новое содержимое "${cmd.payload.substring(0, 50)}${cmd.payload.length > 50 ? '...' : ''}"`);
 			}
 			return true;
 
@@ -648,7 +637,7 @@ class DashboardWebSocketClientV4 {
 
 			if (startIndex === -1) {
 				if (this.config.debugLevel >= 2) {
-					this.log('WARNING', `Begin condition not found: "${beginCond}" in ${cmd.id}`);
+					this.log('WARNING', `В ${cmd.id} не найдена открывающая последовательность "${beginCond}" `);
 				}
 				return false;
 			}
@@ -656,7 +645,7 @@ class DashboardWebSocketClientV4 {
 			const endIndex = html.indexOf(endCond, startIndex + beginCond.length);
 			if (endIndex === -1) {
 				if (this.config.debugLevel >= 2) {
-					this.log('WARNING', `End condition not found: "${endCond}" in ${cmd.id}`);
+					this.log('WARNING', `В ${cmd.id} не найдена закрывающая последовательность "${endCond}"`);
 				}
 				return false;
 			}
@@ -665,8 +654,8 @@ class DashboardWebSocketClientV4 {
 			const after = html.substring(endIndex);
 			element.innerHTML = before + newContent + after;
 
-			if (this.config.debugLevel >= 3) {
-				this.log('DEBUG', `Replaced content in ${cmd.id} with "${newContent}"`);
+			if (this.config.debugLevel >= 4) {
+				this.log('DEBUG', `Заменил содержимое в ${cmd.id} на "${newContent}"`);
 			}
 			return true;
 
@@ -701,7 +690,7 @@ class DashboardWebSocketClientV4 {
 				} else {
 					parentElement.classList.add(cmd.class);
 				}
-				if (this.config.debugLevel >= 3) {
+				if (this.config.debugLevel >= 4) {
 					this.log('DEBUG', `Added parent class "${cmd.class}" to parent of ${cmd.id}`);
 				}
 			} else {
@@ -712,7 +701,7 @@ class DashboardWebSocketClientV4 {
 				} else {
 					parentElement.classList.remove(cmd.class);
 				}
-				if (this.config.debugLevel >= 3) {
+				if (this.config.debugLevel >= 4) {
 					this.log('DEBUG', `Removed parent class "${cmd.class}" from parent of ${cmd.id}`);
 				}
 			}
@@ -733,7 +722,7 @@ class DashboardWebSocketClientV4 {
 		const parentElement = this.getParentElement(cmd.id);
 		if (!parentElement) {
 			if (this.config.debugLevel >= 2) {
-				this.log('WARNING', `Parent element not found for ${cmd.id}`);
+				this.log('WARNING', `Не найдено дочерних элементов у ${cmd.id}`);
 			}
 			return false;
 		}
@@ -762,7 +751,7 @@ class DashboardWebSocketClientV4 {
 			const after = html.substring(endIndex);
 			parentElement.innerHTML = before + newContent + after;
 
-			if (this.config.debugLevel >= 3) {
+			if (this.config.debugLevel >= 4) {
 				this.log('DEBUG', `Replaced parent content for ${cmd.id} with "${newContent}"`);
 			}
 			return true;
@@ -784,8 +773,8 @@ class DashboardWebSocketClientV4 {
 
 		element.remove();
 
-		if (this.config.debugLevel >= 3) {
-			this.log('DEBUG', `Removed element ${cmd.id}`);
+		if (this.config.debugLevel >= 4) {
+			this.log('DEBUG', `Удален ${cmd.id}`);
 		}
 
 		return true;
@@ -839,26 +828,6 @@ class DashboardWebSocketClientV4 {
 				// Если элемент существует и его родитель совпадает с целевым
 				if (existingElement && existingElement.parentElement === parent) {
 					return true;
-					// Обновляем существующий элемент
-					if (cmd.type && existingElement.tagName.toLowerCase() !== cmd.type.toLowerCase()) {
-						const newElement = document.createElement(cmd.type);
-						newElement.id = childId;
-						newElement.className = cmd.class || existingElement.className;
-						newElement.style.cssText = cmd.style || existingElement.style.cssText;
-						newElement.title = cmd.title || existingElement.title;
-						newElement.innerHTML = cmd.payload;
-						existingElement.parentNode.replaceChild(newElement, existingElement);
-					} else {
-						existingElement.innerHTML = cmd.payload;
-						if (cmd.class !== undefined) existingElement.className = cmd.class;
-						if (cmd.style !== undefined) existingElement.style.cssText = cmd.style;
-						if (cmd.title !== undefined) existingElement.title = cmd.title;
-					}
-
-					if (this.config.debugLevel >= 3) {
-						this.log('DEBUG', `Обновлен элемент "${childId}" в родителе "${cmd.target}"`);
-					}
-					return true;
 				}
 			}
 
@@ -873,9 +842,9 @@ class DashboardWebSocketClientV4 {
 
 			parent.appendChild(element);
 
-			if (this.config.debugLevel >= 3) {
+			if (this.config.debugLevel >= 4) {
 				const childInfo = childId ? `"${childId}"` : 'новый элемент';
-				this.log('DEBUG', `Добавлен ${childInfo} (${elementType}) в родителя "${cmd.target}"`);
+				this.log('DEBUG', `В "${cmd.target}" добавлен дочерний "${elementType}" с id "${childInfo}"`);
 			}
 
 			return true;
@@ -983,7 +952,7 @@ class DashboardWebSocketClientV4 {
 				}
 			});
 
-			if (this.config.debugLevel >= 3) {
+			if (this.config.debugLevel >= 4) {
 				this.log('DEBUG', `Replaced class(es) "${cmd.oldClass}" with "${cmd.class}" for ${elementsModified} child elements of "${cmd.id}" (total: ${childElements.length})`);
 			}
 
@@ -1025,7 +994,7 @@ class DashboardWebSocketClientV4 {
 					timestamp: Date.now(),
 					clientId: this.clientId
 				}));
-				if (this.config.debugLevel >= 3) {
+				if (this.config.debugLevel >= 4) {
 					this.log('DEBUG', 'Sent ping to server');
 				}
 			}
@@ -1161,7 +1130,7 @@ class DashboardWebSocketClientV4 {
 		const levelClass = `debug-${level.toLowerCase()}`;
 
 		let fullMessage = message;
-		let sender = "[WS Client v4]";
+		let sender = "[WS Client v4.1]";
 
 		// СНАЧАЛА определяем отправителя
 		if (typeof data === 'string') {
@@ -1296,5 +1265,5 @@ document.addEventListener('DOMContentLoaded', () => {
 		})
 	};
 
-	console.log('Dashboard WebSocket Client v4.0 initialized with config:', wsConfig || 'default');
+	console.log('Dashboard WebSocket Client v4.1 initialized with config:', wsConfig || 'default');
 });

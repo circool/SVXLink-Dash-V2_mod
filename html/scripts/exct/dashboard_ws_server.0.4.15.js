@@ -41,20 +41,49 @@ function getTimestamp() {
 	return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 }
 
-function log(message, level = 'INFO') {
-	const timestamp = getTimestamp();
-	const logMessage = `[${timestamp}] [${level}] ${message}`;
-	console.log(logMessage);
+// function log(message, level = 'INFO') {
+// 	const timestamp = getTimestamp();
+// 	const logMessage = `[${timestamp}] [${level}] ${message}`;
+// 	console.log(logMessage);
 
-	// Отправка сообщения всем подключенным клиентам
-	if (global.serverInstance && global.serverInstance.clients && global.serverInstance.clients.size > 0) {
-		global.serverInstance.broadcast({
-			type: 'log_message',
-			level: level,
-			message: message,
-			timestamp: new Date().toISOString(),
-			source: 'WS Server v4'
-		});
+// 	// Отправка сообщения всем подключенным клиентам
+// 	if (global.serverInstance && global.serverInstance.clients && global.serverInstance.clients.size > 0) {
+// 		global.serverInstance.broadcast({
+// 			type: 'log_message',
+// 			level: level,
+// 			message: message,
+// 			timestamp: new Date().toISOString(),
+// 			source: 'WS Server v4'
+// 		});
+// 	}
+// }
+function log(message, level = 'DEBUG') {
+	const logLevels = {
+		'ERROR': 1,
+		'WARNING': 2,
+		'INFO': 3,
+		'DEBUG': 4
+	};
+
+	const currentDebugLevel = parseInt(process.env.DEBUG_LEVEL) || 4;
+	const messageLevel = logLevels[level] || 4;
+
+	// Выводим только если уровень сообщения <= текущему уровню отладки
+	if (messageLevel <= currentDebugLevel) {
+		const timestamp = getTimestamp();
+		const logMessage = `[${timestamp}] [${level}] ${message}`;
+		console.log(logMessage);
+
+		// Отправка клиентам
+		if (global.serverInstance) {
+			global.serverInstance.broadcast({
+				type: 'log_message',
+				level: level,
+				message: message,
+				timestamp: new Date().toISOString(),
+				source: 'WS Server v4'
+			});
+		}
 	}
 }
 
@@ -133,7 +162,7 @@ class StateManager {
 		if (timer) {
 			timer.startTime = startTimestamp;
 			timer.lastUpdate = Date.now();
-			log(`Таймер ${key} установлен на время: ${new Date(startTimestamp).toISOString()}`);
+			// log(`Таймер ${key} установлен на время: ${new Date(startTimestamp).toISOString()}`);
 			return true;
 		}
 		return false;
@@ -218,7 +247,7 @@ class ConnectionHandler {
 				this.add(source, target);
 			}
 		}
-		log(`Connections initialized: ${this.connections.size} connections from ${sourceKey} to ${targetKey}`);
+		log(`Установлены связи: ${this.connections.size} связей ${sourceKey} с ${targetKey}`);
 	}
 
 	// Быстрый доступ к специфическим связям
@@ -379,7 +408,7 @@ class CommandParser {
 				}
 			},
 
-			// @bookmark Инициализация
+			// @bookmark Инициализация логики
 			// [timestamp]: SimplexLogic: Loading RX "Rx1"
 			{
 				regex: /^(.+?): (\S+): Loading (RX|TX) "(\S+)"$/,
@@ -585,6 +614,7 @@ class CommandParser {
 						{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: `Talkgroup: ${talkgroup}` },
 						{ id: `device_${logic}_tx_status`, action: 'set_content', payload: 'NET' },
 						{ id: `device_${logic}_tx_status`, action: 'add_class', class: 'active-mode-cell' },
+						// Показать строку устройств рефлектора
 						{ id: `radio_logic_${logic}`, action: 'remove_parent_class', class: 'hidden' }
 					];
 				}
@@ -601,6 +631,7 @@ class CommandParser {
 						{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: '' },
 						{ id: `device_${logic}_tx_status`, action: 'set_content', payload: '' },
 						{ id: `device_${logic}_tx_status`, action: 'remove_class', class: 'active-mode-cell' },
+						// Скрыть строку устройств рефлектора
 						{ id: `radio_logic_${logic}`, action: 'add_parent_class', class: 'hidden' }
 					];
 				}
@@ -658,9 +689,26 @@ class CommandParser {
 				handler: (match) => {
 					const logic = match[2];
 					return [
-						{ id: `logic_${logic}_groups`, action: 'remove_child', ignoreClass: 'default,monitored' },
-						{ id: `logic_${logic}_groups`, class: 'disabled-mode-cell', action: 'replace_child_classes', oldClass: 'active-mode-cell' },
-						{ id: `logic_${logic}_groups`, class: 'default,active-mode-cell', action: 'replace_child_classes', oldClass: 'default,disabled-mode-cell' },
+						// Удалить все элементы не относящиеся к группе по умолчанию или группы для мониторинга
+						{
+							id: `logic_${logic}_groups`,
+							action: 'remove_child',
+							ignoreClass: 'default,monitored'
+						},
+						// Оставшиеся группы перевести в состояние disabled-mode-cell
+						{
+							id: `logic_${logic}_groups`,
+							class: 'disabled-mode-cell',
+							action: 'replace_child_classes',
+							oldClass: 'active-mode-cell'
+						},
+
+						{
+							id: `logic_${logic}_groups`,
+							class: 'default,active-mode-cell',
+							action: 'replace_child_classes',
+							oldClass: 'default,disabled-mode-cell'
+						},
 					];
 				}
 			},
@@ -677,17 +725,20 @@ class CommandParser {
 					}
 
 					return [
+						// Удалить все элементы не относящиеся к группе по умолчанию или группы для мониторинга
 						{
 							id: `logic_${logic}_groups`,
 							action: 'remove_child',
 							ignoreClass: 'default,monitored',
 						},
+						// Оставшиеся группы перевести в состояние disabled-mode-cell
 						{
 							id: `logic_${logic}_groups`,
 							action: 'replace_child_classes',
 							oldClass: 'active-mode-cell',
 							class: 'disabled-mode-cell',					
 						},
+						// Попытаться добавить новый элемент (будет проигнорировано при наличии)
 						{
 							action: "add_child",
 							target: `logic_${logic}_groups`,
@@ -697,6 +748,7 @@ class CommandParser {
 							title: group,
 							payload: group,						
 						},
+						// Установить у выбранной группы состояние active-mode-cell
 						{
 							id: `logic_${logic}_group_${group}`,
 							action: "add_class",
@@ -958,7 +1010,7 @@ class CommandParser {
 							{ id: `logic_${logic}_module_EchoLink`, action: 'remove_class', class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell,disabled-mode-cell' },
 							{ id: `logic_${logic}_module_EchoLink`, action: 'add_class', class: 'active-mode-cell' },
 							{ id: `logic_${logic}_active`, action: 'remove_class', class: 'hidden' },
-							{ id: `logic_${logic}_module_EchoLink`, action: 'add_parent_class', class: 'module-connected' },
+							// { id: `logic_${logic}_module_EchoLink`, action: 'add_parent_class', class: 'module-connected' },
 							{ id: `logic_${logic}_active_header`, action: 'set_content', payload: 'EchoLink' },
 							{ id: `logic_${logic}_active_content`, action: 'set_content', payload: `<a class="tooltip" href="#"><span><b>Uptime:</b>0 s<br>Connected ${node}</span>${node}</a>` },
 							{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: `EchoLink:  ${node}` },
@@ -1368,7 +1420,7 @@ class CommandParser {
 			this.connections.initFromData(wsData.link_logic, 'link', 'logic');
 		}
 
-		log(`CommandParser initialized: ${this.connections.connections.size} total connections`, 'DEBUG');
+		log(`Парсер команд готов, получено ${this.connections.connections.size} связок`, 'DEBUG');
 	}
 }
 
@@ -1530,7 +1582,7 @@ class StatefulWebSocketServerV4 {
 
 				this.stateManager.setTimerStart(`logic_${logicName}`, startTime);
 				restoredCount++;
-				log(`Logic timer restored: ${logicName}`, 'DEBUG');
+				log(`Восстановлен таймер для логики: ${logicName}`, 'DEBUG');
 			}
 		}
 
@@ -1654,7 +1706,7 @@ class StatefulWebSocketServerV4 {
 			log(`Service timer restored: ${serviceName}`, 'DEBUG');
 		}
 
-		log(`State restored: ${restoredCount} items, ${this.stateManager.timers.size} timers active, connections: ${this.commandParser.connections.connections.size}`, 'DEBUG');
+		log(`Восстановлено: ${restoredCount} элементов, активно ${this.stateManager.timers.size} таймеров,  ${this.commandParser.connections.connections.size} связей`, 'DEBUG');
 	}
 
 	/// Отправка начальных команд новому клиенту
@@ -1793,7 +1845,7 @@ class StatefulWebSocketServerV4 {
 			log(`WebSocket server error: ${error.message}`, 'ERROR');
 		});
 
-		log(`WebSocket server listening on ${this.config.ws.host}:${this.config.ws.port}`, 'DEBUG');
+		log(`WebSocket сервер принимает вызовы по ${this.config.ws.host}:${this.config.ws.port}`, 'DEBUG');
 	}
 
 	// ==================== УПРАВЛЕНИЕ КЛИЕНТАМИ ====================
@@ -1859,7 +1911,7 @@ class StatefulWebSocketServerV4 {
 			this.clients.delete(disconnectedClient);
 			this.stats.clientsDisconnected++;
 
-			log(`Client ${clientId} disconnected (remaining: ${this.clients.size})`, 'DEBUG');
+			log(`Клиент ${clientId} отключен (осталось ${this.clients.size} клиентов)`, 'DEBUG');
 
 			// Останавливаем мониторинг если клиентов не осталось
 			if (this.clients.size === 0) {
@@ -1892,7 +1944,7 @@ class StatefulWebSocketServerV4 {
 			version: this.config.version,
 			clientId: clientId,
 			serverTime: Date.now(),
-			message: 'Сервер Stateful WebSocket Server с поддержкой состояний счетчиков',
+			message: 'Server WebSocket v0.4.15',
 			system: 'dom_commands_v4_state',
 			initialState: Object.keys(this.wsState.devices).length > 0
 		}));
@@ -1931,7 +1983,7 @@ class StatefulWebSocketServerV4 {
 			return;
 		}
 
-		log('Starting log monitoring...', 'INFO');
+		log('Начинаю мониторинг журнала ...', 'INFO');
 
 		this.tailProcess = spawn('tail', ['-F', '-n', '0', this.config.log.path]);
 		this.isMonitoring = true;
@@ -1977,18 +2029,18 @@ class StatefulWebSocketServerV4 {
 			}
 		});
 
-		log('Log monitoring started', 'DEBUG');
+		log('Запущен мониторинг журнала', 'DEBUG');
 	}
 
 	stopLogMonitoring() {
 		if (this.tailProcess && this.isMonitoring) {
-			log('Stopping log monitoring...', 'DEBUG');
+			log('Останавливаю мониторинг журнала ...', 'DEBUG');
 
 			this.tailProcess.kill('SIGTERM');
 			this.tailProcess = null;
 			this.isMonitoring = false;
 
-			log('Log monitoring stopped', 'INFO');
+			log('Мониторинг журнала остановлен', 'INFO');
 		}
 	}
 
@@ -2004,7 +2056,7 @@ class StatefulWebSocketServerV4 {
 				this.stats.eventsProcessed++;
 				this.stats.commandsGenerated += result.commands.length;
 
-				log(`Processed event: ${result.commands.length} commands generated`, 'DEBUG');
+				// log(`Событие обработано, создано ${result.commands.length} команд`, 'DEBUG');
 
 				result.commands.forEach((cmd, index) => {
 					const cmdInfo = `  [${index + 1}] ${cmd.id} -> ${cmd.action}`;
@@ -2046,7 +2098,7 @@ class StatefulWebSocketServerV4 {
 				const sentCount = this.broadcast(message);
 
 				if (sentCount > 0) {
-					log(`Отправил ${chunk.length} DOM команд для ${sentCount} клиентов (чанк ${message.chunk}/${message.chunks})`, 'DEBUG');
+					// log(`Отправил ${chunk.length} команд для ${sentCount} клиентов (чанк ${message.chunk}/${message.chunks})`, 'DEBUG');
 				}
 			}
 		}
@@ -2157,7 +2209,7 @@ class StatefulWebSocketServerV4 {
 			});
 
 			setTimeout(() => {
-				log('Forced shutdown after timeout', 'WARNING');
+				log('Принудительное выключение по тайм-ауту', 'WARNING');
 				process.exit(1);
 			}, 3000);
 		} else {
