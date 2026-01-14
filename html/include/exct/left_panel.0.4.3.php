@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @date 2026-01-08
+ * @date 2026-01-14
  * @version 0.4.3
  * @filesource /include/exct/left_panel.0.4.3.php
  * @description Панель состояний сервиса,логики,модулей,линков
@@ -32,7 +32,6 @@
 $func_start = microtime(true);
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
-// require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/buildLogicData.0.3.5.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.0.1.2.php';
 
 function buildLogicData(array $lp_status): array
@@ -520,8 +519,11 @@ function buildLogicData(array $lp_status): array
 }
 
 
-$ver = "left_panel.php 0.4.0";
-if (defined("DEBUG") && DEBUG && function_exists("dlog")) dlog("$ver: Начинаю работу", 3, "WARNING");
+
+if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
+	$ver = "left_panel.php 0.4.3";
+	dlog("$ver: Начинаю работу", 3, "WARNING");
+}
 
 
 // Получение данных
@@ -590,6 +592,7 @@ if (!empty($displayData['logics'])){
 			if (!empty($logic['active_module_nodes'])) {
 				$node = current($logic['active_module_nodes']);
 				$nodesTableHeader = $node['parent'];
+				$nodesTableStyle = '';
 			} else {
 				$nodesTableStyle = 'hidden';
 				$node = [
@@ -621,7 +624,8 @@ if (!empty($displayData['logics'])){
 					echo '<div class="divTableHeadCell">' . getTranslation("Reflector") . '</div>';
 					echo '<div id="logic_'  . $reflector['name']  . '" class="divTableCell cell_content middle '
 								. $reflector['style'] .'" style="border: .5px solid #3c3f47;">';
-					echo $reflector['tooltip_start'] . $reflector['shortname'] . $reflector['tooltip_end'];
+					echo $reflector['shortname'] ;
+					// echo $reflector['tooltip_start'] . $reflector['shortname'] . $reflector['tooltip_end'];
 					echo '</div></div>';
 					
 					// @bookmark Линки рефлектора

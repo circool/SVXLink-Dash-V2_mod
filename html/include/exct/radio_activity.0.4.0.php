@@ -76,7 +76,7 @@ function renderRadioActivityTable()
 
 		// Форматируем ячейки для логик с устройствами 
 		$rowDevice = $logicName;
-		
+
 		if ($logic['type'] !== 'Reflector') {
 			$rowClass = '';
 			$rowStyle = ' style = "font-size:1.3em; text-align: center;" ';
@@ -165,8 +165,8 @@ function renderRadioActivityTable()
 			<div style="width: 10%;" class="divTableHeadCell">Status RX</div>
 			<div style="width: 5%;" class="divTableHeadCell">TX Device</div>
 			<div style="width: 10%;" class="divTableHeadCell">Status TX</div>
-			<div style="width: 20%;" class="divTableHeadCell">Callsign</div>
-			<div class="divTableHeadCell">Destination</div>
+			<div style="width: 30%;" class="divTableHeadCell">Callsign</div>
+			<div style="width: 30%;" class="divTableHeadCell">Destination</div>
 		</div>
 		<?php echo renderRadioActivityTable(); ?>
 	</div>
