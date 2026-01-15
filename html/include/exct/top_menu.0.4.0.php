@@ -2,7 +2,7 @@
 
 /**
  * Меню команд
- * @file /include/exct/top_menu.0.3.2.php
+ * @file /include/exct/top_menu.0.4.0.php
  * @version 0.3.2
  * @date 2026.01.15
  * @author vladimir@tsurkanenko.ru
@@ -12,10 +12,10 @@
  * @note Новое в 0.3.1
  * - Добавлена поддержка константы SHOW_AUDIO_MONITOR
  * - Убраны кнопки переподключения к ws
- * @note Новое в 0.3.2
+ * @note Новое в 0.4.0
  * - Добавлено управление видимостью блока Reflectors при клике на кнопку
  */
-$ver = 'top_menu 0.3.2';
+$ver = 'top_menu 0.4.0';
 include_once $_SERVER["DOCUMENT_ROOT"] . '/include/init.php';
 $is_authorised = false;
 
