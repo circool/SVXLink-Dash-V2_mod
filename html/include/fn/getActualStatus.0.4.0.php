@@ -41,7 +41,7 @@ function getActualStatus(bool $forceRebuild = false): array
 
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.php';
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getServiceStatus.0.1.11.php';
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getLineTime.0.1.1.php';
+	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getLineTime.0.1.2.php';
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/parseXmlTags.0.1.5.php';
 
 	if ($forceRebuild) {
