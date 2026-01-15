@@ -11,5 +11,5 @@
 if(defined("DEBUG") && DEBUG) {
 	$ver = "footer.php " . DASHBOARD_VERSION;
 	dlog("$ver: Loaded successfully", 4, "DEBUG");}
-echo DASHBOARD_TITLE . ' v' . DASHBOARD_VERSION . '. Created by R2ADU ' . date('Y') . '. © Concept idea G4NAB, SP2ONG, SP0DZ. Design idea by Chip Cuccio, <code>W0CHP</code>';
+echo DASHBOARD_TITLE . ' v' . DASHBOARD_VERSION . '. Created by R2ADU ' . date('Y') . '.<br> © Concept idea G4NAB, SP2ONG, SP0DZ. Design idea by Chip Cuccio, <code>W0CHP</code>';
 ?>

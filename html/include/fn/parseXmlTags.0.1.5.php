@@ -12,7 +12,7 @@
  */
 function parseXmlTags(string $_xml_data) : array
 {
-	$ver = 'parseXmlTags 0.1.4';
+	$ver = 'parseXmlTags 0.1.5';
 	if (defined("DEBUG") && DEBUG) dlog("$ver: Получил строку $_xml_data", 4, "DEBUG");
 	$result = [];
 
@@ -36,7 +36,7 @@ function parseXmlTags(string $_xml_data) : array
 	
 	if (defined("DEBUG") && DEBUG) {
 		$resultCount = count($result);
-		dlog("$ver: Возвращаю $resultCount элементов", 1, "DEBUG");
+		dlog("$ver: Возвращаю $resultCount элементов", 4, "DEBUG");
 		}
 	return $result;
 }

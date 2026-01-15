@@ -16,8 +16,9 @@
 
 require_once $_SERVER["DOCUMENT_ROOT"] . "/include/init.php";
 require_once $_SERVER["DOCUMENT_ROOT"] . "/include/fn/getTranslation.php";
-
-if (defined("DEBUG") && DEBUG) {
+// $_SESSION['dashboard_lang'] = 'ru';
+if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) $_SESSION['dashboard_lang'] = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
+	if (defined("DEBUG") && DEBUG) {
 	require_once $_SERVER["DOCUMENT_ROOT"] . "/include/fn/dlog.0.2.php";
 	$main_funct_start = microtime(true);
 	$main_ver = "index_debug.php 0.3.2";

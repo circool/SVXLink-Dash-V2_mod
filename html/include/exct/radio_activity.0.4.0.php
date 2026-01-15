@@ -161,13 +161,14 @@ function renderRadioActivityTable()
 	<div class="divTableBody">
 		<div class="divTableRow">
 			<div style="width: 10%;" class="divTableHeadCell"><?php echo getTranslation('Logic') ?></div>
-			<div style="width: 5%;" class="divTableHeadCell">RX Device</div>
-			<div style="width: 10%;" class="divTableHeadCell">Status RX</div>
-			<div style="width: 5%;" class="divTableHeadCell">TX Device</div>
-			<div style="width: 10%;" class="divTableHeadCell">Status TX</div>
-			<div style="width: 30%;" class="divTableHeadCell">Callsign</div>
-			<div style="width: 30%;" class="divTableHeadCell">Destination</div>
+			<div style="width: 5%;" class="divTableHeadCell"><?php echo getTranslation('RX Device') ?></div>
+			<div style="width: 10%;" class="divTableHeadCell"><?php echo getTranslation('Status') ?> RX</div>
+			<div style="width: 5%;" class="divTableHeadCell"><?php echo getTranslation('TX Device') ?></div>
+			<div style="width: 10%;" class="divTableHeadCell"><?php echo getTranslation('Status') ?> TX</div>
+			<div style="width: 30%;" class="divTableHeadCell"><?php echo getTranslation('Callsign') ?></div>
+			<div style="width: 30%;" class="divTableHeadCell"><?php echo getTranslation('Destination') ?></div>
 		</div>
 		<?php echo renderRadioActivityTable(); ?>
 	</div>
+
 </div>
