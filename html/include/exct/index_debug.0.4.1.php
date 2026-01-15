@@ -161,7 +161,7 @@ if (!file_exists($auth_file)) {
 				?>
 			</div>
 			<br>
-			<div id="reflector_activity">
+			<div id="reflector_activity" class="reflectors">
 				<?php
 				if (!defined("SHOW_REFLECTOR_ACTIVITY") || constant("SHOW_REFLECTOR_ACTIVITY") === true) {
 					include $_SERVER["DOCUMENT_ROOT"] . "/include/reflector_activity.php";

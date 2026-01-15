@@ -2,9 +2,9 @@
 
 /**
  * Меню команд
- * @file /include/exct/top_menu.0.3.1.php
- * @version 0.3.1
- * @date 2026.01.03
+ * @file /include/exct/top_menu.0.3.2.php
+ * @version 0.3.2
+ * @date 2026.01.15
  * @author vladimir@tsurkanenko.ru
  * @note Новое в 0.2.2
  * - WebSocket статус заменен на элемент в стиле меню с иконкой FontAwesome
@@ -12,8 +12,10 @@
  * @note Новое в 0.3.1
  * - Добавлена поддержка константы SHOW_AUDIO_MONITOR
  * - Убраны кнопки переподключения к ws
+ * @note Новое в 0.3.2
+ * - Добавлено управление видимостью блока Reflectors при клике на кнопку
  */
-$ver = 'top_menu 0.3.1';
+$ver = 'top_menu 0.3.2';
 include_once $_SERVER["DOCUMENT_ROOT"] . '/include/init.php';
 $is_authorised = false;
 
@@ -71,14 +73,13 @@ if (defined("SHOW_AUDIO_MONITOR") && SHOW_AUDIO_MONITOR) {
 
 <?php
 if (defined("SHOW_REFLECTOR_ACTIVITY") && SHOW_REFLECTOR_ACTIVITY) {
-	echo '<a class="menureflector" href="#">';
+	echo '<a class="menureflector" href="javascript:void(0)" onclick="toggleReflectorsVisibility()">';
 	echo getTranslation('Reflectors') ?? 'Reflectors';
 	echo '</a>';
 }
 
 
 ?>
-
 
 <?php if (defined("SHOW_AUDIO_MONITOR") && SHOW_AUDIO_MONITOR): ?>
 	<a href="#" class="menuaudio" onclick="toggleMonitor(); return false;">Monitor</span></a>
@@ -157,4 +158,53 @@ WebSocket статус в стиле меню
 
 	// Экспортируем функцию для использования в UpdateManager
 	// window.updateWebSocketStatus = updateWebSocketStatus;
+
+	// Функция для переключения видимости блока Reflectors
+	function toggleReflectorsVisibility() {
+		const reflectorBlock = document.getElementById('reflector_activity');
+		if (reflectorBlock) {
+			// Переключаем класс hidden
+			reflectorBlock.classList.toggle('hidden');
+
+			// Сохраняем состояние в localStorage для сохранения между перезагрузками страницы
+			const isHidden = reflectorBlock.classList.contains('hidden');
+			localStorage.setItem('reflectorsHidden', isHidden);
+
+			// Обновляем текст кнопки для индикации состояния
+			const reflectorLink = document.querySelector('a.menureflector');
+			if (reflectorLink) {
+				if (isHidden) {
+					reflectorLink.style.opacity = '0.6';
+					reflectorLink.title = 'Показать информацию о рефлекторах';
+				} else {
+					reflectorLink.style.opacity = '1';
+					reflectorLink.title = 'Скрыть информацию о рефлекторах';
+				}
+			}
+		}
+	}
+
+	// Функция для восстановления состояния при загрузке страницы
+	function restoreReflectorsVisibility() {
+		const reflectorBlock = document.getElementById('reflector_activity');
+		const reflectorLink = document.querySelector('a.menureflector');
+
+		if (reflectorBlock && reflectorLink) {
+			// Проверяем сохраненное состояние
+			const wasHidden = localStorage.getItem('reflectorsHidden') === 'true';
+
+			if (wasHidden) {
+				reflectorBlock.classList.add('hidden');
+				reflectorLink.style.opacity = '0.6';
+				reflectorLink.title = 'Показать информацию о рефлекторах';
+			} else {
+				reflectorBlock.classList.remove('hidden');
+				reflectorLink.style.opacity = '1';
+				reflectorLink.title = 'Скрыть информацию о рефлекторах';
+			}
+		}
+	}
+
+	// Инициализируем при загрузке DOM
+	document.addEventListener('DOMContentLoaded', restoreReflectorsVisibility);
 </script>
