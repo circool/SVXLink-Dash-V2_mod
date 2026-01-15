@@ -381,6 +381,7 @@ class CommandParser {
 				handler: (match) => {
 					const timestamp = match[1];
 					const logic = match[2];
+					
 					this.sm.startTimer(`logic_${logic}`, {
 						elementId: `logic_${logic}`,
 						replaceStart: ':</b>',
@@ -510,12 +511,28 @@ class CommandParser {
 				regex: /^(.+?): (\S+): Disconnected/,
 				handler: (match) => {
 					const logic = match[2];
-					this.sm.stopTimer(`logic_${logic}`);
+					
+					// У рефлектора нет таймера!
+					//this.sm.stopTimer(`logic_${logic}`);
+
+					// Остановить таймеры для подключенных узлов и удалить связки с логикой
+					const nodes = this.connections.getAllTo(logic);
+					for (let i = 0; i < nodes.length; i++) { 
+						const node = nodes[i];						
+						this.connections.remove(node, logic);
+						this.sm.stopTimer(`logic_${logic}_node_${node}`);	
+					}
+
 					return [
+						// Показать рефлектор отключенным
 						{ id: `logic_${logic}`, action: 'remove_class', class: 'active-mode-cell,paused-mode-cell,disabled-mode-cell' },
 						{ id: `logic_${logic}`, action: 'add_class', class: 'inactive-mode-cell' },
+						
+						// Удалить все подключенные узлы
 						{ id: `logic_${logic}_nodes_header`, action: 'set_content', payload: 'Nodes' },
 						{ id: `logic_${logic}_nodes`, action: 'remove_child' },
+						
+						// Очистить разговорные группы
 						{ id: `logic_${logic}_groups`, action: 'remove_child', ignoreClass: 'monitored,default' },
 					];
 				}
@@ -534,16 +551,16 @@ class CommandParser {
 					const nodes = nodesString.split(',').map(node => node.trim());
 
 					// Извлекаем позывные (убираем суффиксы -1, -T и т.д.)
-					const callsigns = nodes.map(node => {
+					// const callsigns = nodes.map(node => {
 						// Убираем всё после дефиса
-						return node.split('-')[0];
-					});
+						// return node.split('-')[0];
+					// });
 
-					log(`${logic}: ${nodes.length} connected nodes`, 'INFO');
+					log(`У рефлектора ${logic} ${nodes.length} подключенный(х) узлов`, 'INFO');
 
 					const commands = [];
 
-					// 1. Обновляем состояние логики
+					// Обновляем состояние логики
 					commands.push(
 						{
 							id: `logic_${logic}`,
@@ -557,7 +574,7 @@ class CommandParser {
 						}
 					);
 
-					// 2. Очищаем старые узлы
+					// Очищаем старые узлы
 					commands.push(
 						{
 							id: `logic_${logic}_nodes`,
@@ -567,22 +584,20 @@ class CommandParser {
 						{
 							id: `logic_${logic}_nodes_header`,
 							action: 'set_content',
-							payload: `Nodes [${callsigns.length}]`  
+							payload: `Nodes [${nodes.length}]`  
 						}
 					);
 
-					// 3. Добавляем каждый узел
+					// Добавляем каждый узел: устанавливаем связь с логикой, добавляем таймер
 					for (let i = 0; i < nodes.length; i++) {
-						const fullNodeName = nodes[i];      // "RY6HAB-1"
-						const callsign = callsigns[i];      // "RY6HAB"
-
-						// Запускаем таймер для узла
-						this.sm.startTimer(`logic_${logic}_node_${fullNodeName}`, {
-							elementId: `logic_${logic}_node_${fullNodeName}`,
+						const node = nodes[i];      
+						this.connections.add(node, logic);
+						this.sm.startTimer(`logic_${logic}_node_${node}`, {
+							elementId: `logic_${logic}_node_${node}`,
 							replaceStart: ':</b>',
 							replaceEnd: '<br>',
 							logic: logic,
-							node: fullNodeName
+							node: node
 						});
 
 						// Добавляем HTML для узла
@@ -590,10 +605,10 @@ class CommandParser {
 							{
 								target: `logic_${logic}_nodes`,
 								action: 'add_child',
-								id: `logic_${logic}_node_${fullNodeName}`,
+								id: `logic_${logic}_node_${node}`,
 								class: 'mode_flex column disabled-mode-cell',
 								style: 'border: .5px solid #3c3f47;',
-								payload: `${getTimerTooltip(fullNodeName, "0 s")}`
+								payload: `${getTimerTooltip(node, "0 s")}`
 							});
 					}
 
@@ -626,11 +641,13 @@ class CommandParser {
 				handler: (match) => {
 					const logic = match[2];
 					const group = match[3];
+					
 					return [
 						{ id: `radio_logic_${logic}_callsign`, action: 'set_content', payload: '' },
 						{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: '' },
 						{ id: `device_${logic}_tx_status`, action: 'set_content', payload: '' },
 						{ id: `device_${logic}_tx_status`, action: 'remove_class', class: 'active-mode-cell' },
+						
 						// Скрыть строку устройств рефлектора
 						{ id: `radio_logic_${logic}`, action: 'add_parent_class', class: 'hidden' }
 					];
@@ -642,13 +659,15 @@ class CommandParser {
 				regex: /^(.+?): (\S+): Node left: (\S+)$/,
 				handler: (match) => {
 					const logic = match[2];
-					const callsign = match[3];
+					const node = match[3];
 
-					this.sm.stopTimer(`logic_${logic}_node_${callsign}`);
-
+					// Останавливаем таймер, удаляем связку с логикой, удаляем из списка узлов
+					this.sm.stopTimer(`logic_${logic}_node_${node}`);
+					this.connections.remove(node, logic);
+					
 					return [
 						{
-							id: `logic_${logic}_node_${callsign}`,
+							id: `logic_${logic}_node_${node}`,
 							action: 'remove_element'
 						}
 					]
@@ -660,15 +679,17 @@ class CommandParser {
 				regex: /^(.+?): (\S+): Node joined: (\S+)$/,
 				handler: (match) => {
 					const logic = match[2];
-					const callsign = match[3];
-
-					this.sm.startTimer(`logic_${logic}_node_${callsign}`, {
-						elementId: `logic_${logic}_node_${callsign}`,
+					const node = match[3];
+					// Запускаем таймер, добавляем связку с логикой, добавляем в список узлов
+					this.sm.startTimer(`logic_${logic}_node_${node}`, {
+						elementId: `logic_${logic}_node_${node}`,
 						replaceStart: ':</b>',
 						replaceEnd: '<br>',
 						type: 'node'
 					});
-
+					
+					this.connections.add(node, logic);
+					
 					return [
 						{
 							target: `logic_${logic}_nodes`,
