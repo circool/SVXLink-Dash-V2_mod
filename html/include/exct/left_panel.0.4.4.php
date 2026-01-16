@@ -51,7 +51,7 @@ function buildLogicData(array $lp_status): array
 	$excl = ["Logic", "Reflector", "Link"];
 
 	// Функция для получения стиля ячейки
-	$getCellStyle = function ($active, $connected, $hasConnected=false) {
+	$getCellStyle = function ($active, $connected, $hasConnected = false) {
 		if ($hasConnected) {
 			return $active
 				? ($connected ? "active-mode-cell" : "inactive-mode-cell")
@@ -104,7 +104,7 @@ function buildLogicData(array $lp_status): array
 		}
 
 		$logicClass = $getCellStyle($logic['is_connected'], $logic['is_active'],  true); //@since 0.4
-		
+
 		// Модули логики
 		$modules = [];
 		$activeModule = null;
@@ -138,47 +138,27 @@ function buildLogicData(array $lp_status): array
 		}
 
 		// Узлы активного модуля 
-		// @todo Вернуть все узлы, а не только последний подключеннный
 		$activeModuleNodes = [];
 		if ($activeModule && !empty($activeModule['connected_nodes'])) {
-			$maxStartTime = 0;
-			$nodeWithMaxStart = null;
-			$nodeNameWithMaxStart = null;
-
-			// Ищем узел с максимальным временем старта
 			foreach ($activeModule['connected_nodes'] as $nodeName => $nodeData) {
-				$startTime = $nodeData['start'] ?? 0;
-
-				// Выбираем узел с наибольшим start
-				// Если startTime == 0 у всех, выберем последний обработанный узел
-				if ($startTime > $maxStartTime || ($startTime == 0 && $maxStartTime == 0 && $nodeWithMaxStart === null)) {
-					$maxStartTime = $startTime;
-					$nodeNameWithMaxStart = $nodeName;
-					$nodeWithMaxStart = $nodeData;
-				}
-			}
-
-			// Создаем запись только для узла с максимальным start
-			if ($nodeNameWithMaxStart !== null && $nodeWithMaxStart !== null) {
 				$nodeInfo = [
 					'parent' => $activeModule['name'],
-					'name' => $nodeNameWithMaxStart,
-					'start_time' => $nodeWithMaxStart['start'] ?? 0,
-					'type' => $nodeWithMaxStart['type'] ?? '',
-					'callsign' => $nodeWithMaxStart['callsign'] ?? '',
-					'has_uptime' => !empty($nodeWithMaxStart['start']),
-					'uptime' => !empty($nodeWithMaxStart['start']) ? time() - $nodeWithMaxStart['start'] : 0,
-					'tooltip_start' => !empty($nodeWithMaxStart['start']) ?
+					'name' => $nodeName,
+					'start_time' => $nodeData['start'] ?? 0,
+					'type' => $nodeData['type'] ?? '',
+					'callsign' => $nodeData['callsign'] ?? '',
+					'has_uptime' => !empty($nodeData['start']),
+					'uptime' => !empty($nodeData['start']) ? time() - $nodeData['start'] : 0,
+					'tooltip_start' => !empty($nodeData['start']) ?
 						'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' .
-						formatDuration(time() - $nodeWithMaxStart['start']) .
-						(!empty($nodeWithMaxStart['type']) ? '<br>' . htmlspecialchars($nodeWithMaxStart['type']) : '') .
-						(!empty($nodeWithMaxStart['callsign']) ? ' ' . htmlspecialchars($nodeWithMaxStart['callsign']) : '') .
+						formatDuration(time() - $nodeData['start']) .
+						(!empty($nodeData['type']) ? '<br>' . htmlspecialchars($nodeData['type']) : '') .
+						(!empty($nodeData['callsign']) ? ' ' . htmlspecialchars($nodeData['callsign']) : '') .
 						'</span>' : '',
-					'tooltip_end' => !empty($nodeWithMaxStart['start']) ? '</a>' : '',
-					'is_latest_node' => true  // Флаг, что это узел с максимальным start
+					'tooltip_end' => !empty($nodeData['start']) ? '</a>' : '',
 				];
 
-				$activeModuleNodes[$nodeNameWithMaxStart] = $nodeInfo;
+				$activeModuleNodes[$nodeName] = $nodeInfo;
 			}
 		}
 
@@ -279,6 +259,7 @@ function buildLogicData(array $lp_status): array
 						if ($shortname === '') {
 							$shortname = $reflector['name'];
 						}
+						$durationHtml = $logic['duration'] > 0 ? formatDuration($logic['duration']) : '';
 						$relatedReflectors[$reflectorName] = [
 							'shortname' => $shortname,
 							'name' => $reflector['name'],
@@ -287,17 +268,19 @@ function buildLogicData(array $lp_status): array
 							'has_talkgroups' => $hasTalkGroupsData,
 							'nodes' => $reflectorNodes,
 							'node_count' => count($reflectorNodes),
-							'links' => [] 
+							'links' => [],
+							'tooltip_start' => '<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br></span>',
+							'tooltip_end' => '</a>'
 						];
 					}
 
 					// Добавляем линк к рефлектору
-					$linkClass = $getCellStyle($link['is_connected'],$link['is_active'],  false);
+					$linkClass = $getCellStyle($link['is_connected'], $link['is_active'],  false);
 
 					// Формируем содержимое tooltip для линка
 					$tooltipParts = [];
 					$durationHtml = $link['duration'] > 0 ? $link['duration'] : '';
-					
+
 					if (!empty($link['timeout'])) $tooltipParts[] = 'Timeout: ' . $link['timeout'] . " s.";
 					if (!empty($link['source']['announcement_name'])) $tooltipParts[] = 'Source: ' . $link['source']['announcement_name'];
 					if (!empty($link['destination']['announcement_name'])) $tooltipParts[] = 'Destination: ' . $link['destination']['announcement_name'];
@@ -313,8 +296,8 @@ function buildLogicData(array $lp_status): array
 					$relatedReflectors[$reflectorName]['links'][$linkName] = [
 						'shortname' => $shortname,
 						'name' => $linkName,
-						'style' => $linkClass,						
-						'tooltip_start' => '<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br>'.
+						'style' => $linkClass,
+						'tooltip_start' => '<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br>' .
 							implode(' | ', $tooltipParts) . '</span>',
 						'tooltip_end' => $hasTooltip ? '</a>' : ''
 					];
@@ -327,7 +310,7 @@ function buildLogicData(array $lp_status): array
 		if ($shortname === '') {
 			$shortname = $logic['name'];
 		}
-		$durationHtml = $logic['duration'] > 0 ? $logic['duration']:'';
+		$durationHtml = $logic['duration'] > 0 ? $logic['duration'] : '';
 		$data['logics'][$logicName] = [
 			'shortname' => $shortname,
 			'name' => $logic['name'],
@@ -408,8 +391,7 @@ function buildLogicData(array $lp_status): array
 						'start' => $nodeData['start'] ?? 0,
 						'has_uptime' => !empty($nodeData['start']),
 						'uptime' => !empty($nodeData['start']) ? time() - $nodeData['start'] : 0,
-						'tooltip_start' => !empty($nodeData['start']) ?
-							'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . formatDuration(time() - $nodeData['start']) . '<br></span>' : '',
+						'tooltip_start' => '<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . formatDuration(time() - $nodeData['start']) . '<br></span>',
 						'tooltip_end' => !empty($nodeData['start']) ? '</a>' : ''
 					];
 
@@ -437,9 +419,9 @@ function buildLogicData(array $lp_status): array
 					if ($shortname === '') {
 						$shortname = $linkName;
 					}
-					
-					$durationHtml = $link['duration']>0 ? $link['duration']: '';
-					
+
+					$durationHtml = $link['duration'] > 0 ? $link['duration'] : '';
+
 					$reflectorLinks[$linkName] = [
 						'shortname' => $shortname,
 						'name' => $linkName,
@@ -531,177 +513,197 @@ $lp_status = $_SESSION['status'];
 
 // Получаем структурированные данные
 $displayData = buildLogicData($lp_status);
-
+// Для краткости
+$cellStyleStr = ' style="border: .5px solid #3c3f47;"';
 
 // @bookmark Сервис
-echo '<div class="mode_flex">';
-echo '<div class="mode_flex row">';
-echo '<div class="mode_flex column"> ';
-echo '<div class="divTableHead">' . getTranslation('Service') . '</div>';
-echo '</div></div>';
+?>
+<div class="mode_flex">
+	<div class="mode_flex row">
+		<div class="mode_flex column">
+			<div class="divTableHead"> <?= getTranslation('Service'); ?></div>
+		</div>
+	</div>
 
-echo '<div class="mode_flex row">';
-echo '<div class="mode_flex column">';
-echo '<div class="divTableCell white-space:normal">';
-echo '<div id="service" class="' . $displayData['service']['style'] . '">';
-echo $displayData['service']['tooltip_start'] . $displayData['service']['name'] . $displayData['service']['tooltip_end'];
-echo '</div></div></div></div></div><br>';
+	<div class="mode_flex row">
+		<div class="mode_flex column">
+			<div class="divTableCell white-space:normal">
+				<div id="service" class="<?= $displayData['service']['style'] ?>">
+					<?php echo $displayData['service']['tooltip_start'] . $displayData['service']['name'] . $displayData['service']['tooltip_end']; ?>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+<br>
 
-if (!empty($displayData['logics'])){
-	foreach ($displayData['logics'] as $logic){
+<?php
+if (!empty($displayData['logics'])) {
+	foreach ($displayData['logics'] as $logic) {
 
-		// Начало блока логики 
-		echo '<div class="mode_flex">';
 		// @bookmark Логика 
-		echo '<div class="mode_flex column"><div class="divTableCell">';
-		echo '<div id="logic_' . $logic['name'] . '" class="' . $logic['style'] . '" title="">'. $logic['tooltip_start'] . $logic['name'] . $logic['tooltip_end'] . '</div>';
-		echo '</div></div>';			
-				
-		if (!empty($logic['modules'])) {
-			// @bookmark Модули шапка
-			echo '<div id= "logic_' . $logic['name'] . '_modules_header" class="mode_flex row"><div class="mode_flex column"><div class="divTableHead">';
-			echo getTranslation('Modules');		
-			echo $logic['module_count'] > 1 ? ' [' . $logic['module_count'] . ']' : '' ;
-			echo '</div></div></div>';			
+		// Начало блока логики 
+?>
+		<div class="mode_flex">
+			<div class="mode_flex column">
+				<div class="divTableCell">
+					<div id="logic_<?= $logic['name'] ?>" class="<?= $logic['style'] ?>"><?php echo $logic['tooltip_start'] . $logic['name'] . $logic['tooltip_end'];  ?></div>
+				</div>
+			</div>
 
-			// @bookmark Модули тело
-			$moduleIndex = 0;
-			$moduleCount = $logic['module_count'];
-			foreach ($logic['modules'] as $module){
-				// Начало новой строки каждые 2 модуля
-				if ($moduleIndex % 2 == 0){
-					echo '<div class="mode_flex row">';
+
+			<?php // @bookmark Модули шапка 
+			?>
+			<div id="logic_<?= $logic['name'] ?>_modules_header" class="mode_flex row">
+				<div class="mode_flex column">
+					<div class="divTableHead"><?= getTranslation('Modules') ?></div>
+				</div>
+			</div>
+
+			<?php	// @bookmark Модули тело	
+			if (!empty($logic['modules'])) {
+				$moduleIndex = 0;
+				$moduleCount = $logic['module_count'];
+				foreach ($logic['modules'] as $module) {
+					// Начало новой строки каждые 2 модуля
+					if ($moduleIndex % 2 == 0) {
+						echo '<div class="mode_flex row">';
+					}
+					echo 		'<div class="mode_flex column">';
+					echo 			'<div class="divTableCell">';
+					echo 				'<div id="logic_' . $logic['name'] . '_module_' . $module['name'] . '" class="' . $module['style'] . '" title="">';
+					echo 					$module['tooltip_start'] . $module['name'] . $module['tooltip_end'];
+					echo 				'</div>';
+					echo 			'</div>';
+					echo 		'</div>';
+					// Конец строки
+					if ($moduleIndex % 2 == 1 || $moduleIndex == $moduleCount - 1) {
+						echo '</div>';
+					}
+
+					$moduleIndex++;
 				}
-
-				echo '<div class="mode_flex column"><div class="divTableCell">';
-				echo '<div id="logic_' . $logic['name'] . '_module_' . $module['name'] . '" class="' . $module['style'] . '" title="">';
-				echo $module['tooltip_start'] . $module['name'] . $module['tooltip_end'];
-				echo '</div></div></div>';
-
-				// Конец строки
-				if ($moduleIndex % 2 == 1 || $moduleIndex == $moduleCount - 1){
-					echo '</div>';
-				}
-					
-				$moduleIndex++;
 			}
-		}
 
-			// @bookmark Активный модуль и его узлы -->
-
+			// @bookmark Формируем параметры для отображения активного модуля -->
 			if (!empty($logic['active_module_nodes'])) {
-				$node = current($logic['active_module_nodes']);
-				$nodesTableHeader = $node['parent'];
+				$nodesTableHeader = $logic['active_module']['name'] ?? getTranslation('Connected Nodes');
 				$nodesTableStyle = '';
+				$nodeCount = $logic['active_module_node_count'];
 			} else {
 				$nodesTableStyle = 'hidden';
-				$node = [
-					'name' => '',
-					'tooltip_start' => '',
-					'tooltip_end' => '',
-				];
+				$nodeCount = 0;
 				$nodesTableHeader = '';
 			}
 
-			// @bookmark Всегда создаем пустой каркас для подключенных узлов но скрываем его если нет подключенных узлов
-			echo '<div id="logic_' . $logic['name'] . '_active" class="divTable ' . $nodesTableStyle . '">';
-			echo '<div id="logic_' . $logic['name'] . '_active_header" class="divTableHead">' . $nodesTableHeader . '</div>';
-			echo '<div class="divTableBody"><div class="mode_flex"><div class="mode_flex row">';
-			echo '<div id="logic_' . $logic['name'] . '_active_content" class="mode_flex column disabled-mode-cell" style="border: .5px solid #3c3f47;">';
-			echo $node['tooltip_start'] . $node['name'] . $node['tooltip_end'];
-			echo '</div></div></div></div></div>';
+			// @bookmark Всегда создаем пустой каркас для подключенных узлов но скрываем его если нет подключенных узлов 
+			?>
+			<div id="logic_<?= $logic['name'] ?>_active" class="divTable <?= $nodesTableStyle ?>">
+				<div id="logic_<?= $logic['name'] ?>_active_header" class="divTableHead"><?= $nodesTableHeader ?> [ <?= $nodeCount ?> ]</div>
+				<div class="divTableBody">
+					<div id="logic_<?= $logic['name'] ?>_active_content" class="mode_flex row" style="white-space: nowrap;">
+						<?php if (!empty($logic['active_module_nodes'])) {
+							foreach ($logic['active_module_nodes'] as $nodeName => $node) : ?>
+								<div id="logic_<?= $logic['name'] ?>_node_<?= $nodeName ?>"
+									class="mode_flex column disabled-mode-cell"
+									title="<?= $nodeName ?>"
+									<?= $cellStyleStr ?>>
+									<?= $node['tooltip_start'] . $node['name'] . $node['tooltip_end'] ?>
+								</div>
+						<?php endforeach;
+						} ?>
+					</div>
+				</div>
+			</div>
 
-			// @bookmark Рефлекторы связанные с этой логикой
+			<?php // @bookmark Рефлекторы связанные с этой логикой
 			if ($logic['has_reflectors']) {
-				foreach ($logic['reflectors'] as $reflector) {
-					
-					
-					// @bookmark Рефлектор блок
-					echo '<div class="divTable">';
-					echo '<div class="divTableHead" style="background: none; border: none"></div>';
-					echo '<div class="divTableBody">';
-					echo '<div class="divTableRow center">';
-					echo '<div class="divTableHeadCell">' . getTranslation("Reflector") . '</div>';
-					echo '<div id="logic_'  . $reflector['name']  . '" class="divTableCell cell_content middle '
-								. $reflector['style'] .'" style="border: .5px solid #3c3f47;">';
-					echo $reflector['shortname'] ;
-					// echo $reflector['tooltip_start'] . $reflector['shortname'] . $reflector['tooltip_end'];
-					echo '</div></div>';
-					
-					// @bookmark Линки рефлектора
-					if (!empty($reflector['links'])){
-						foreach ($reflector['links'] as $link) {
-							echo '<div id="logic_' . $reflector['name']  .'_links" class="divTableRow center">';
-							echo '<div class="divTableHeadCell">' . getTranslation('Link') . '</div>';
-							echo '<div id="link_' . $link['name'] . '" class="' . $reflector['name']  . ' divTableCell cell_content middle ' . $link['style'] . '" style="border: .5px solid #3c3f47;">';
-							echo $link['tooltip_start'] . $link['shortname'] . $link['tooltip_end'];
-							echo '</div></div>';
-						}
-					}
-					echo '</div></div>';
 
-					// @bookmark TalkGroups рефлектора 
-					if ($reflector['has_talkgroups']){
-						echo '<div class="divTable">';
-						echo '<div class="divTableHead">' . getTranslation('Talk Groups') .'</div>';
-						echo '<div class="divTableBody">';
-						echo '<div id="logic_' . $reflector['name'] . '_groups" class="mode_flex row">';
-							
-						$tgIndex = 0;
-						$tgCount = count($reflector['talkgroups']);
-						foreach ($reflector['talkgroups'] as $group) {
-							echo '<div id="logic_' . $reflector['name'] . '_group_' . $group['name'] .
-							'" class="mode_flex column ' . $group['style'] .
-								'" title="' . $group['title'] .
-								'" style="border: .5px solid #3c3f47;">' .
-								$group['name'] .
-								'</div>';
-						}
-						echo '</div></div></div>';
-					};
+				foreach ($logic['reflectors'] as $reflector) : ?>
+					<?php // @bookmark Рефлектор блок 
+					?>
+					<div class="divTable">
+						<div class="divTableHead" style="background: none; border: none"></div>
+						<div class="divTableBody">
+							<div class="divTableRow center">
+								<div class="divTableHeadCell"><?= getTranslation("Reflector") ?></div>
+								<?php dlog("У рефлектора {$reflector['shortname']} тултип содержит {$reflector['tooltip_start']} ", 1, "ERROR"); ?>
+								<div id="logic_<?= $reflector['name'] ?>" class="divTableCell cell_content middle <?= $reflector['style'] ?>" <?= $cellStyleStr ?>><?php echo $reflector['tooltip_start'] . $reflector['shortname'] . $reflector['tooltip_end'] ?></div>
+							</div>
 
-					// @bookmark Узлы рефлектора 
-					if (!empty($reflector['nodes'])) {
-						echo '<div class="divTable">';
-						echo '<div id="logic_' . $reflector['name'] . '_nodes_header" class="divTableHead">' . getTranslation('Nodes') . ' [' . $reflector['node_count'] . ']</div>';
-						
-						echo '<div id = "logic_' . $reflector['name'] .'_nodes" class = "divTableBody mode-flex row" style="white-space: nowrap;">';
-						foreach ($reflector['nodes'] as $node) {
-							echo '<div id="logic_' . $reflector['name'] . '_node_' . $node['name'] . '" 
-							class="mode_flex column disabled-mode-cell" 
-							title="' . $node['name'] . '"' .
-							'style="border: .5px solid #3c3f47;">' .
-							$node['tooltip_start'] . $node['name'] . $node['tooltip_end'] .
-							'</div>';
-						} 
-						echo '</div></div>';
-					}
-				}
-				echo '<br>';
+							<?php // @bookmark Линк рефлектора
+							if (!empty($reflector['links'])) {
+								foreach ($reflector['links'] as $link) {
+									echo '<div id="logic_' . $reflector['name']  . '_links" class="divTableRow center">';
+									echo 		'<div class="divTableHeadCell">' . getTranslation('Link') . '</div>';
+									echo 		'<div id="link_' . $link['name'] . '" class="' . $reflector['name']  . ' divTableCell cell_content middle ' . $link['style'] . '" ' . $cellStyleStr . '>';
+									echo 			$link['tooltip_start'] . $link['shortname'] . $link['tooltip_end'] . '</div>';
+									echo 	'</div>';
+								}
+							} ?>
+						</div>
+					</div>
 
-				echo '</div>';
+					<?php // @bookmark TalkGroups рефлектора 
+					?>
+					<div class=" divTable">
+						<div class="divTableHead"><?= getTranslation('Talk Groups') ?></div>
+						<div class="divTableBody">
+							<div id="logic_<?= $reflector['name'] ?>_groups" class="mode_flex row">
+								<?php
+								if ($reflector['has_talkgroups']) {
+									$tgIndex = 0;
+									$tgCount = count($reflector['talkgroups']);
+									foreach ($reflector['talkgroups'] as $group) {
+										echo '<div id="logic_' . $reflector['name'] . '_group_' . $group['name'] . '" class="mode_flex column ' . $group['style'] . '" title="' . $group['title'] . '" ' . $cellStyleStr . '>' . $group['name'] . '</div>';
+									}
+								};
+								?>
+
+							</div>
+						</div>
+					</div>
+
+					<?php // @bookmark Узлы рефлектора 
+					?>
+					<div class="divTable">
+						<div id="logic_<?= $reflector['name'] ?>_nodes_header" class="divTableHead"><?= getTranslation('Nodes') ?> [ <?= $reflector['node_count'] ?> ]</div>
+						<div id="logic_<?= $reflector['name'] ?>_nodes" class="divTableBody mode-flex row" style="white-space: nowrap;">
+							<?php if (!empty($reflector['nodes'])) {
+								foreach ($reflector['nodes'] as $node) {
+									echo '<div id="logic_' . $reflector['name'] . '_node_' . $node['name'] . '" class="mode_flex column disabled-mode-cell" title="' . $node['name'] . '"' . $cellStyleStr . '>' . $node['tooltip_start'] . $node['name'] . $node['tooltip_end'] . '</div>';
+								}
+							}
+							?>
+						</div>
+					</div>
+
+			<?php endforeach;
 			}
-		
-	}; 
+			?>
 
-}; 
+		</div>
+		<br>
+<?php
+	};
+};
 
 unset(
-	$displayData,
-	$logic,
-	$lp_status,
-	$linkIndex,
-	$linkCount,
-	$link,
-	$nodeCount,
-	$nodeIndex,
-	$node,
-	$reflector,
-	$tgIndex,
-	$tgCount,
-	$group,
-	$moduleIndex,
-	$moduleCount,
+	// $displayData,
+	// $logic,
+	// $lp_status,
+	// $linkIndex,
+	// $linkCount,
+	// $link,
+	// $nodeCount,
+	// $nodeIndex,
+	// $node,
+	// $reflector,
+	// $tgIndex,
+	// $tgCount,
+	// $group,
+	// $moduleIndex,
+	// $moduleCount,
 	$module
 );
 

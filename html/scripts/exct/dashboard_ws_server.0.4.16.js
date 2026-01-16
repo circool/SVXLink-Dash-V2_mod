@@ -529,7 +529,7 @@ class CommandParser {
 						{ id: `logic_${logic}`, action: 'add_class', class: 'inactive-mode-cell' },
 						
 						// Удалить все подключенные узлы
-						{ id: `logic_${logic}_nodes_header`, action: 'set_content', payload: 'Nodes' },
+						{ id: `logic_${logic}_nodes_header`, action: 'replace_content', payload: ['[', ']', ''] },
 						{ id: `logic_${logic}_nodes`, action: 'remove_child' },
 						
 						// Очистить разговорные группы
@@ -694,11 +694,11 @@ class CommandParser {
 						{
 							target: `logic_${logic}_nodes`,
 							action: 'add_child',
-							id: `logic_${logic}_node_${callsign}`,
+							id: `logic_${logic}_node_${node}`,
 							class: 'mode_flex column disabled-mode-cell',
 							style: 'border: .5px solid #3c3f47;',
-							title: callsign,
-							payload: getTimerTooltip(callsign, this.sm.formatDuration(0)),
+							title: node,
+							payload: getTimerTooltip(node, this.sm.formatDuration(0)),
 						},
 					]
 				}
@@ -1031,9 +1031,18 @@ class CommandParser {
 							{ id: `logic_${logic}_module_EchoLink`, action: 'remove_class', class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell,disabled-mode-cell' },
 							{ id: `logic_${logic}_module_EchoLink`, action: 'add_class', class: 'active-mode-cell' },
 							{ id: `logic_${logic}_active`, action: 'remove_class', class: 'hidden' },
-							// { id: `logic_${logic}_module_EchoLink`, action: 'add_parent_class', class: 'module-connected' },
+
 							{ id: `logic_${logic}_active_header`, action: 'set_content', payload: 'EchoLink' },
-							{ id: `logic_${logic}_active_content`, action: 'set_content', payload: `<a class="tooltip" href="#"><span><b>Uptime:</b>0 s<br>Connected ${node}</span>${node}</a>` },
+							{
+								id: `EchoLink_${node}`,
+								target: `logic_${logic}_active_content`,
+								action: 'add_child',
+								class: 'mode_flex column disabled-mode-cell',
+								style: 'border: .5px solid #3c3f47;',
+								payload: `${getTimerTooltip(node, "0 s")}`
+							},
+							
+							
 							{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: `EchoLink:  ${node}` },
 						);
 					}
@@ -1160,7 +1169,7 @@ class CommandParser {
 				handler: (match) => {
 					const xml = match[2];
 					const onMatch = xml.match(/<ON>(.*?)<\/ON>/);
-					const nodeCallsign = onMatch ? onMatch[1].trim() : 'Unknown Frn node';
+					const node = onMatch ? onMatch[1].trim() : 'Unknown Frn node';
 
 					const allLogics = this.connections.getAllFrom('Frn');
 					const commands = [];
@@ -1174,11 +1183,11 @@ class CommandParser {
 						commands.push({
 							id: `radio_logic_${logic}_callsign`,
 							action: 'set_content',
-							payload: `${nodeCallsign}`
+							payload: `${node}`
 						});
 					});
 
-					log(`Frn voice started: Обновил ${allLogics.length} логик узла ${nodeCallsign}`, "DEBUG");
+					log(`Frn voice started: Обновил ${allLogics.length} логик узла ${node}`, "DEBUG");
 					return commands;
 				}
 			},
