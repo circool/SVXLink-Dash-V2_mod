@@ -599,7 +599,7 @@ if (!empty($displayData['logics'])) {
 			// @bookmark Всегда создаем пустой каркас для подключенных узлов но скрываем его если нет подключенных узлов 
 			?>
 			<div id="logic_<?= $logic['name'] ?>_active" class="divTable <?= $nodesTableStyle ?>">
-				<div id="logic_<?= $logic['name'] ?>_active_header" class="divTableHead"><?= $nodesTableHeader ?> [ <?= $nodeCount ?> ]</div>
+				<div id="logic_<?= $logic['name'] ?>_active_header" class="divTableHead"><?= $nodesTableHeader ?> [<?= $nodeCount ?>]</div>
 				<div class="divTableBody">
 					<div id="logic_<?= $logic['name'] ?>_active_content" class="mode_flex row" style="white-space: nowrap;">
 						<?php if (!empty($logic['active_module_nodes'])) {
@@ -667,7 +667,7 @@ if (!empty($displayData['logics'])) {
 					<?php // @bookmark Узлы рефлектора 
 					?>
 					<div class="divTable">
-						<div id="logic_<?= $reflector['name'] ?>_nodes_header" class="divTableHead"><?= getTranslation('Nodes') ?> [ <?= $reflector['node_count'] ?> ]</div>
+						<div id="logic_<?= $reflector['name'] ?>_nodes_header" class="divTableHead"><?= getTranslation('Nodes') ?> [<?= $reflector['node_count'] ?>]</div>
 						<div id="logic_<?= $reflector['name'] ?>_nodes" class="divTableBody mode-flex row" style="white-space: nowrap;">
 							<?php if (!empty($reflector['nodes'])) {
 								foreach ($reflector['nodes'] as $node) {
@@ -689,21 +689,21 @@ if (!empty($displayData['logics'])) {
 };
 
 unset(
-	// $displayData,
-	// $logic,
-	// $lp_status,
-	// $linkIndex,
-	// $linkCount,
-	// $link,
-	// $nodeCount,
-	// $nodeIndex,
-	// $node,
-	// $reflector,
-	// $tgIndex,
-	// $tgCount,
-	// $group,
-	// $moduleIndex,
-	// $moduleCount,
+	$displayData,
+	$logic,
+	$lp_status,
+	$linkIndex,
+	$linkCount,
+	$link,
+	$nodeCount,
+	$nodeIndex,
+	$node,
+	$reflector,
+	$tgIndex,
+	$tgCount,
+	$group,
+	$moduleIndex,
+	$moduleCount,
 	$module
 );
 
