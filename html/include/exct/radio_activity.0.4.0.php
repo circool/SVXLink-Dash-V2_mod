@@ -154,21 +154,22 @@ function renderRadioActivityTable()
 	return $html;
 }
 ?>
+<div id="radio_activity">
+	<div class="larger" style="vertical-align: bottom; font-weight:bold;text-align:left;margin-top:-12px;"><?php echo getTranslation('Radio Status') ?></div>
 
-<div class="larger" style="vertical-align: bottom; font-weight:bold;text-align:left;margin-top:-12px;"><?php echo getTranslation('Radio Status') ?></div>
-
-<div class="divTable">
-	<div class="divTableBody">
-		<div class="divTableRow">
-			<div style="width: 10%;" class="divTableHeadCell"><?php echo getTranslation('Logic') ?></div>
-			<div style="width: 5%;" class="divTableHeadCell"><?php echo getTranslation('RX Device') ?></div>
-			<div style="width: 10%;" class="divTableHeadCell"><?php echo getTranslation('Status') ?> RX</div>
-			<div style="width: 5%;" class="divTableHeadCell"><?php echo getTranslation('TX Device') ?></div>
-			<div style="width: 10%;" class="divTableHeadCell"><?php echo getTranslation('Status') ?> TX</div>
-			<div style="width: 30%;" class="divTableHeadCell"><?php echo getTranslation('Callsign') ?></div>
-			<div style="width: 30%;" class="divTableHeadCell"><?php echo getTranslation('Destination') ?></div>
+	<div class="divTable">
+		<div class="divTableBody">
+			<div class="divTableRow">
+				<div style="width: 10%;" class="divTableHeadCell"><?php echo getTranslation('Logic') ?></div>
+				<div style="width: 5%;" class="divTableHeadCell"><?php echo getTranslation('RX Device') ?></div>
+				<div style="width: 10%;" class="divTableHeadCell"><?php echo getTranslation('Status') ?> RX</div>
+				<div style="width: 5%;" class="divTableHeadCell"><?php echo getTranslation('TX Device') ?></div>
+				<div style="width: 10%;" class="divTableHeadCell"><?php echo getTranslation('Status') ?> TX</div>
+				<div style="width: 30%;" class="divTableHeadCell"><?php echo getTranslation('Callsign') ?></div>
+				<div style="width: 30%;" class="divTableHeadCell"><?php echo getTranslation('Destination') ?></div>
+			</div>
+			<?php echo renderRadioActivityTable(); ?>
 		</div>
-		<?php echo renderRadioActivityTable(); ?>
-	</div>
 
+	</div>
 </div>

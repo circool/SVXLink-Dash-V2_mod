@@ -21,7 +21,7 @@ if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) $_SESSION['dashboard_lang'] = $_SER
 	if (defined("DEBUG") && DEBUG) {
 	require_once $_SERVER["DOCUMENT_ROOT"] . "/include/fn/dlog.0.2.php";
 	$main_funct_start = microtime(true);
-	$main_ver = "index_debug.php 0.3.2";
+	$main_ver = "index_debug.php 0.4.1";
 	dlog("$main_ver: Начинаю работу", 3, "WARNING");
 }
 
@@ -87,28 +87,11 @@ if (!file_exists($auth_file)) {
 			</div>
 		</div>
 		<div class="contentwide">
-			<div id="hw_info" class="hw_toggle" style="display: none;">
-				<div id="hwInfo">
-					<div class="divTable" id="hwInfoTable">
-						<div class="divTableBody">
-							<div class="divTableRow">
-								<!-- <div class="divTableHeadCell"><a class="tooltip" href="#">Загрузка CPU<span><strong>Загрузка CPU</strong></span></a></div>
-								<div class="divTableHeadCell"><a class="tooltip" href="#">Температура CPU<span><strong>CPU Temp</strong></span></a><span></span></div>
-								<div class="divTableHeadCell"><a class="tooltip" href="#">Memory Usage<span><strong>Memory Usage</strong></span></a></div>
-								<div class="divTableHeadCell"><a class="tooltip" href="#">Disk Usage<span><strong>Disk Usage</strong></span></a></div>
-								<div class="divTableHeadCell"><a class="tooltip" href="#">Network Traffic<span><strong>Total Network Traffic Today</strong></span></a></div> -->
-							</div>
-							<div class="divTableRow">
-								<!-- <div class="divTableCell cell_content middle"><a class="tooltip" href="#" style="border-bottom:1px solid; color:#000000;">27%<span><strong>Hardware:</strong> RaspberryPi<br><strong>Platform:</strong> Raspberry Pi 3 Model B Plus Rev. 1.3 armv7l 1GB - Sony UK - Board # a020d3<br><strong>OS:</strong> Raspbian GNU/Linux 11 "bullseye" (release ver. 11.8)<br><strong>Linux Kernel:</strong> 6.1.21-v7+<br><strong>Uptime:</strong> 1 week, 8 hours, 10 minutes</span></a></div>
-								<div class="divTableCell cell_content" style="background: inherit">113°F / 45°C</div>
-								<div class="divTableCell cell_content middle"><a class="tooltip" href="#" style="border-bottom:1px dotted;color: #000000;">216.78 MB of 971.88 MB<span><strong>Used:</strong> 22.30%<br><strong>Free:</strong> 755.11 MB</span></a></div>
-								<div class="divTableCell cell_content middle;"><a class="tooltip" href="#" style="border-bottom:1px dotted;color: #000000;">1.9 GB of 29.09 GB<span><strong>Used:</strong> 6.55%<br><strong>Free:</strong> 27.18 GB</span></a></div>
-								<div class="divTableCell cell_content middle;"><a class="tooltip" href="#" style="border-bottom:1px dotted;color: #000000;">22.49 MiB ↓ / 6.38 MiB ↑<span><strong>Total Network Traffic</strong><br>28.87 MiB combined<br> 5.72 kbit/s avg. rate<br>(Interface: wlan0)</span></a></div> -->
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
+			<?php
+			if (!defined("SHOW_MACROS") || constant("SHOW_MACROS") === true) {
+				include $_SERVER["DOCUMENT_ROOT"] . "/include/macros.php";
+			}
+			?>
 			<div id="radioInfo">
 				<div class="divTable">
 					<div class="divTableBody">
@@ -145,30 +128,33 @@ if (!file_exists($auth_file)) {
 		</div>
 		<div class="content">
 			<div id="lcmsg" style="background:#d6d6d6;color:black; margin:0 0 10px 0;"></div>
-			<div id="radio_activity">
+			
+			
 				<?php
 				if (!defined("SHOW_RADIO_ACTIVITY") || constant("SHOW_RADIO_ACTIVITY") === true) {
 					include $_SERVER["DOCUMENT_ROOT"] . "/include/radio_activity.php";
 				}
+				echo '<br>';
 				?>
-			</div>
-			<br>
-			<div id="connection_details">
+
+
+			
 				<?php
 				if (!defined("SHOW_CON_DETAILS") || constant("SHOW_CON_DETAILS") === true) {
 					include $_SERVER["DOCUMENT_ROOT"] . "/include/connection_details.php";
+					echo '<br>';
 				}
 				?>
-			</div>
-			<br>
-			<div id="reflector_activity" class="reflectors">
+
+			
+			
 				<?php
 				if (!defined("SHOW_REFLECTOR_ACTIVITY") || constant("SHOW_REFLECTOR_ACTIVITY") === true) {
 					include $_SERVER["DOCUMENT_ROOT"] . "/include/reflector_activity.php";
+					echo '<br>';
 				}
 				?>
-			</div>
-			<br>
+
 			<div id="net_activity">
 				<?php
 				if (!defined("SHOW_NET_ACTIVITY") || constant("SHOW_NET_ACTIVITY") === true) {

@@ -24,7 +24,7 @@ if (defined("DEBUG")) {
     }
 }
 // Версия и название
-define('DASHBOARD_VERSION', '0.2');
+define('DASHBOARD_VERSION', '0.4');
 define('DASHBOARD_NAME', 'SvxLink Dashboard');
 define('DASHBOARD_TITLE', 'SvxLink Dashboard by R2ADU');
 
@@ -56,7 +56,8 @@ define("TIMESTAMP_FORMAT", "%d %b %Y %H:%M:%S.%f");
 // Настройки отображения частей
 define('SHOW_AUDIO_MONITOR', true);
 
-define('SHOW_CON_DETAILS', false);
+define('SHOW_MACROS', true);
+define('SHOW_CON_DETAILS', true);
 define('SHOW_RADIO_ACTIVITY', true);
 define('SHOW_REFLECTOR_ACTIVITY', true);
 define('SHOW_NET_ACTIVITY', true);

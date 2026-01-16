@@ -59,46 +59,41 @@ if (isset($_SESSION['DTMF_CTRL_PTY'])) {
 if (defined("SHOW_AUDIO_MONITOR") && SHOW_AUDIO_MONITOR) {
 	include $_SERVER["DOCUMENT_ROOT"] . "/include/monitor.php";
 }
-
+if ($_SESSION['auth'] == 'AUTHORISED') {
+	echo '<a class="menusettings" href="#">';
+	echo getTranslation('Settings');
+	echo '</a>';
+}
 ?>
+
 <a class="menureset" href="/">Reset Session</a>
 
 <?php
-// if (defined("SHOW_CON_DETAILS") && SHOW_CON_DETAILS) {
-// 	echo '<a class="menuconnection" href="#">';
-// 	echo getTranslation('Connect Details');
-// 	echo '</a>';
-// }
+if (defined("SHOW_MACROS") && SHOW_MACROS) {
+	echo '<a class="menumacros" href="#">';
+	echo getTranslation('Macros');
+	echo '</a>';
+}
 ?>
 
 <?php
-if (defined("SHOW_REFLECTOR_ACTIVITY") && SHOW_REFLECTOR_ACTIVITY) {
-	echo '<a class="menureflector" href="javascript:void(0)" onclick="toggleReflectorsVisibility()">';
-	echo getTranslation('Reflectors') ?? 'Reflectors';
-	echo '</a>';
-}
+if (defined("SHOW_CON_DETAILS") && SHOW_CON_DETAILS) :?>
+	<a class="menuconnection" href="#"> <?= getTranslation('Connect Details') ?></a>';
+<?php endif ?>
 
-
-?>
+<?php
+if (defined("SHOW_REFLECTOR_ACTIVITY") && SHOW_REFLECTOR_ACTIVITY) :?>
+	<a class="menureflector" href="#"><?= getTranslation('Reflectors'); ?></a>
+<?php endif ?>
 
 <?php if (defined("SHOW_AUDIO_MONITOR") && SHOW_AUDIO_MONITOR): ?>
-	<a href="#" class="menuaudio" onclick="toggleMonitor(); return false;">Monitor</span></a>
+	<a href="#" class="menuaudio" onclick="toggleMonitor(); return false;"><?php echo getTranslation('Monitor') ?></span></a>
 <?php endif; ?>
 
-<a class="menudashboard" href="/index_debug.php"><?php echo getTranslation('Dashboard') ?? 'Dashboard'; ?></a>
-
-<!-- 
-@deprecated -> dashboard_ws_client.0.3.2
-WebSocket статус в стиле меню 
-
-<a href="javascript:void(0)" class="menuwebsocket menuwebsocket-disconnected" id="websocketStatus">
-	<span id="websocketStatusText">WebSocket Offline</span>
-</a>
--->
+<a class="menudashboard" href="/index_debug.php"><?php echo getTranslation('Dashboard'); ?></a>
 
 
-
-<!-- Модальное окно для выхода -->
+<!-- Модальное окно для входа / выхода -->
 <div id="logoutModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center;">
 	<div style="background: #2e363f; padding: 20px; border-radius: 5px; border: 1px solid #3c3f47; min-width: 300px; text-align: center;">
 		<h3 style="color: #bebebe; margin-bottom: 20px;">Adminisration</h3>
@@ -138,73 +133,57 @@ WebSocket статус в стиле меню
 		}
 	});
 
-	// Функция для обновления статуса WebSocket (будет вызываться из UpdateManager)
-	// @deprecated - > dashboard_ws_client .0 .3 .2
-	// function updateWebSocketStatus(status, message) {
-	// 	const element = document.getElementById('websocketStatus');
-	// 	const textElement = document.getElementById('websocketStatusText');
 
-	// 	if (element && textElement) {
-	// 		// Удаляем все классы состояний
-	// 		element.classList.remove('menuwebsocket-disconnected', 'menuwebsocket-connected', 'menuwebsocket-error', 'menuwebsocket-connecting');
+	// Универсальный скрипт для скрытия/показа блоков
+	document.addEventListener('DOMContentLoaded', () => {
+		// Настройка: блок_id => класс_кнопки
+		const blocks = {
+			'reflector_activity': 'menureflector',
+			'macros_panel': 'menumacros',
+			'connection_details': 'menuconnection',
+		};
 
-	// 		// Добавляем соответствующий класс состояния
-	// 		element.classList.add('menuwebsocket-' + status);
+		// Инициализация для каждого блока
+		for (const blockId in blocks) {
+			const block = document.getElementById(blockId);
+			const menuClass = blocks[blockId];
+			const link = document.querySelector(`a.${menuClass}`);
 
-	// 		// Обновляем текст (Убрал префикс)
-	// 		textElement.textContent = '' + message;
-	// 	}
-	// }
+			// Если блок и кнопка существуют
+			if (block && link) {
+				// Восстанавливаем состояние из localStorage
+				try {
+					const isHidden = localStorage.getItem(`${blockId}_hidden`) === 'true';
 
-	// Экспортируем функцию для использования в UpdateManager
-	// window.updateWebSocketStatus = updateWebSocketStatus;
-
-	// Функция для переключения видимости блока Reflectors
-	function toggleReflectorsVisibility() {
-		const reflectorBlock = document.getElementById('reflector_activity');
-		if (reflectorBlock) {
-			// Переключаем класс hidden
-			reflectorBlock.classList.toggle('hidden');
-
-			// Сохраняем состояние в localStorage для сохранения между перезагрузками страницы
-			const isHidden = reflectorBlock.classList.contains('hidden');
-			localStorage.setItem('reflectorsHidden', isHidden);
-
-			// Обновляем текст кнопки для индикации состояния
-			const reflectorLink = document.querySelector('a.menureflector');
-			if (reflectorLink) {
-				if (isHidden) {
-					reflectorLink.style.opacity = '0.6';
-					reflectorLink.title = 'Показать информацию о рефлекторах';
-				} else {
-					reflectorLink.style.opacity = '1';
-					reflectorLink.title = 'Скрыть информацию о рефлекторах';
+					if (isHidden) {
+						block.classList.add('hidden');
+						// Кнопка без icon-active (блок скрыт)
+					} else {
+						link.classList.add('icon-active');
+						// Блок виден по умолчанию
+					}
+				} catch (e) {
+					console.error('Ошибка чтения localStorage:', e);
 				}
+
+				// Добавляем обработчик клика
+				link.addEventListener('click', (e) => {
+					e.preventDefault();
+
+					// Переключаем видимость блока
+					const isNowHidden = block.classList.toggle('hidden');
+
+					// Переключаем класс кнопки
+					link.classList.toggle('icon-active');
+
+					// Сохраняем состояние
+					try {
+						localStorage.setItem(`${blockId}_hidden`, isNowHidden);
+					} catch (e) {
+						console.error('Ошибка сохранения в localStorage:', e);
+					}
+				});
 			}
 		}
-	}
-
-	// Функция для восстановления состояния при загрузке страницы
-	function restoreReflectorsVisibility() {
-		const reflectorBlock = document.getElementById('reflector_activity');
-		const reflectorLink = document.querySelector('a.menureflector');
-
-		if (reflectorBlock && reflectorLink) {
-			// Проверяем сохраненное состояние
-			const wasHidden = localStorage.getItem('reflectorsHidden') === 'true';
-
-			if (wasHidden) {
-				reflectorBlock.classList.add('hidden');
-				reflectorLink.style.opacity = '0.6';
-				reflectorLink.title = 'Показать информацию о рефлекторах';
-			} else {
-				reflectorBlock.classList.remove('hidden');
-				reflectorLink.style.opacity = '1';
-				reflectorLink.title = 'Скрыть информацию о рефлекторах';
-			}
-		}
-	}
-
-	// Инициализируем при загрузке DOM
-	document.addEventListener('DOMContentLoaded', restoreReflectorsVisibility);
+	});
 </script>
