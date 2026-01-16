@@ -1228,15 +1228,16 @@ class CommandParser {
 					const commands = [
 						{ id: `link_${link}`, action: 'remove_class', class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell,disabled-mode-cell' },
 						{ id: `link_${link}`, action: 'add_class', class: 'active-mode-cell' },
-						// { id: `link_${link}`, action: 'add_parent_class', class: 'link-active' },
+						
 						{ id: `toggle-link-state-${link}`, action: "set_checkbox_state", state: "on" }
 					];
 
 					// Добавляем команды для связанных логик
 					for (const logic of relatedLogics) {
 						commands.push(
-							{ id: `logic_${logic}`, action: 'remove_class', class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell' },
-							{ id: `logic_${logic}`, action: 'add_class', class: 'active-mode-cell' }
+							// { id: `logic_${logic}`, action: 'remove_class', class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell' },
+							// { id: `logic_${logic}`, action: 'add_class', class: 'active-mode-cell' }
+							{ id: `logic_${logic}`, action: 'replace_class', new_class: 'active-mode-cell', old_class: 'paused-mode-cell' },
 						);
 					}
 
@@ -1257,6 +1258,7 @@ class CommandParser {
 						{ id: `link_${link}`, action: 'remove_class', class: 'active-mode-cell,paused-mode-cell,inactive-mode-cell,disabled-mode-cell' },
 						{ id: `link_${link}`, action: 'add_class', class: 'disabled-mode-cell' },
 						// { id: `link_${link}`, action: 'remove_parent_class', class: 'link-active' },
+						
 						{ id: `toggle-link-state-${link}`, action: "set_checkbox_state", state: "off" }
 					];
 
@@ -1287,8 +1289,9 @@ class CommandParser {
 						if (!hasActiveConnections) {
 							// Устанавливаем связанную логику на паузу
 							commands.push(
-								{ id: `logic_${logic}`, action: 'remove_class', class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell' },
-								{ id: `logic_${logic}`, action: 'add_class', class: 'paused-mode-cell' }
+								// { id: `logic_${logic}`, action: 'remove_class', class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell' },
+								// { id: `logic_${logic}`, action: 'add_class', class: 'paused-mode-cell' }
+								{ id: `logic_${logic}`, action: 'replace_class', new_class: 'paused-mode-cell', old_class: 'active-mode-cell' },
 							);
 						}
 					}

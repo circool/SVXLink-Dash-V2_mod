@@ -1,6 +1,6 @@
 /**
- * @filesource /scripts/exct/dashboard_ws_client.0.4.1.js
- * @version 0.4.1
+ * @filesource /scripts/exct/dashboard_ws_client.0.4.2.js
+ * @version 0.4.2
  * @date 2026.01.09
  * @author vladimir@tsurkanenko.ru
  * @description WebSocket клиент с полной поддержкой системы команд DOM v4.0
@@ -20,6 +20,8 @@
  * Удален  `handleChildClasses`
  * Добавлен `replaceChildClasses`
  * * @todo Вернуть получение конфига из вызывающего скрипта
+ * @since 0.4.2
+ * Добавлен `replace_class`
  */
 
 class DashboardWebSocketClientV4 {
@@ -366,8 +368,8 @@ class DashboardWebSocketClientV4 {
 			case 'set_content':
 				return this.handleSetContent(cmd);
 			
-			// case 'add_content':  
-			// 	return this.handleAddContent(cmd);
+			case 'replace_class':  
+				return this.handleReplaceClass(cmd);
 			
 							
 			case 'replace_content':
@@ -595,6 +597,56 @@ class DashboardWebSocketClientV4 {
 		}
 	}
 
+	handleReplaceClass(cmd) {
+		// Проверяем обязательные параметры
+		if (!cmd.old_class) {
+			this.log('ERROR', 'replace_class missing old_class parameter', cmd);
+			return false;
+		}
+
+		if (!cmd.new_class) {
+			this.log('ERROR', 'replace_class missing new_class parameter', cmd);
+			return false;
+		}
+
+		if (!cmd.id) {
+			this.log('ERROR', 'replace_class missing id parameter', cmd);
+			return false;
+		}
+
+		const element = this.getElement(cmd.id);
+		if (!element) return false;
+
+		try {
+			
+			const oldClass = cmd.old_class.trim();
+			const newClass = cmd.new_class.trim();
+
+			// Проверяем, есть ли старый класс
+			if (!element.classList.contains(oldClass)) {
+				// Если старого класса нет - игнорируем операцию
+				if (this.config.debugLevel >= 2) {
+					this.log('WARNING', `Element ${cmd.id} doesn't have old class: "${oldClass}"`);
+				}
+				return true; // Возвращаем true, так как это не ошибка, а ожидаемое поведение
+			}
+
+			// Удаляем старый класс и добавляем новый
+			element.classList.remove(oldClass);
+			element.classList.add(newClass);
+
+			// Логируем результат
+			if (this.config.debugLevel >= 3) {
+				this.log('INFO', `В  ${cmd.id} класс "${oldClass}" изменен на "${newClass}"`);
+			}
+
+			return true;
+
+		} catch (error) {
+			this.log('ERROR', `Error replacing class in ${cmd.id}: ${error.message}`, cmd);
+			return false;
+		}
+	}
 		
 	handleSetContent(cmd) {
 		if (cmd.payload === undefined) {
