@@ -1,9 +1,8 @@
 /**
- * @filesource /scripts/exct/dashboard_ws_server.0.4.15.js
- * @version 0.4.15
- * @date 2026.01.14
- * @description Stateful WebSocket сервер для SvxLink Dashboard с поддержкой начального состояния
- * @todo Дописать разбор
+ * @filesource /scripts/exct/dashboard_ws_server.0.4.17.js
+ * @version 0.4.17
+ * @date 2026.01.16
+ * @description Stateful WebSocket сервер для SvxLink Dashboard
  */
 
 const WebSocket = require('ws');
@@ -15,7 +14,7 @@ const { match } = require('assert');
 
 // @bookmark  КОНСТАНТЫ И КОНФИГУРАЦИЯ
 const CONFIG = {
-	version: '0.4.15',
+	version: '0.4.17',
 	ws: {
 		host: '0.0.0.0',
 		port: 8080,
@@ -1094,8 +1093,8 @@ class CommandParser {
 					const node = match[2];
 
 					// Включаем режим ожидания позывного
-					this.isPacketMessageMode = true; // <-- НОВОЕ
-
+					this.isPacketMessageMode = true;
+					this.packetType = 'EchoLink';
 					const commands = [];
 					commands.push(
 						{
@@ -1125,11 +1124,11 @@ class CommandParser {
 				handler: (match) => {
 					log(`Получена команда подключения Frn`, 'DEBUG');
 
-					let serverName = 'Unknown Server';
+					let node = 'Unknown Server';
 					const xml = match[2];
 					const bnMatch = xml.match(/<BN>(.*?)<\/BN>/);
 					if (bnMatch && bnMatch[1]) {
-						serverName = bnMatch[1];
+						node = bnMatch[1];
 					}
 
 					const allLogics = this.connections.getAllFrom('Frn');
@@ -1141,21 +1140,30 @@ class CommandParser {
 					}
 
 					for (const logic of allLogics) {
-						this.sm.startTimer(`logic_${logic}_active_content`, {
-							elementId: `logic_${logic}_active_content`,
+						this.sm.startTimer(`logic_${logic}_node_${node}`, {
+							elementId: `logic_${logic}_node_${node}`,
 							replaceStart: ':</b>',
 							replaceEnd: '<br>',
 							type: 'module_frn',
 							logic: logic,
-							server: serverName
+							server: node
 						});
 						resultCommands.push(
 							{ id: `logic_${logic}_module_Frn`, action: 'remove_class', class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell,disabled-mode-cell' },
 							{ id: `logic_${logic}_module_Frn`, action: 'add_class', class: 'active-mode-cell' },
 							{ id: `logic_${logic}_active`, action: 'remove_class', class: 'hidden' },
-							{ id: `logic_${logic}_active_header`, action: 'set_content', payload: 'Frn' },
-							{ id: `logic_${logic}_active_content`, action: 'set_content', payload: `<a class="tooltip" href="#"><span><b>Uptime:</b><br>Server ${serverName}</span>${serverName}</a>` },
-							{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: `Frn: ${serverName}` },
+							{ id: `logic_${logic}_active_header`, action: 'set_content', payload: 'Frn [1]' },
+							
+							{
+								target: `logic_${logic}_active_content`,
+								action: 'add_child',
+								id: `logic_${logic}_node_${node}`,
+								class: 'mode_flex column disabled-mode-cell',
+								style: 'border: .5px solid #3c3f47;',
+								payload: `<a class="tooltip" href="#"><span><b>Uptime:</b><br>Server ${node}</span>${node}</a>`
+							},
+							// { id: `logic_${logic}_active_content`, action: 'set_content', payload: `<a class="tooltip" href="#"><span><b>Uptime:</b><br>Server ${node}</span>${node}</a>` },
+							{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: `Frn: ${node}` },
 						);
 					}
 
@@ -1314,88 +1322,89 @@ class CommandParser {
 
 		if (this.isPacketMessageMode) {
 			
-			
-			// Проверяем на известные признаки окончания пакетов
-			// SMS в Echolink завершается [TIMESTAMP]: Trailing chat data: {различные варианты, напр <0c><11><ce>+}
-			if (trimmed.includes('Trailing chat data:')) { 
-				this.isPacketMessageMode = false;
-			}
-			// Искать > в строке, но только если нет <
-			if (trimmed.includes('>') && !trimmed.includes('<')) {
-				let processedPayload = trimmed;
-
-				// Удаляем лидирующий timestamp (все до первого ": ", включая ": ")
-				const firstColonSpaceIndex = processedPayload.indexOf(': ');
-				if (firstColonSpaceIndex !== -1) {
-					// Удаляем все до ": " включительно
-					processedPayload = processedPayload.substring(firstColonSpaceIndex + 2);
-				}
-
-				// Если это строка с ->, поменять -> на >
-				if (processedPayload.includes('->')) {
-					processedPayload = processedPayload.replace('->', '>');
-				}
-
-				// Проверяем первый символ после обработки ->
-				if (processedPayload.startsWith('>')) {
-					// Если > начинает строку, поменять ее на <b>
-					processedPayload = '<b>' + processedPayload.substring(1);
-
-					// Найти первый пробел после <b>
-					const firstSpaceIndex = processedPayload.indexOf(' ', 3); // 3 - длина "<b>"
-					if (firstSpaceIndex !== -1) {
-						// Вставить </b> перед пробелом
-						processedPayload = processedPayload.substring(0, firstSpaceIndex) +
-							'</b>' +
-							processedPayload.substring(firstSpaceIndex);
-					} else {
-						// Если пробела нет, добавляем </b> в конец
-						processedPayload += '</b>';
-					}
-				} else if (processedPayload.includes('>') && !trimmed.includes('->')) {
-					// Если > не первый символ и это не строка с ->, поменять ее на "</b>: " и добавить первым в начало строки "SMS from <b>"
-					const gtIndex = processedPayload.indexOf('>');
-					const beforeGt = processedPayload.substring(0, gtIndex);
-					const afterGt = processedPayload.substring(gtIndex + 1);
-					processedPayload = `SMS from <b>${beforeGt}</b>: ${afterGt}`;
-				}
-
-				// Отправляем обработанную строку
-				return {
-					commands: [{
-						id: 'elPacketMode',
-						targetClass: 'callsign',
-						action: 'set_content_by_class',
-						payload: processedPayload
-					}],
-					raw: trimmed,
-					timestamp: this.extractTimestamp(trimmed) || new Date().toISOString()
-				};
-			}
-			
-
-			// Если -> не нашли - проверяем основные паттерны
-			for (const pattern of this.patterns) {
-				const match = trimmed.match(pattern.regex);
-				if (match) {
-					// Нашли основной паттерн - выключаем режим ожидания
+			if (this.packetType == "EchoLink") { 
+				// Проверяем на известные признаки окончания пакетов
+				// SMS в Echolink завершается [TIMESTAMP]: Trailing chat data: {различные варианты, напр <0c><11><ce>+}
+				if (trimmed.includes('Trailing chat data:')) { 
 					this.isPacketMessageMode = false;
+				}
+				// Искать > в строке, но только если нет <
+				if (trimmed.includes('>') && !trimmed.includes('<')) {
+					let processedPayload = trimmed;
 
-					// Обрабатываем эту строку как обычную команду
-					const commands = pattern.handler(match);
+					// Удаляем лидирующий timestamp (все до первого ": ", включая ": ")
+					const firstColonSpaceIndex = processedPayload.indexOf(': ');
+					if (firstColonSpaceIndex !== -1) {
+						// Удаляем все до ": " включительно
+						processedPayload = processedPayload.substring(firstColonSpaceIndex + 2);
+					}
+
+					// Если это строка с ->, поменять -> на >
+					if (processedPayload.includes('->')) {
+						processedPayload = processedPayload.replace('->', '>');
+					}
+
+					// Проверяем первый символ после обработки ->
+					if (processedPayload.startsWith('>')) {
+						// Если > начинает строку, поменять ее на <b>
+						processedPayload = '<b>' + processedPayload.substring(1);
+
+						// Найти первый пробел после <b>
+						const firstSpaceIndex = processedPayload.indexOf(' ', 3); // 3 - длина "<b>"
+						if (firstSpaceIndex !== -1) {
+							// Вставить </b> перед пробелом
+							processedPayload = processedPayload.substring(0, firstSpaceIndex) +
+								'</b>' +
+								processedPayload.substring(firstSpaceIndex);
+						} else {
+							// Если пробела нет, добавляем </b> в конец
+							processedPayload += '</b>';
+						}
+					} else if (processedPayload.includes('>') && !trimmed.includes('->')) {
+						// Если > не первый символ и это не строка с ->, поменять ее на "</b>: " и добавить первым в начало строки "SMS from <b>"
+						const gtIndex = processedPayload.indexOf('>');
+						const beforeGt = processedPayload.substring(0, gtIndex);
+						const afterGt = processedPayload.substring(gtIndex + 1);
+						processedPayload = `SMS from <b>${beforeGt}</b>: ${afterGt}`;
+					}
+
+					// Отправляем обработанную строку
 					return {
-						commands: commands,
-						raw: match[0],
-						timestamp: match[1]
+						commands: [{
+							id: 'elPacketMode',
+							targetClass: 'callsign',
+							action: 'set_content_by_class',
+							payload: processedPayload
+						}],
+						raw: trimmed,
+						timestamp: this.extractTimestamp(trimmed) || new Date().toISOString()
 					};
 				}
-			}
+				// Если -> не нашли - проверяем основные паттерны
+				for (const pattern of this.patterns) {
+					const match = trimmed.match(pattern.regex);
+					if (match) {
+						// Нашли основной паттерн - выключаем режим ожидания
+						this.isPacketMessageMode = false;
 
-			// Если не -> и не основной паттерн - остаёмся в режиме ожидания
-			return null;
+						// Обрабатываем эту строку как обычную команду
+						const commands = pattern.handler(match);
+						return {
+							commands: commands,
+							raw: match[0],
+							timestamp: match[1]
+						};
+					}
+				}
+				// Если не -> и не основной паттерн - остаёмся в режиме ожидания
+				return null;
+			} else if (this.packetType == "Frn") {  
+
+			};
+			
 		}
 
-		// 2. Обычный режим парсинга (не в ожидании)
+		// Обычный режим парсинга (не пакетный)
 		for (const pattern of this.patterns) {
 			const match = trimmed.match(pattern.regex);
 			if (match) {
