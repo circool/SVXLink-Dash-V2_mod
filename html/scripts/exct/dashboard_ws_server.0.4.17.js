@@ -475,7 +475,7 @@ class CommandParser {
 
 			// Squelch OPEN/CLOSED
 			{
-				regex: /^(.+?): (\w+): The squelch is (OPEN|CLOSED)$/,
+				regex: /^(.+?): (\w+): The squelch is (OPEN|CLOSED)/,
 				handler: (match) => {
 					const device = match[2];
 					const state = match[3];
