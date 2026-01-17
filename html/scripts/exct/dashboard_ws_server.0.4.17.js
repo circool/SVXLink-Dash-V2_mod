@@ -1986,7 +1986,7 @@ class StatefulWebSocketServerV4 {
 			version: this.config.version,
 			clientId: clientId,
 			serverTime: Date.now(),
-			message: 'Server WebSocket v0.4.15',
+			message: 'Server WebSocket v' + this.config.version,
 			system: 'dom_commands_v4_state',
 			initialState: Object.keys(this.wsState.devices).length > 0
 		}));
