@@ -3,10 +3,10 @@
 /** Парсит XML-теги в ассоциативный массив
  *
  * @namespace Функции отображения активности с указанием длительности
- * @filesource parseXmlTags.0.1.5.php
+ * @filesource /include/fn/exct/parseXmlTags.0.1.5.php
  * @date 2025.11.26
  * @version 0.1.5
- * @note Новое в 0.1.5
+ * @since 0.1.5
  * Исправлена ошибка в регулярке
  * 
  */

@@ -26,13 +26,13 @@
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/settings.php';
 
 if (defined("DEBUG") && DEBUG){
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/dlog.0.2.php';
+	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/dlog.php';
 	$func_start = microtime(true);
 	$ver = "init.0.4.0";
 	dlog("$ver: Начинаю работу", 3, "WARNING");
 }
 
-require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getActualStatus.0.4.3.php';
+require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getActualStatus.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.php';
 
 

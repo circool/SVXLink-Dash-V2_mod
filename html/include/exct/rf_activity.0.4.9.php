@@ -24,9 +24,9 @@ if ($isAjax) {
 	// Подключаем только необходимые файлы
 	$requiredFiles = [
 		'/include/fn/getTranslation.php',
-		'/include/fn/logTailer.0.2.1.php',
-		'/include/fn/formatDuration.0.1.2.php',
-		'/include/fn/getLineTime.0.1.2.php'
+		'/include/fn/logTailer.php',
+		'/include/fn/formatDuration.php',
+		'/include/fn/getLineTime.php'
 	];
 
 	foreach ($requiredFiles as $file) {
@@ -38,7 +38,7 @@ if ($isAjax) {
 
 	// Подключаем dlog только если DEBUG включен и файл существует
 	if (defined("DEBUG") && DEBUG) {
-		$dlogFile = $docRoot . '/include/fn/dlog.0.2.php';
+		$dlogFile = $docRoot . '/include/fn/dlog.php';
 		if (file_exists($dlogFile)) {
 			require_once $dlogFile;
 		}
@@ -55,12 +55,12 @@ if ($isAjax) {
 } else {
 	// Обычный режим - подключаем как обычно
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.0.2.1.php';
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.0.1.2.php';
+	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.php';
+	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.php';
 
 
 	if (defined("DEBUG") && DEBUG) {
-		include_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/dlog.0.2.php';
+		include_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/dlog.php';
 	}
 }
 

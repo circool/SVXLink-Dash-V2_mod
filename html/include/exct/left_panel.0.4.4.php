@@ -32,7 +32,7 @@
 $func_start = microtime(true);
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
-require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.0.1.2.php';
+require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.php';
 
 function buildLogicData(array $lp_status): array
 {

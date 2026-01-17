@@ -59,7 +59,7 @@ if (isset($_SESSION['DTMF_CTRL_PTY'])) {
 if (defined("SHOW_AUDIO_MONITOR") && SHOW_AUDIO_MONITOR) {
 	include $_SERVER["DOCUMENT_ROOT"] . "/include/monitor.php";
 }
-if ($_SESSION['auth'] == 'AUTHORISED') {
+if (isset($_SESSION['auth']) && $_SESSION['auth'] == 'AUTHORISED') {
 	echo '<a class="menusettings" href="#">';
 	echo getTranslation('Settings');
 	echo '</a>';

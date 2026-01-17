@@ -6,7 +6,7 @@
  * @date 2026.01.12
  * @author vladimir@tsurkanenko.ru
  * @description Главная страница отладочного режима
- * @note Изменения в 0.3.2:
+ * @since 0.3.2:
  * - Удалён WebSocket кнопки управления WS, стартер, конфигурация и подключение клиента (в init.php)
  * @since 0.4.1
  * Запуск ws сервера и клиента вернул в index
@@ -19,7 +19,7 @@ require_once $_SERVER["DOCUMENT_ROOT"] . "/include/fn/getTranslation.php";
 // $_SESSION['dashboard_lang'] = 'ru';
 if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) $_SESSION['dashboard_lang'] = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
 if (defined("DEBUG") && DEBUG) {
-	require_once $_SERVER["DOCUMENT_ROOT"] . "/include/fn/dlog.0.2.php";
+	require_once $_SERVER["DOCUMENT_ROOT"] . "/include/fn/dlog.php";
 	$main_funct_start = microtime(true);
 	$main_ver = "index_debug.php 0.4.1";
 	dlog("$main_ver: Начинаю работу", 3, "WARNING");

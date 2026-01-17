@@ -17,7 +17,7 @@ require_once $_SERVER["DOCUMENT_ROOT"] . "/include/session_header.php";
 $redirectDelay = 12;
 
 if (defined("DEBUG") && DEBUG) {
-	include_once $_SERVER["DOCUMENT_ROOT"] . "/include/fn/dlog.0.2.php";
+	include_once $_SERVER["DOCUMENT_ROOT"] . "/include/fn/dlog.php";
 	if (defined("DEBUG") && DEBUG) dlog("========================================", 2, "INFO");
 	if (defined("DEBUG") && DEBUG) dlog(" $ver CLEANUP SESSION INFO AND RESTART  ", 2, "INFO");
 	if (defined("DEBUG") && DEBUG) dlog("========================================", 2, "INFO");

@@ -3,7 +3,7 @@
 /**
  * Возвращает время строки журнала
  * @version 0.1.2
- * @filesource /include/fn/getLineTime.0.1.2.php
+ * @filesource /include/fn/exct/getLineTime.0.1.2.php
  */
 function getLineTime(string $line): int
 {

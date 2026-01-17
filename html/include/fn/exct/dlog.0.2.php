@@ -3,7 +3,7 @@
 /**
  * Функция логирования в журнал ошибок
  * @version 0.2
- * @filesource dlog.0.2.php
+ * @filesource /include/fn/exct/dlog.0.2.php
  * */
 
 function dlog($message, $verboseLevel = 1, $category = 'GENERAL')

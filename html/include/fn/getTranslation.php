@@ -1,0 +1,1 @@
+exct/getTranslation.0.2.2.php
