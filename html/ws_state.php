@@ -1,12 +1,13 @@
 <?php
 
 /**
- * WebSocket State Provider - ВЕРСИЯ 0.4
+ * WebSocket State Provider - ПРЕДВ. ВЕРСИЯ
  * Поставщик начального состояния для WebSocket-системы v4.0, 
  * обеспечивающий синхронизацию между PHP-сессией и Node.js WebSocket сервером
  */
 // 3. Начинаем сессию
 // require_once $_SERVER["DOCUMENT_ROOT"] . '/include/session_header.php';
+// ТОЛЬКО СЕССИИ НЕДОСТАТОЧНО!
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/init.php';
 
 // 1. Заголовки

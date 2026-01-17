@@ -5,7 +5,7 @@
  * @version 0.2.0
  * @author vladimir@tsurkanenko.ru
  * @filesource /include/exct/footer.0.2.0.php
- * @description Подвал - Предварительая версия
+ * @description Подвал - Предварительная версия
  * @todo Заполнить содержимое
  */
 if(defined("DEBUG") && DEBUG) {
