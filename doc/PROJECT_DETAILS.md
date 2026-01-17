@@ -2,7 +2,7 @@
 
 # Документация по проекту SvxLink Dashboard by R2ADU
 
-Дата обновления 06.01.2026
+Дата обновления 17.01.2026
 
 Версия 0.4.x
 
@@ -26,10 +26,7 @@
 
 Возможно, клиентов подключенных к dashboard будет несколько - администратор и наблюдатели
 Наличие наблюдателей потребует усложения архитектуры;
-
-### Выводы
-
-@todo Продумать это после реализации основных механизмов в однопользовательском режиме
+Текущая реализация поддерживает обновления для нескольких клиентов
 
 
 ## 2. Необходимые пакеты
@@ -58,18 +55,10 @@
     + DEBUG, DEBUG_VERBOSE, DEBUG_LOG_FILE, LOG_LEVEL
   - константы определяющие настройки поведения
     + UPDATE_INTERVAL
-    + DASHBOARD_FAST_INTERVAL
-    + WS_ENABLED
+    + WS_ENABLED        Работать с websocket сервером состояний
     + настроки для websocket
       - WS_PORT
       - WS_PATH
-      - LOCK_TIMEOUT.   Время блокировки
-      - TMP_PATH        Путь для хранения вайла блокировки
-      - LOCK_FILE       Файл для хранения состояния блокировки
-      - CHANGES_HANDLER Функция получения обновленного? состояния ( @deprecated )
-      - INIT_HANDLER    Функция для получения актуального состояния ( @deprecated )
-      - BLOCK_RENDER    Функция рендеринга html для ответа ( @deprecated )
-      - FALLBACK_URL.   Обработчик фолбеков ( @deprecated )
     + USE_CACHE         Глобально, оспользовать кеш или нет
     + LOG_CACHE_TTL_MS  Настройки времени жизни кеша для различных функций
   - константы определяющие настройки сессии
@@ -83,7 +72,7 @@
     + SVXLINK_LOG_PATH
     + SVXCONFPATH
     + SVXCONFIG
-    + TIMESTAMP_FORMAT
+    + TIMESTAMP_FORMAT @deprecated - нужно брать из конфигурации svxlink
 
 
   3.1.2.1. Выполняется чтение файла конфигурации svxlink и построение структуры компонентов (init.php)
@@ -114,7 +103,7 @@
 
   Элементы страницы делятся на три части
   1. Статические - создаются единожды при открытии страницы
-  2. Динамически обновляемые с интервалом 2-5 сек
+  2. Динамически обновляемые с интервалом 2-5 сек (реализовано частично)
   3. Обновляемые в реальном времени
 
 
@@ -138,12 +127,10 @@
 Исторические сводки вычисляются соответствующими функциями отдельно для каждого блока. Данные рассчитываются путем анализа журнала svxlink в пределах последней активной сессии. Интервал обновления таких данных устанавливается 5 секунд.
 
 
-## 5. Структура $_SESSION
+## 5. Структура данных о состоянии ($_SESSION) 
 
 Данные о состоянии сервиса хранятся в сессии (сессия с жестко заданным ID всегда одна для всех элементов, в т.ч. обновляемых AJAX)
 
-@todo Подумать над целесообразностью хранения наиболее востребованных данных в независимых(отдельных) переменных - напр. имя активного модуля - это позволит избежать 
-обхода логик для его поиска (1-5 мсек экономии)
 
 ### ['DTMF_CTRL_PTY'] : string
 ### ['TIMEZONE'] : string
@@ -157,6 +144,7 @@
   - `callsign`: string (глобальный позывной)
 
 #### Структура link[linkName]
+
   - `is_active`: bool
   - `is_connected`: bool
   - `start`: int (timestamp)
@@ -177,6 +165,7 @@
     - `announcement_name`: string
 
 #### Структура logic[logicName]
+
   - `start`: int (timestamp)
   - `duration`: int (секунды)
   - `name`: string (logicName)
@@ -184,7 +173,7 @@
   - `callsign`: string
   - `rx`: string (устройство RX)
   - `tx`: string (устройство TX)
-  - `macros`: string
+  - `macros`: array [key,value]
   - `type`: string
   - `dtmf_cmd`: string
   - `is_connected`: bool
@@ -212,6 +201,7 @@
   - `hosts`: string (опционально) - разделенные запятыми значения.
 
 #### Структура service
+
   - `start`: int
   - `duration`: int
   - `name`: string
@@ -219,128 +209,118 @@
   - `timestamp_format`: string
 
 #### Структура multiple_device[deviceName]
-  - string (список передатчиков через запятую)
+
+  - `device_name` : string (список передатчиков через запятую)
 
 ## 6. Организация файловой структуры
 
 Фактическое абсолютное значение корня тестовой среды (для справки) - /var/www/html/
 Тестовый сервер по адресу http://svxlink_development_dashboard.local
 
-На время разработки вмето реальных файлов в каталогах размещены симлинки на текущие версии.
+На время разработки вместо реальных файлов в каталогах размещены симлинки на текущие версии.
 По окончании разработки симлинку будут заменены продакшн версиями.
 Некоторые из файлов - атавизмы от предыдущих версий. 
 Безусловно актуальными считать версии с текущим номером (см в начале файла)
+
 ```
 /                                       # Корень проекта
-├── index_debug.php                     # Прокси -> /include/exct/index_debug.0.2.4.php
-├── include/                            # здесь хранятся только симлинки на используемые файлы (сами файлы находятся в /include/exct)
-│   ├── authorise.php                   # симлинк -> /include/exct/authorise.0.0.1.php
+├── index.php                           # Основная страница (продакшн)
+├── index_debug.php                     # Основная страница для отладочного режима
+├── backup.sh                           # Скрипт резервного копирования
+├── clear_and_show_apache_error_log     # Просмотр логов Apache
+├── clear_and_show_dashboard_debug_log  # Очистка и показ отладочных логов
+├── clear_ans_show_websocketserver_log  # Показ логов WebSocket сервера
+├── fake_log_msg                        # Генератор тестовых сообщений svxlink
+├── favicon.ico                         # Иконка сайта
+├── kill_ws_and_show_log.sh             # Остановка WS и показ логов
+├── kill_ws_server.sh                   # Остановка WebSocket сервера
+├── logs/                               # Каталог логов
+├── sessions_clear                      # Очистка сессий
+├── update_simlink.sh                   # Обновление симлинков
+├── websocket_server.log                # Лог WebSocket сервера
+├── ws_state.php                        # Состояние WebSocket
+├── svxlink_development_dashboard.conf  # Конфигурация Apache
+├── svxlink-node.service                # Сервис для Node.js
+├── include/                            # PHP включаемые файлы
+│   ├── auth_config.php                 # Конфигурация авторизации
+│   ├── auth_handler.php                # Обработчик авторизации
+│   ├── authorise.php                   # Авторизация
 │   ├── browserdetect.php               # Подстройка под браузер
-│   ├── connection_details.php          # симлинк -> /include/exct/connection_details.0.2.1.php
-│   ├── debug_page.php          		    # симлинк -> /include/exct/debug_page.0.2.1.php
-│   ├── echolink_data.php               # @deprecated v 0.3.x симлинк -> /include/exct/echolink_data.0.1.4.php
-│   ├── footer.php                      # симлинк -> /include/exct/footer.0.1.5.php
-│   ├── init.php                        # симлинк -> /include/exct/init.0.2.2.php
-│   ├── keypad.php               		    # симлинк -> /include/exct/keypad.0.2.1.php
-│   ├── left_panel.php               	  # симлинк -> /include/exct/left_panel.0.2.1.php
-│   ├── log_parser.php               	  # @deprecated v 0.3.x симлинк -> /include/exct/log_parser.0.2.1.php
-│   ├── monitor.php               		  # симлинк -> /include/exct/monitor.0.2.0.php
-│   ├── net_activity.php               	# симлинк -> /include/exct/net_activity.0.2.1.php
-│   ├── radio_activity.php				      # симлинк -> /include/exct/radio_activity.0.2.1.php
-│   ├── reflector_activity.php          # симлинк -> /include/exct/reflector_activity.0.2.1.php
-│   ├── rf_activity.php          		    # симлинк -> /include/exct/rf_activity.0.2.1.php
-│   ├── session_header.php          	  # симлинк -> /include/exct/session_header.0.0.1.php
-│   ├── settings.php                    # симлинк -> /include/exct/settings.0.2.2.php
-│   ├── top_menu.php          			    # симлинк -> /include/exct/top_menu.0.2.2.php
-│   ├── update_handler.php       		    # @deprecated v 0.3.x симлинк -> /include/exct/update_handler.0.2.1.php
-│   ├── ws_log_parser.php       		    # @deprecated v 0.3.x симлинк -> /include/exct/ws_log_parser.0.2.2.php
-│   ├── log_parser_dispatcher.php       # @deprecated ver 0.3 симлинк -> /include/exct/log_parser_dispatcher.0.2.4.php
-│   ├── update_simlinks.sh   			      # скрипт для обновления симлинков на последнии версии источников
-│   ├── exct/                                     # сдесь хранятся версионированные источники
-│   │   ├── auth_config.0.0.1.php              		# Конфигурация авторизации
-│   │   ├── auth_handler.0.0.1.php              	# Обработчик авторизации
-│   │   ├── authorise.0.0.1.php              	    # Форма авторизации
-│   │   ├── change_password.0.0.1.php             # Утилита для смены пароля и логина
-│   │   ├── connection_details.0.2.1.php          # ПРОТОТИП Блок с подробностями для текущго соединения
-│   │   ├── debug_page.2.2.php                    # Отладочные данные
-│   │   ├── footer.0.2.0.php                      # Подвал
-│   │   ├── index_debug.0.2.6.php       			    # Главная отладочная страница
-│   │   ├── index.0.2.0.php       			          # Очистка данных сессии и перенаправление на отладочную страницу
-│   │   ├── init.0.3.1.php              			    # Инициализация системы, настройка и запуск ws сервера
-│   │   ├── keypad.0.2.1.php              			  # Модальная DTMF клавиатура
-│   │   ├── left_panel.0.2.1.php     			        # Панель состояний сервиса,логики,модулей,линков
-│   │   ├── log_parser_dispatcher.0.2.4.php     	# @deprecated v 0.3.x Роутер парсеров AJAX/WS - перенаправляет данные на нужный парсер
-│   │   ├── ajax_log_parser.0.2.0.php             # @deprecated v 0.3.x Парсер новых строк журнала для AJAX fallback    
-│   │   ├── ws_log_parser.0.2.2.php     			    # @deprecated v 0.3.x Парсер новых строк журнала для динамически обновляемых страниц (@todo Переписать)
-│   │   ├── log_parser.php     				            # @deprecated Прокси -> отладочный simlink на парсер логов (диспетчер)
-│   │   ├── logout.0.0.1.php     			            # Выход из системы
-│   │   ├── monitor.0.2.0.php     					      # Скрипты аудиомониторинга
-│   │   ├── net_activity.0.2.1.php     			      # Блок активности из сети
-│   │   ├── radio_activity.0.2.1.php     			    # Блок радио
-│   │   ├── reset_auth.0.0.1.php     				      # Сброс авторизации
-│   │   ├── reflector_activity.0.2.1.php     		  # Блок рефлекторов
-│   │   ├── session_header.0.0.1.php     			    # Служебный - инициализация сессии
-│   │   ├── settings.0.2.2.php     			          # Константы (@todo Почистить от атавизмов)
-│   │   ├── toggle_coninfo.0.1.0.php     			    # @deprecated v. 0.3
-│   │   ├── top_menu.0.3.1.php     			          # Главное меню команд
-│   │   ├── session_header.0.0.1.php     			    # Служебный - инициализация сессии
-│   │   ├── rf_activity.0.2.1.php     		        # Блок локальных вызовов
-│   │   ├── update_handler.0.2.1.php    			    # @deprecated v. 0.3
-│   │   ├── websocket_starter.0.2.14.php    			# @deprecated see init.0.3.1.php __Запуск и управление WebSocket__ сервером
-│   │   ├── websocket_control.0.2.0.php    			  # @deprecated Запуск и управление WebSocket сервером
-│   ├── fn/                                       # Функции и наборы функций
-│   │   ├── removeTimestamp.php                   # 
-│   │   ├── getActualStatus.php                   # 
-│   │   ├── logTailer.php                         # Работа с последнеми записями журнала (отслеживание и возврат)
-│   │   ├── getTranslation.php                    #
-│   │   ├── websocket_starter.php                 # @deprecated v. 0.3 Запускает ws сервер
-│   │   ├── getCallsign.php                       # Выделяет позывной из строки журнала
-│   │   ├── dlog.0.2.php                          # Журналирование для отладки
-│   │   ├── parseXmlTags.0.1.5.php                # Парсит XML-теги строки журнала в ассоциативный массив
-│   │   ├── getCallsign.0.1.14.php                # Функции getCallsign(), extractCallsignFromChat()
-│   │   ├── removeTimestamp.0.1.14.php            # removeTimestamp()
-│   │   ├── getActualStatus.0.4.0.php             # Строит начальное состояние системы
-│   │   ├── getRadioStatus.0.2.0.php              # @deprecated v. 0.3 getRadioStatus()
-│   │   ├── getNewState.php							          # Прокси -> /include/fn/getNewState.0.2.1.php
-├── scripts/                                      здесь хранятся либо окончательные версии скриптов, либо симлинки на текущие (сами скрипты находятся в /scripts/exct)
-│   ├── exct/                                     # сдесь хранятся версионированные источники
-│   │   ├── dashboard_ws_server.4.0.js            # __WebSocket сервер__ версия 4.0
-│   │   └── dashboard_ws_client.4.0.js            # __WebSocket клиент__ версия 4.0
-│   ├── jquery.min.js 								            #
-│   ├── server.js 									              # websocket Audio Monitor :8001
-│   ├── featherlight.js         				          # 
-│   ├── __Симлинки__
-│   ├── dashboard_ws_server.js   			            # simlink dashboard_ws_server.js -> exct/dashboard_ws_server.4.0.js
-│   ├── dashboard_ws_client.js   			            # simlink -> exct/dashboard_ws_client.4.0.js
-│   └── update_simlinks.sh   			                # скрипт для обновления симлинков на последнии версии источников (для разработки)
-├── css/
-│   ├── css.php 								                  # Основной набор стилей
-│   ├── menu.0.2.2.php 							              # Дополнения к основному набору
-│   ├── websocket_control.css				              # стили для кнопки управления WS
-│   ├─ font-awesome.min.css                       # Awesome
-│   └─ font-awesome-4.7.0
-│       ├── css
-│       ├── fonts
-│       ├── less
-│       └── scss
-├── fonts/
+│   ├── change_password.php             # Смена пароля
+│   ├── connection_details.php          # Детальная информация о текущем соединении
+│   ├── debug_page.php                  # Отладочные данные
+│   ├── footer.php                      # Подвал
+│   ├── init.php                        # Основная инициализация
+│   ├── js_utils.php                    # JavaScript утилиты
+│   ├── keypad.php                      # DTMF клавиатура
+│   ├── languages/                      # Локализации
+│   ├── left_panel.php                  # Левая панель состояний
+│   ├── logout.php                      # Выход из системы
+│   ├── macros.php                      # Макросы
+│   ├── monitor.php                     # Мониторинг аудио
+│   ├── net_activity.php                # История сетевой активности
+│   ├── radio_activity.php              # Состояние приемника/передатчика
+│   ├── reflector_activity.php          # Данные рефлекторов
+│   ├── reset_auth.php                  # Сброс авторизации
+│   ├── rf_activity.php                 # История событий локальной активности
+│   ├── session_header.php              # Легковесное открытие сессии
+│   ├── settings.php                    # Настройки приложения
+│   ├── top_menu.php                    # Основное меню команд
+│   ├── update_simlink.sh               # Скрипт обновления симлинков
+│   ├── websocket.php                   # WebSocket утилиты
+│   ├── websocket_client_config.php     # Конфигурация WebSocket клиента
+│   ├── websocket_server.php            # WebSocket сервер (PHP)
+│   ├── exct/                           # Версионированные источники
+│   │   ├── auth_config.0.0.1.php
+│   │   └── ...
+│   └── fn/                             # Функции и пакеты функций
+│       ├── logTailer.php               # Работа с последними записями журнала
+│       ├── getTranslation.php          # Работа с переводами
+│       ├── dlog.php                    # Журналирование для отладки
+│       ├── parseXmlTags.php            # Парсит XML-теги строки журнала
+│       ├── getActualStatus.php         # Строит начальное состояние системы
+│       └── exct/                       # Версионированные источники
+│           ├── getActualStatus.0.4.0.php
+│           └── ...
+├── scripts/                            # JS скрипты
+│   ├── dashboard_ws_client.js          # WebSocket клиент состояний
+│   ├── dashboard_ws_server.js          # WebSocket сервер состояний
+│   ├── featherlight.js                 # Библиотека модальных окон
+│   ├── jquery.min.js                   # jQuery библиотека
+│   ├── svxlink-audio-proxy-server.js   # WebSocket Audio Monitor :8001
+│   ├── restart_audio_proxy_server      # Перезапуск аудио сервера
+│   ├── show_audio_proxy_server_log     # Показ логов аудио сервера
+│   ├── update_simlink.sh               # Обновление симлинков
+│   └── exct/                           # Версионированные источники
+│       ├── dashboard_ws_server.4.17.js # WebSocket сервер версия 4.17
+│       ├── dashboard_ws_client.4.2.js  # WebSocket клиент версия 4.2
+│       └── svxlink-audio-proxy-server.0.0.2.js # Audio Monitor 0.0.2
+├── css/                                # Стили
+│   ├── css.php                         # Основной набор стилей
+│   ├── menu.0.2.2.php                  # Дополнения к основному набору
+│   ├── websocket_control.css           # Стили для кнопки управления WS
+│   ├── font-awesome.min.css            # Awesome Fonts
+│   └── font-awesome-4.7.0/
+│       ├── css/
+│       ├── fonts/
+│       ├── less/
+│       └── scss/
+├── fonts/                              # Шрифты
 │   ├── stylesheet.css
 │   ├── ...
 │   ├── ...
 │   └── ...
-├── data/
-│   └── ws_config                   # @deprecated v. 0.3 Каталог для хранения JSON конфигурации WebSocket сервера
-├── favicon.ico                     # 
-├── websocket.log                   # Лог WebSocket сервера
-└── install/
-    ├── cli_setup.php 							# CLI Setup Script 0.1.1
-    └── setup_auth.php 							# Скрипт установки авторизации
+├── install/                            # Установочные скрипты
+│   ├── cli_setup.php                   # CLI Setup Script 0.1.1
+│   └── setup_auth.php                  # Скрипт установки авторизации
+└── config/                             # Конфигурационные файлы
 ```
 
 ## 7. WebSocket система v4.0
 
 ### Назначение
-Обеспечение двусторонней коммуникации между сервером SvxLink и веб-интерфейсом Dashboard в реальном времени. Сервер мониторит журнал SvxLink, парсит события и отправляет команды DOM-обновлений всем подключенным клиентам.
+Обеспечение двусторонней коммуникации между сервером SvxLink и веб-интерфейсом Dashboard в реальном времени. 
+Сервер мониторит журнал SvxLink, разбирает события и отправляет команды DOM-обновлений всем подключенным клиентам.
 
 ### Архитектура
 
@@ -357,237 +337,23 @@
 - Формирование команд DOM для обновления интерфейса
 - Рассылка обновлений всем подключенным клиентам
 
+Подробная документация в ws_server.md
+
 #### Клиент WebSocket (JavaScript)
-**Основные компоненты:**
-- **DashboardWebSocketClientV4** - основной класс клиента
-- **Обработчик DOM-команд** - выполнение команд обновления интерфейса
-- **Менеджер соединения** - управление подключением и переподключениями
-- **Интерфейс статуса** - визуальная индикация состояния
-
-**Функционал:**
-- Автоматическое подключение к WebSocket серверу
-- Обработка и выполнение DOM-команд от сервера
-- Поддержка всех типов операций: классы, контент, родительские операции
-- Автоматические переподключения при разрыве связи
-- Визуальная индикация статуса через кнопку в навигации
-
-### Формат сообщений
-
-#### От сервера к клиенту:
-**Приветственное сообщение:**
-```json
-{
-  "type": "welcome",
-  "version": "4.0",
-  "clientId": "client_123456789"
-}
-```
-
-**Команды DOM:**
-```json
-{
-  "type": "dom_commands",
-  "commands": [
-    {
-      "action": "add_class",
-      "id": "element_id",
-      "class": "active-mode-cell"
-    },
-    {
-      "action": "set_content",
-      "id": "rx_status",
-      "payload": "RECEIVE (15s)"
-    }
-  ],
-  "chunk": 1,
-  "chunks": 3
-}
-```
-
-#### От клиента к серверу:
-**Ping:**
-```json
-{
-  "type": "ping",
-  "timestamp": 1736000000000,
-  "clientId": "client_123456789"
-}
-```
-
-### Поддерживаемые действия DOM
-
-#### Базовые операции:
-- `add_class` - добавление класса(ов) к элементу
-- `remove_class` - удаление класса(ов) из элемента
-- `set_content` - полная замена содержимого элемента
-- `add_content` - добавление контента в конец элемента
-- `replace_content` - замена части контента по условиям
-- `remove_content` - очистка содержимого элемента
-- `remove_element` - удаление элемента из DOM
-
-#### Родительские операции:
-- `add_parent_class` - добавление класса родительскому элементу
-- `remove_parent_class` - удаление класса у родительского элемента
-- `replace_parent_content` - замена контента у родительского элемента
-
-#### Дочерние операции:
-- `add_child` - добавление/обновление дочернего элемента
-- `remove_child` - удаление дочерних элементов (с фильтрацией по классам)
-- `handle_child_classes` - массовые операции с классами для всех потомков
-
-#### Специальные операции:
-- `set_checkbox_state` - установка состояния чекбокса
-
-### Инициализация и конфигурация
-
-#### Конфигурация клиента:
-```javascript
-const config = {
-  host: window.location.hostname,  // Хост сервера
-  port: 8080,                      // Порт WebSocket
-  autoConnect: true,               // Автоподключение при загрузке
-  reconnectDelay: 3000,            // Задержка переподключения (мс)
-  debugLevel: 2,                   // Уровень логирования: 1-4
-  debugWebConsole: true,           // Логи в веб-консоль
-  debugConsole: false,             // Логи в console браузера
-  maxReconnectAttempts: 5,         // Макс. попыток переподключения
-  pingInterval: 30000              // Интервал ping (мс)
-};
-```
-
-#### Инициализация:
-Конфигурация передается из PHP через глобальную переменную:
-```javascript
-window.DASHBOARD_CONFIG = {
-  websocket: {
-    host: "192.168.1.100",
-    port: 8080,
-    autoConnect: true
-    // ... другие параметры
-  }
-};
-```
 
 Клиент автоматически инициализируется при загрузке страницы.
+##### Формат команд
 
-### Интерфейс управления
+Команды представляют собой объекты JSON с обязательным полем `action`:
 
-#### Кнопка статуса WebSocket:
-Расположена в навигационной панели, показывает текущее состояние:
+```javascript
+{
+  "action": "имя_действия",
+  // дополнительные параметры
+}
+```
 
-**Состояния и действия:**
-- **Connected (OK)** - зеленый, клик отключает соединение
-- **Disconnected (WS!)** - серый, клик перезагружает страницу для запуска сервера
-- **Connecting/Reconnecting (TRY)** - желтый мигающий, процесс подключения
-- **Error/Timeout (ERR/TO)** - красный, клик перезагружает страницу
-
-### Особенности реализации v4.0
-
-#### Поддержка родительских операций:
-- Кэширование родительских элементов для производительности
-- Единый интерфейс для операций с родительскими элементами
-- Обработка множественных классов через запятую
-
-#### Улучшенная обработка дочерних элементов:
-- Интеллектуальное обновление существующих элементов
-- Массовые операции с классами для всех потомков
-- Фильтрация при удалении дочерних элементов
-
-#### Надежность соединения:
-- Автоматические переподключения с экспоненциальной задержкой
-- Таймаут подключения 5 секунд
-- Graceful shutdown при ручном отключении
-- Пинг-понг для поддержания соединения
-
-#### Производительность:
-- Чанкинг больших наборов команд
-- Кэширование DOM элементов
-- Минимальное количество запросов к DOM
-
-### Интеграция с Dashboard
-
-#### Обновляемые элементы:
-- Статусы радиоустройств (TX/RX)
-- Позывные и длительность активности
-- Состояния модулей и рефлекторов
-- Списки подключенных узлов
-- Исторические данные активности
-
-#### CSS классы для состояний:
-- `active-mode-cell` - активное состояние
-- `inactive-mode-cell` - неактивное состояние  
-- `paused-mode-cell` - приостановленное состояние
-- `disabled-mode-cell` - отключенное состояние
-
-#### Идентификаторы элементов:
-Следуют паттерну: `{тип}_{имя}_{наименование-селектор}...`
-
-Примеры: 
-
-`device_Rx1_status`,
-`device_Tx1_status`, 
-
-`module_{EchoLink}`
-
-`logic_{ReflectorLogicM.A.R.R.I}_node_{CN8EAA-DV}`
-
-`link_{LinkKAVKAZ}`
-`link_{LinkM.A.R.R.I}`
-
-Родительский элемент для разговорных групп
-`logic_{ReflectorLogic}_groups`
-Дочерний элемент
-`logic_{ReflectorLogic}_group_77`
-
-`logic_{ReflectorLogic}_modules`
-`logic_{ReflectorLogic}_modules_header`
-`logic_{ReflectorLogic}_modules_content`
-
-`logic_{ReflectorLogic}_module_{EchoLink}`
-
-`logic_{ReflectorLogic}_nodes`
-`logic_{ReflectorLogic}_node`
-
-### Логирование и отладка
-
-#### Уровни логирования:
-- **ERROR (1)** - критические ошибки
-- **WARNING (2)** - предупреждения (по умолчанию)
-- **INFO (3)** - информационные сообщения
-- **DEBUG (4)** - детальная отладочная информация
-
-#### Направления логирования:
-- Встроенная веб-консоль на странице
-- Console браузера (опционально)
-- Автоматическая ротация логов (100 последних сообщений)
-
-### Восстановление после сбоев
-
-#### Сценарии восстановления:
-1. **Потеря соединения** - автоматическое переподключение
-2. **Сервер не доступен** - перезагрузка страницы после исчерпания попыток
-3. **Ошибка клиента** - перезагрузка страницы
-4. **Ручное отключение** - graceful disconnect без переподключения
-
-#### Механизмы восстановления:
-- Экспоненциальная задержка переподключений
-- Ограничение максимального количества попыток
-- Перезагрузка страницы для полного перезапуска системы
-- Сохранение состояния при кратковременных разрывах
-
-### Производительность и масштабируемость
-
-#### Оптимизации:
-- Минимальный трафик: только команды изменений
-- Группировка команд в пакеты
-- Кэширование DOM-элементов
-- Отложенное выполнение не критичных операций
-
-#### Масштабируемость:
-- Поддержка множественных клиентов
-- Независимость сессий клиентов
-- Эффективная рассылка обновлений
-- Автоматическая очистка ресурсов
+Подробная документация в ws_client.md
 
 ## 8. Структура DOM 
 
@@ -638,7 +404,7 @@ div.header
     ├── a.menuaudio (Monitor)
     ├── a.menudashboard (Dashboard)
     ├── a.menuwebsocket (WebSocket статус)
-    ├── div (модальное окно выхода)
+    ├── div (модальное окно авторизации/выхода)
     │   └── div#logoutModal
     ├── script (управление модальными окнами)
     ├── a.menuwsdisconnect (WS Disconnect)
@@ -651,98 +417,7 @@ div.header
 ```
 div.container
 ├── div.leftnav
-│   └── div#leftPanel
-│       ├── div#rptInfoTable (сервис)
-│       │   ├── div "Service" (шапка сервиса)
-│       │   └── div
-│       │       └── div#service[имя сервиса] (блок сервиса)
-│       │
-│       └── div.mode_flex (комплект блоков логики №1)
-│           ├── div (логика)
-│           │   └── div
-│           │       └── div#logic[имя логики] (блок логики)
-│           │           └── a (ссылка логики)
-│           │
-│           ├── div (модули)
-│           │   ├── div "Modules" (шапка модулей)
-│           │   └── div (тело модулей - ряды)
-│           │       ├── div (ряд модулей)
-│           │       │   ├── div
-│           │       │   │   └── div#module[имя логики][имя модуля] (модуль 1)
-│           │       │   │       └── a (ссылка модуля)
-│           │       │   └── div
-│           │       │       └── div#module[имя логики][имя модуля] (модуль 2)
-│           │       └── div (ряд модулей)
-│           │           ├── div
-│           │           │   └── div#module[имя логики][имя модуля] (модуль 3)
-│           │           └── div
-│           │               └── div#module[имя логики][имя модуля] (модуль 4)
-│           │
-│           ├── div#[logic_name]modulesTable.divTable [.hidden опционально, когда нет подключенного модуля] (последний из подкл. узлов активного модуля)
-│           │   ├── div#[logic_name]moduleNodesHeader.divTableHead  (шапка - имя активного модуля)
-│           │   └── div.NodesTableBody (тело узлов модуля)
-│           │       └── div.mode_flex 
-│           │           └── div.mode_flex .row
-│           │               └── div#[logic_name]moduleNodesContent .mode_flex .column .disabled-mode-cell
-│           │                   └── a.tooltip 
-│           │
-│           ├── div.divTable (рефлектор 1.1)
-│           │   ├── div.divTableBody
-│           │   │   ├── div (инфо рефлектора)
-│           │   │   │   ├── div "Reflector"
-│           │   │   │   └── div#reflector[имя логики] (блок рефлектора)
-│           │   │   └── div (линк)
-│           │   │       ├── div "Link"
-│           │   │       └── div#link[имя линка] (блок линка)
-│           │   │           └── a (ссылка линка)
-│           │   ├── div.divTable (talk groups)
-│           │   │   ├── div "Talk Groups" (шапка talk groups)
-│           │   │   └── div#reflector[имя рефлектора]TalkGroupsTableBody (тело talk groups)
-│           │   │       └── div (ряд групп)
-│           │   │           ├── div (talk group 1)
-│           │   │           ├── div (talk group 2)
-│           │   │           └── div (talk group 3)
-│           │   └── div.divTable (узлы рефлектора)
-│           │       ├── div "Nodes" (шапка узлов рефлектора)
-│           │       └── div#reflector[имя рефлектора]NodesTableBody (тело узлов рефлектора)
-│           │           ├── div (ряд узлов)
-│           │           │   ├── div (узел рефлектора 1)
-│           │           │   │   └── a (ссылка узла)
-│           │           │   └── div (узел рефлектора 2)
-│           │           │       └── a (ссылка узла)
-│           │           └── div (ряд узлов)
-│           │               └── div (узел рефлектора 3)
-│           │                   └── a (ссылка узла)
-│           │
-│           └── div.divTable (рефлектор 1.2)
-│               ├── div.divTableBody
-│               │   ├── div (инфо рефлектора)
-│               │   │   ├── div "Reflector"
-│               │   │   └── div#reflector[имя логики] (блок рефлектора)
-│               │   └── div (линк)
-│               │       ├── div "Link"
-│               │       └── div#link[имя линка] (блок линка)
-│               │           └── a (ссылка линка)
-│               ├── div.divTable (talk groups)
-│               │   ├── div "Talk Groups" (шапка talk groups)
-│               │   └── div#reflector[имя рефлектора]TalkGroupsTableBody (тело talk groups)
-│               │       ├── div (ряд групп)
-│               │       │   ├── div (talk group 1)
-│               │       │   ├── div (talk group 2)
-│               │       │   ├── div (talk group 3)
-│               │       │   └── div (talk group 4)
-│               │       └── div (ряд групп)
-│               │           └── div (talk group 5)
-│               └── div.divTable (узлы рефлектора)
-│                   ├── div "Nodes" (шапка узлов рефлектора)
-│                   └── div#reflector[имя рефлектора]NodesTableBody (тело узлов рефлектора)
-│                       └── div (ряд узлов)
-│                           ├── div (узел рефлектора 1)
-│                           │   └── a (ссылка узла)
-│                           └── div (узел рефлектора 2)
-│                               └── a (ссылка узла)
-│
-│       └── ... (опционально: дополнительные комплекты блоков логики №2...№n)
+│   └── div#leftPanel      
 │               
 ├── div.content (основной контент)
 │   ├── div#lcmsg (сообщения)
@@ -773,7 +448,36 @@ div.container
 
 ```
 
-### Ключевые элементы интерфейса
+##### Индентификаторы элементов левой панели (leftPanel)
+
+```
+leftPanel
+        ├── service
+        ├── logic_{имя_логики}
+        │   ├── logic_{имя_логики}
+        │   ├── logic_{имя_логики}_modules_header           Шапка блока модулей
+        │   ├── logic_{имя_логики}_module_{имя_модуля}
+        │   ├── ... (другие модули)
+        │   └── logic_{имя_логики}_active                   Блок активного модуля
+        │       ├── logic_{имя_логики}_active_header        Шапка
+        │       └── logic_{имя_логики}_active_content       Тело блока
+        │    
+        ├─── Блок "Рефлектор - Линк"                                                 
+        │   ├── logic_{имя_рефлектора}                      Рефлектор
+        │   ├── link_{имя_линка}                            Линк      
+        │   ├── logic_{имя_рефлектора}_groups               Разговорные группы рефлектора
+        │   │   ├── logic_{имя_рефлектора}_{имя_группы}
+        │   │   └── ...
+        │   │
+        │   └── logic_{имя_рефлектора}_nodes                Узлы рефлектора
+        │       ├── logic_{имя_рефлектора}_nodes_header     Шапка блока узлов
+        │       ├── logic_{имя_рефлектора}_node_{имя_узла}  Узел
+        │       └── ...
+        └── ...
+```
+
+
+### Элементы интерфейса
 
 #### Модальные окна
 1. **Авторизация** (`authContainer`) - форма входа
@@ -805,7 +509,7 @@ div.container
 
 Начинает захват только после подключения клиентов, освобождает захват после отключения всех клиентов
 
-Выполнен в формате отдельного сервиса (```/etc/systemd/system/svxlink-audio-capture.service```)
+Выполнен в формате отдельного сервиса (```/etc/systemd/system/svxlink-audio-proxy.service```)
 
 
 ```bash
@@ -830,14 +534,12 @@ TimeoutStopSec=10
 Type=simple
 User=svxlink
 Group=svxlink
-ExecStart=/usr/bin/node /var/www/html/scripts/svxlink-audio-proxy-server.js
+ExecStart=/usr/bin/node /etc/systemd/system/svxlink-audio-proxy.service.js
 Environment=NODE_ENV=production
 
 [Install]
 WantedBy=multi-user.target
 ```
-
-
 
 #### Управление:
 
@@ -852,7 +554,6 @@ WantedBy=multi-user.target
 | `sudo journalctl -u svxlink-audio-proxy.service --since="1 hour ago"` | Логи за последний час |
 
 ---
-
 
 #### Настройка
 
@@ -884,5 +585,3 @@ TIMEOUT = 7200
 TX_DELAY = 0
 PREEMPHASIS = 0
 ```
-
-Система обеспечивает полный мониторинг состояния SvxLink с обновлением в реальном времени через WebSocket v4.0, историческими данными и аудио мониторингом.
