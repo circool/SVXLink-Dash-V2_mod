@@ -1,6 +1,3 @@
-# README.md
-
-```markdown
 ![Project status](https://img.shields.io/badge/Status-Testing-red?style=flat)
 ![Version](https://img.shields.io/badge/Version-0.4.x-red?style=flat)
 ![Licensy](https://img.shields.io/badge/Licensy-GNU_FDL_v1.3-green?style=flat)
