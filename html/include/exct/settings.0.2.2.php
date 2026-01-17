@@ -73,7 +73,7 @@ if (WS_ENABLED) {
 }
 
 // Глобально, использовать кеш или нет
-define("USE_CACHE", false);
+define("USE_CACHE", true);
 // Настройки времени жизни кеша для различных функций
 define("LOG_CACHE_TTL_MS", 1000);
 

@@ -29,6 +29,14 @@ font-weight : normal;
 
 }
 
+#local_activity table tr:hover td, 
+#local_activity table tr:hover td a
+{
+background-color: #3c3f47;
+color: #ffffff;
+}
+
+
 .status-indicator {
 display: inline-block;
 width: 10px;

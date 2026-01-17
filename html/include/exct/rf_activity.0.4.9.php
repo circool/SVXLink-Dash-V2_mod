@@ -57,7 +57,7 @@ if ($isAjax) {
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.0.2.1.php';
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.0.1.2.php';
-	// require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getLineTime.0.1.2.php';
+
 
 	if (defined("DEBUG") && DEBUG) {
 		include_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/dlog.0.2.php';
@@ -110,7 +110,7 @@ function buildLocalActivityTable(): string
 		dlog("Уникальных поисковых паттернов: " . count($search_patterns), 4, "DEBUG");
 	}
 
-	// 4. ОДИН запрос для поиска контекста по всем паттернам
+
 	$context_lines = getLogTailFiltered(
 		500,
 		null,
@@ -177,7 +177,7 @@ function buildLocalActivityTable(): string
 	return $html;
 }
 
-// [Все вспомогательные функции остаются БЕЗ изменений]
+
 
 /**
  * Находит пары OPEN/CLOSED из squelch строк
@@ -479,7 +479,7 @@ function generateActivityTable(array $activity_rows, string $rfResultLimit): str
 	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Date') . '<span><b>' . getTranslation('Date') . '</b></span></a></th>';
 	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Time') . '<span><b>' . getTranslation('Local Time') . '</b></span></a></th>';
 	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Caller') . '<span><b>' . getTranslation('Who is target of transmission') . '</b></span></a></th>';
-	$html .= '<th><a class="tooltip" href="#">Transmission destination<span><b>' . getTranslation("Frn Server, Reflector's Talkgroup, Echolink Node, Conference etc.") . '</b></span></a></th>';
+	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Transmission destination') . '<span><b>' . getTranslation("Frn Server, Reflector's Talkgroup, Echolink Node, Conference etc.") . '</b></span></a></th>';
 	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Logic') . '<span><b>' . getTranslation('Active Logic') . '</b></span></a></th>';
 	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Module') . '<span><b>' . getTranslation('Active module') . '</b></span></a></th>';
 	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration in Seconds') . '</b></span></a></th>';
@@ -562,18 +562,7 @@ function generateEmptyTable(string $rfResultLimit): string
 	return $html;
 }
 
-// Получаем время из строки лога
-// function getLineTime(string $line): ?int
-// {
-// 	static $format = null;
-// 	if ($format === null) {
-// 		$format = TIMESTAMP_FORMAT;
-// 	}
 
-// 	$timestamp = substr($line, 0, 23);
-// 	$time = DateTime::createFromFormat($format, $timestamp);
-// 	return $time ? $time->getTimestamp() : null;
-// }
 
 // ===================================================
 // Основная логика выполнения
@@ -591,10 +580,12 @@ if ($isAjax) {
 
 // Для обычных запросов выводим таблицу + JavaScript для автообновления
 ?>
-<div id="rf_activity_table_container">
+<div id="rf_activity">
+	<div id="rf_activity_table_container">
 	<?php echo $tableHtml; ?>
 </div>
-
+</div>
+<br>
 <script>
 	(function() {
 		'use strict';

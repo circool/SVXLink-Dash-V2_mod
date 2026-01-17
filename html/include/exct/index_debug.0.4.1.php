@@ -18,7 +18,7 @@ require_once $_SERVER["DOCUMENT_ROOT"] . "/include/init.php";
 require_once $_SERVER["DOCUMENT_ROOT"] . "/include/fn/getTranslation.php";
 // $_SESSION['dashboard_lang'] = 'ru';
 if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) $_SESSION['dashboard_lang'] = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
-	if (defined("DEBUG") && DEBUG) {
+if (defined("DEBUG") && DEBUG) {
 	require_once $_SERVER["DOCUMENT_ROOT"] . "/include/fn/dlog.0.2.php";
 	$main_funct_start = microtime(true);
 	$main_ver = "index_debug.php 0.4.1";
@@ -119,8 +119,9 @@ if (!file_exists($auth_file)) {
 				</div>
 
 			</div>
-			<br class="noMob">
+			<!-- <br class="noMob"> -->
 		</div>
+		<br class="noMob">
 		<div class="leftnav">
 			<div id="leftPanel">
 				<?php include $_SERVER["DOCUMENT_ROOT"] . "/include/left_panel.php"; ?>
@@ -128,48 +129,43 @@ if (!file_exists($auth_file)) {
 		</div>
 		<div class="content">
 			<div id="lcmsg" style="background:#d6d6d6;color:black; margin:0 0 10px 0;"></div>
-			
-			
-				<?php
-				if (!defined("SHOW_RADIO_ACTIVITY") || constant("SHOW_RADIO_ACTIVITY") === true) {
-					include $_SERVER["DOCUMENT_ROOT"] . "/include/radio_activity.php";
-				}
-				echo '<br>';
-				?>
 
 
-			
-				<?php
-				if (!defined("SHOW_CON_DETAILS") || constant("SHOW_CON_DETAILS") === true) {
-					include $_SERVER["DOCUMENT_ROOT"] . "/include/connection_details.php";
-					echo '<br>';
-				}
-				?>
+			<?php
+			if (!defined("SHOW_RADIO_ACTIVITY") || constant("SHOW_RADIO_ACTIVITY") === true) {
+				include $_SERVER["DOCUMENT_ROOT"] . "/include/radio_activity.php";
+			}		
+			?>
+
+			<?php
+			if (!defined("SHOW_CON_DETAILS") || constant("SHOW_CON_DETAILS") === true) {
+				include $_SERVER["DOCUMENT_ROOT"] . "/include/connection_details.php";
+			}
+			?>
+
+
+
+			<?php
+			if (!defined("SHOW_REFLECTOR_ACTIVITY") || constant("SHOW_REFLECTOR_ACTIVITY") === true) {
+				include $_SERVER["DOCUMENT_ROOT"] . "/include/reflector_activity.php";
+			}
+			?>
 
 			
+			<?php
+			if (!defined("SHOW_NET_ACTIVITY") || constant("SHOW_NET_ACTIVITY") === true) {
+				include $_SERVER["DOCUMENT_ROOT"] . "/include/net_activity.php";
+			}
+			?>
 			
-				<?php
-				if (!defined("SHOW_REFLECTOR_ACTIVITY") || constant("SHOW_REFLECTOR_ACTIVITY") === true) {
-					include $_SERVER["DOCUMENT_ROOT"] . "/include/reflector_activity.php";
-					echo '<br>';
-				}
-				?>
-
-			<div id="net_activity">
-				<?php
-				if (!defined("SHOW_NET_ACTIVITY") || constant("SHOW_NET_ACTIVITY") === true) {
-					include $_SERVER["DOCUMENT_ROOT"] . "/include/net_activity.php";
-				}
-				?>
-			</div>
-			<br>
-			<div id="local_activity">
-				<?php
-				if (!defined("SHOW_RF_ACTIVITY") || constant("SHOW_RF_ACTIVITY") === true) {
-					include $_SERVER["DOCUMENT_ROOT"] . "/include/rf_activity.php";
-				}
-				?>
-			</div>
+			
+			
+			<?php	
+			if (!defined("SHOW_RF_ACTIVITY") || constant("SHOW_RF_ACTIVITY") === true) {
+				include $_SERVER["DOCUMENT_ROOT"] . "/include/rf_activity.php";
+			}	
+			?>
+			
 
 			<?php
 			if (defined("DEBUG") && DEBUG) {
@@ -180,20 +176,21 @@ if (!file_exists($auth_file)) {
 			?>
 
 			<?php if (defined("DEBUG") && DEBUG): ?>
-				<div style="margin-top: 20px; padding: 10px; border: 1px solid #ddd;">
-					<h4>Debug Console Websocket</h4>
-					<div id="debugLog" style="height: 300px; overflow-y: auto;"></div>
-				</div>
+				<div id="debug_section">
+					<div  style="margin-top: 20px; padding: 10px; border: 1px solid #ddd;">
+						<h4>Debug Console Websocket</h4>
+						<div id="debugLog" style="height: 300px; overflow-y: auto;"></div>				
+					</div>
 
-				<div class="debug" id="session_debug">
-					<?php
-					include $_SERVER["DOCUMENT_ROOT"] . "/include/debug_page.php";
-					?>
+					<div class="debug" id="session_debug">
+						<?php
+						include $_SERVER["DOCUMENT_ROOT"] . "/include/debug_page.php";
+						?>
+					</div>
 				</div>
-
 			<?php endif; ?>
 		</div>
-
+		
 		<div id="footer" class="footer">
 			<?php include $_SERVER['DOCUMENT_ROOT'] . "/include/footer.php"; ?>
 		</div>

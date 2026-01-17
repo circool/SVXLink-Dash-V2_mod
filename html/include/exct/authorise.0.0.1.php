@@ -10,7 +10,8 @@
 
 
 
-include_once $_SERVER["DOCUMENT_ROOT"] . "/include/init.php";
+require_once $_SERVER["DOCUMENT_ROOT"] . "/include/init.php";
+include_once $_SERVER["DOCUMENT_ROOT"] . "/include/fn/getTranslation.php";
 $ver = 'authorise.php 0.0.1';
 
 
@@ -25,34 +26,34 @@ $ver = 'authorise.php 0.0.1';
 		<button class="auth-close" onclick="closeAuthForm()" title="Close">&times;</button>
 
 		<div class="auth-title">
-			<i class="fa fa-lock" style="margin-right: 10px;"></i>Authorization Required
+			<i class="fa fa-lock" style="margin-right: 10px;"></i><?= getTranslation('Authorization') ?>
 		</div>
 
 		<form id="authForm" method="POST" action="/include/auth_handler.php">
 			<div class="auth-field">
 				<label for="username">
-					<i class="fa fa-user" style="margin-right: 8px;"></i>Username:
+					<i class="fa fa-user" style="margin-right: 8px;"></i><?= getTranslation('Username') ?>:
 				</label>
-				<input type="text" id="username" name="username" placeholder="Enter your username" required autocomplete="username">
+				<input type="text" id="username" name="username" placeholder="<?= getTranslation('Enter your username') ?>" required autocomplete="username">
 			</div>
 
 			<div class="auth-field">
 				<label for="password">
-					<i class="fa fa-key" style="margin-right: 8px;"></i>Password:
+					<i class="fa fa-key" style="margin-right: 8px;"></i><?= getTranslation('Password') ?>:
 				</label>
-				<input type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password">
+				<input type="password" id="password" name="password" placeholder="<?= getTranslation('Enter your password') ?>" required autocomplete="current-password">
 			</div>
 
 			<div class="auth-error" id="authError">
-				<i class="fa fa-exclamation-triangle" style="margin-right: 8px;"></i>Invalid credentials. Please try again.
+				<i class="fa fa-exclamation-triangle" style="margin-right: 8px;"></i><?= getTranslation('Invalid credentials. Please try again.') ?>
 			</div>
 
 			<div class="auth-buttons">
 				<button type="submit">
-					<i class="fa fa-sign-in" style="margin-right: 8px;"></i>Login
+					<i class="fa fa-sign-in" style="margin-right: 8px;"></i><?= getTranslation('Login') ?>
 				</button>
 				<button type="button" onclick="closeAuthForm()">
-					<i class="fa fa-times" style="margin-right: 8px;"></i>Cancel
+					<i class="fa fa-times" style="margin-right: 8px;"></i><?= getTranslation('Cancel') ?>
 				</button>
 			</div>
 		</form>
@@ -94,7 +95,7 @@ $ver = 'authorise.php 0.0.1';
 		const originalText = submitButton.innerHTML;
 
 		// Показываем загрузку
-		submitButton.innerHTML = '<i class="fa fa-spinner fa-spin" style="margin-right: 8px;"></i>Logging in...';
+		submitButton.innerHTML = '<i class="fa fa-spinner fa-spin" style="margin-right: 8px;"></i><?= getTranslation('Logging in') ?>...';
 		submitButton.disabled = true;
 
 		console.log("Sending request to /include/auth_handler.php...");

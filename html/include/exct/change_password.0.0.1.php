@@ -14,9 +14,9 @@ include $_SERVER["DOCUMENT_ROOT"] . "/include/init.php";
 include_once $_SERVER["DOCUMENT_ROOT"] . "/include/fn/dlog.0.2.php";
 $ver = 'change_password.php 0.0.1';
 
-if (defined("DEBUG") && DEBUG ) dlog("change_password.php loaded", 4, "AUTH");
-if (defined("DEBUG") && DEBUG ) dlog("Request method: " . $_SERVER['REQUEST_METHOD'], 4, "AUTH");
-if (defined("DEBUG") && DEBUG ) dlog("Session auth status: " . ($_SESSION['auth'] ?? 'NOT SET'), 4, 'AUTH');
+if (defined("DEBUG") && DEBUG) dlog("change_password.php loaded", 4, "AUTH");
+if (defined("DEBUG") && DEBUG) dlog("Request method: " . $_SERVER['REQUEST_METHOD'], 4, "AUTH");
+if (defined("DEBUG") && DEBUG) dlog("Session auth status: " . ($_SESSION['auth'] ?? 'NOT SET'), 4, 'AUTH');
 
 if (!isset($_SESSION['auth']) || $_SESSION['auth'] !== 'AUTHORISED') {
 	header('HTTP/1.0 403 Forbidden');
@@ -390,12 +390,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 		<button class="password-close" onclick="closePasswordForm()" title="Close">&times;</button>
 
 		<div class="password-title">
-			<i class="fa fa-key" style="margin-right: 10px;"></i>Change Credentials
+			<i class="fa fa-key" style="margin-right: 10px;"></i><?= getTranslation('Change credentials') ?>
 		</div>
 
 		<!-- Переключатель режимов -->
 		<div class="password-switcher">
-			<span class="password-switcher-label active" id="labelPasswordOnly">Password Only</span>
+			<span class="password-switcher-label active" id="labelPasswordOnly"><?= getTranslation('Password only') ?></span>
 
 			<div style="display: inline-flex; align-items: center;">
 				<input type="hidden" name="mode" value="password_only" id="modeInput">
@@ -404,7 +404,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 				<label for="toggle-mode"></label>
 			</div>
 
-			<span class="password-switcher-label" id="labelBoth">Username & Password</span>
+			<span class="password-switcher-label" id="labelBoth"><?= getTranslation('Username & Password') ?></span>
 		</div>
 
 		<!-- Смена пароля -->
@@ -412,28 +412,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 			<form id="changePasswordForm">
 				<div class="password-field">
 					<label for="current_password">
-						<i class="fa fa-lock" style="margin-right: 8px;"></i>Current Password:
+						<i class="fa fa-lock" style="margin-right: 8px;"></i><?= getTranslation('Current password') ?>:
 					</label>
-					<input type="password" id="current_password" name="current_password" placeholder="Enter current password" required>
+					<input type="password" id="current_password" name="current_password" placeholder="<?= getTranslation('Enter current password') ?>" required>
 				</div>
 
 				<div class="password-field">
 					<label for="new_password">
-						<i class="fa fa-key" style="margin-right: 8px;"></i>New Password:
+						<i class="fa fa-key" style="margin-right: 8px;"></i><?= getTranslation('New password') ?>:
 					</label>
-					<input type="password" id="new_password" name="new_password" placeholder="Enter new password" required>
+					<input type="password" id="new_password" name="new_password" placeholder="<?= getTranslation('Enter new password') ?>" required>
 				</div>
 
 				<div class="password-field">
 					<label for="confirm_password">
-						<i class="fa fa-key" style="margin-right: 8px;"></i>Confirm New Password:
+						<i class="fa fa-key" style="margin-right: 8px;"></i><?= getTranslation('Confirm new password') ?>:
 					</label>
-					<input type="password" id="confirm_password" name="confirm_password" placeholder="Confirm new password" required>
+					<input type="password" id="confirm_password" name="confirm_password" placeholder="<?= getTranslation('Confirm new password') ?>" required>
 				</div>
 
 				<div class="password-buttons">
 					<button type="submit">
-						<i class="fa fa-refresh" style="margin-right: 8px;"></i>Change Password
+						<i class="fa fa-refresh" style="margin-right: 8px;"></i><?= getTranslation('Change password') ?>
 					</button>
 				</div>
 			</form>
@@ -446,35 +446,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 			<form id="changeCredentialsForm">
 				<div class="password-field">
 					<label for="cred_current_password">
-						<i class="fa fa-lock" style="margin-right: 8px;"></i>Current Password:
+						<i class="fa fa-lock" style="margin-right: 8px;"></i><?= getTranslation('Current password') ?>:
 					</label>
-					<input type="password" id="cred_current_password" name="current_password" placeholder="Enter current password" required>
+					<input type="password" id="cred_current_password" name="current_password" placeholder="<?= getTranslation('Enter current password') ?>" required>
 				</div>
 
 				<div class="password-field">
 					<label for="new_username">
-						<i class="fa fa-user" style="margin-right: 8px;"></i>New Username:
+						<i class="fa fa-user" style="margin-right: 8px;"></i><?= getTranslation('New username') ?>:
 					</label>
-					<input type="text" id="new_username" name="new_username" value="<?php echo PHP_AUTH_USER; ?>" placeholder="Enter new username" required>
+					<input type="text" id="new_username" name="new_username" value="<?php echo PHP_AUTH_USER; ?>" placeholder="<?= getTranslation('Enter new username') ?>" required>
 				</div>
 
 				<div class="password-field">
 					<label for="cred_new_password">
-						<i class="fa fa-key" style="margin-right: 8px;"></i>New Password:
+						<i class="fa fa-key" style="margin-right: 8px;"></i><?= getTranslation('New password') ?>:
 					</label>
-					<input type="password" id="cred_new_password" name="new_password" placeholder="Enter new password" required>
+					<input type="password" id="cred_new_password" name="new_password" placeholder="<?= getTranslation('Enter new password') ?>" required>
 				</div>
 
 				<div class="password-field">
 					<label for="cred_confirm_password">
-						<i class="fa fa-key" style="margin-right: 8px;"></i>Confirm New Password:
+						<i class="fa fa-key" style="margin-right: 8px;"></i><?= getTranslation('Confirm new password') ?>:
 					</label>
-					<input type="password" id="cred_confirm_password" name="confirm_password" placeholder="Confirm new password" required>
+					<input type="password" id="cred_confirm_password" name="confirm_password" placeholder="<?= getTranslation('Confirm new password') ?>" required>
 				</div>
 
 				<div class="password-buttons">
 					<button type="submit" class="orange-btn">
-						<i class="fa fa-user-circle" style="margin-right: 8px;"></i>Change Both
+						<i class="fa fa-user-circle" style="margin-right: 8px;"></i><?= getTranslation('Change both') ?>
 					</button>
 				</div>
 			</form>
@@ -484,7 +484,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 		<div class="password-buttons" style="margin-top: 20px;">
 			<button type="button" class="cancel-btn" onclick="closePasswordForm()">
-				<i class="fa fa-times" style="margin-right: 8px;"></i>Close
+				<i class="fa fa-times" style="margin-right: 8px;"></i><?= getTranslation('Close') ?>
 			</button>
 		</div>
 	</div>
@@ -589,7 +589,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 		const originalText = submitButton.innerHTML;
 
 		// Показываем загрузку
-		submitButton.innerHTML = '<i class="fa fa-spinner fa-spin" style="margin-right: 8px;"></i>Changing...';
+		submitButton.innerHTML = '<i class="fa fa-spinner fa-spin" style="margin-right: 8px;"></i><?= getTranslation('Changing') ?>...';
 		submitButton.disabled = true;
 
 		fetch('/include/change_password.php', {

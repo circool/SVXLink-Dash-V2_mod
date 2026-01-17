@@ -158,35 +158,33 @@
 			$hosts = implode(', ', $hosts);
 		}
 
-		// @bookmark Таблица линка/рефлектора
-		echo '
-    <table style="word-wrap: break-word; white-space:normal;">
-        <tbody>
-            <tr>
-                <th><a class="tooltip" href="#">Date/Time<span><b>Current Date and Time</b></span></a></th>
-                <th width="150px"><a class="tooltip" href="#">Selected Talkgroup<span><b>Talkgroup</b></span></th>
-                <th class="noMob"><a class="tooltip" href="#">Monitored Talkgroups<span><b>Talkgroups</b></span></th>
-                <th class="noMob"><a class="tooltip" href="#">Temporary Monitored Talkgroups<span><b>Talkgroups</b></span></th>
-                <th><a class="tooltip" href="#">Logic<span><b>Linked Logic</b></span></a></th>
-                <th><a class="tooltip" href="#">Host<span><b>Host</b></span></a></th>
-                <th><a class="tooltip" href="#">Duration (s)<span><b>Duration in Seconds</b></span></a></th>
-            </tr>
-
-            <tr>
-                <td>' . htmlspecialchars(date('d.m.y H:i')) . '</td>
-                <td>' . htmlspecialchars($selectedTG) . '</td>
-                <td>' . htmlspecialchars($monitoringTG) . '</td>
-                <td>' . htmlspecialchars($tempMonitoringTG) . '</td>
-
-                <td>' . htmlspecialchars($sourceLogicName) . '</td>
-                <td>' . htmlspecialchars($hosts) . '</td>
-                <td></td>
-            </tr>
-        </tbody>
-    </table>';
-	}
-
+		// @bookmark Таблица линка/рефлектора 
 	?>
+		<table style="word-wrap: break-word; white-space:normal;">
+			<tbody>
+				<tr>
+					<th><a class="tooltip" href="#"><?= getTranslation('Date/Time') ?><span><b><?= getTranslation('Current Date and Time') ?></b></span></a></th>
+					<th width="150px"><a class="tooltip" href="#"><?= getTranslation('Selected Talkgroup') ?><span><b><?= getTranslation('Talkgroup') ?></b></span></th>
+					<th class="noMob"><a class="tooltip" href="#"><?= getTranslation('Monitored Talkgroups') ?><span><b><?= getTranslation('Talkgroups') ?></b></span></th>
+					<th class="noMob"><a class="tooltip" href="#"><?= getTranslation('Temporary Monitored Talkgroups') ?><span><b><?= getTranslation('Talkgroups') ?></b></span></th>
+					<th><a class="tooltip" href="#"><?= getTranslation('Logic') ?><span><b><?= getTranslation('Linked Logic') ?></b></span></a></th>
+					<th><a class="tooltip" href="#"><?= getTranslation('Host') ?><span><b><?= getTranslation('Host') ?></b></span></a></th>
+					<th><a class="tooltip" href="#"><?= getTranslation('Duration') ?><span><b><?= getTranslation('Duration in Seconds') ?></b></span></a></th>
+				</tr>
+
+				<tr>
+					<td><?= htmlspecialchars(date('d.m.y H:i')) ?></td>
+					<td><?= htmlspecialchars($selectedTG) ?></td>
+					<td><?= htmlspecialchars($monitoringTG) ?></td>
+					<td><?= htmlspecialchars($tempMonitoringTG) ?></td>
+
+					<td><?= htmlspecialchars($sourceLogicName) ?></td>
+					<td><?= htmlspecialchars($hosts) ?></td>
+					<td></td>
+				</tr>
+			</tbody>
+		</table>
+	<?php } ?>
 	<script>
 		// Функция для управления состоянием линков
 		function setLinkState(toggleElement) {
@@ -326,4 +324,5 @@
 		unset($ver, $funct_start, $funct_time);
 	}
 	?>
+	<br>
 </div>

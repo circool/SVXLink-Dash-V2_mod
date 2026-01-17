@@ -66,7 +66,12 @@ if ($_SESSION['auth'] == 'AUTHORISED') {
 }
 ?>
 
-<a class="menureset" href="/">Reset Session</a>
+
+<?php
+if (defined("DEBUG") && DEBUG) : ?>
+	<a class="menureset" href="/">Reset Session</a>
+	<a class="menudebug" href="#"> <?= getTranslation('Debug') ?></a>
+<?php endif ?>
 
 <?php
 if (defined("SHOW_MACROS") && SHOW_MACROS) {
@@ -77,12 +82,12 @@ if (defined("SHOW_MACROS") && SHOW_MACROS) {
 ?>
 
 <?php
-if (defined("SHOW_CON_DETAILS") && SHOW_CON_DETAILS) :?>
+if (defined("SHOW_CON_DETAILS") && SHOW_CON_DETAILS) : ?>
 	<a class="menuconnection" href="#"> <?= getTranslation('Connect Details') ?></a>
 <?php endif ?>
 
 <?php
-if (defined("SHOW_REFLECTOR_ACTIVITY") && SHOW_REFLECTOR_ACTIVITY) :?>
+if (defined("SHOW_REFLECTOR_ACTIVITY") && SHOW_REFLECTOR_ACTIVITY) : ?>
 	<a class="menureflector" href="#"><?= getTranslation('Reflectors'); ?></a>
 <?php endif ?>
 
@@ -96,16 +101,16 @@ if (defined("SHOW_REFLECTOR_ACTIVITY") && SHOW_REFLECTOR_ACTIVITY) :?>
 <!-- Модальное окно для входа / выхода -->
 <div id="logoutModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 10000; justify-content: center; align-items: center;">
 	<div style="background: #2e363f; padding: 20px; border-radius: 5px; border: 1px solid #3c3f47; min-width: 300px; text-align: center;">
-		<h3 style="color: #bebebe; margin-bottom: 20px;">Adminisration</h3>
+		<h3 style="color: #bebebe; margin-bottom: 20px;"><?php echo getTranslation('Adminisration') ?></h3>
 		<div style="display: flex; flex-direction: column; gap: 10px;">
-			<a class="menuadmin" href="javascript:void(0)" onclick="openPasswordForm(); closeLogoutModal();" style="display: block; padding: 10px; text-align: center;">Change Password</a>
+			<a class="menuadmin" href="javascript:void(0)" onclick="openPasswordForm(); closeLogoutModal();" style="display: block; padding: 10px; text-align: center;"><?php echo getTranslation('Change password') ?></a>
 			<a class="menuconfig" href="/include/settings.php" style="display: block; padding: 10px; text-align: center;"><?php echo getTranslation('Settings') ?? 'Settings'; ?></a>
 			<a href="/include/logout.php" class="menuadmin" style="display: block; padding: 10px; text-align: center;"><?php echo getTranslation('Logout') ?? 'Logout'; ?></a>
 			<?php
 
 			?>
 		</div>
-		<button onclick="closeLogoutModal()" style="margin-top: 20px; padding: 8px 16px; background: #65737e; color: #bebebe; border: 1px solid #3c3f47; cursor: pointer;">Cancel</button>
+		<button onclick="closeLogoutModal()" style="margin-top: 20px; padding: 8px 16px; background: #65737e; color: #bebebe; border: 1px solid #3c3f47; cursor: pointer;"><?php echo getTranslation('Cancel') ?></button>
 	</div>
 </div>
 
@@ -141,6 +146,7 @@ if (defined("SHOW_REFLECTOR_ACTIVITY") && SHOW_REFLECTOR_ACTIVITY) :?>
 			'reflector_activity': 'menureflector',
 			'macros_panel': 'menumacros',
 			'connection_details': 'menuconnection',
+			'debug_section': 'menudebug',
 		};
 
 		// Инициализация для каждого блока
