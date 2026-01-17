@@ -243,6 +243,7 @@
 │   ├── change_password.php             # Смена пароля
 │   ├── connection_details.php          # Детальная информация о текущем соединении
 │   ├── debug_page.php                  # Отладочные данные
+│   ├── dtmf_handler.php                # Обработчик DTMF команд
 │   ├── footer.php                      # Подвал
 │   ├── init.php                        # Основная инициализация
 │   ├── js_utils.php                    # JavaScript утилиты

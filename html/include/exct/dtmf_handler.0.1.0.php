@@ -4,7 +4,7 @@
  * @version 0.1.0
  * @date 2026.01.16
  * @author vladimir@tsurkanenko.ru
- * @description Единый обработчик DTMF команд для всех модулей
+ * @description Обработчик DTMF команд для всех модулей
  */
 
 // Инициализация сессии с теми же параметрами, что и в основной системе
@@ -16,7 +16,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-header('Content-Type: application/json');
+// header('Content-Type: application/json');
 
 /**
  * Получение пути к DTMF устройству

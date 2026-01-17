@@ -46,6 +46,7 @@ declare -A files_to_check=(
     ["include/browserdetect.php"]="Подстройка под браузер"
     ["include/change_password.php"]="Смена пароля"
     ["include/connection_details.php"]="Детальная информация о текущем соединении"
+    ["include/dtmf_handler.php"]="Обработчик DTMF команд" 
     ["include/footer.php"]="Подвал" 
     ["include/init.php"]="Основная инициализация"
     ["include/js_utils.php"]="JavaScript утилиты"

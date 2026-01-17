@@ -205,6 +205,7 @@ During development, symlinks point to current versions. After development, symli
 │   ├── change_password.php             # Password change
 │   ├── connection_details.php          # Connection details
 │   ├── debug_page.php                  # Debug data
+│   ├── dtmf_handler.php                # DTMF commands handler
 │   ├── footer.php                      # Footer
 │   ├── init.php                        # Main initialization
 │   ├── js_utils.php                    # JavaScript utilities

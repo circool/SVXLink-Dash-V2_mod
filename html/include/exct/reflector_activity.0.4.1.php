@@ -25,7 +25,7 @@
 
 	// Проверяем, является ли это AJAX запросом для управления линками
 	if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_link'])) {
-		header('Content-Type: application/json');
+		// header('Content-Type: application/json');
 
 		// Просто перенаправляем в единый обработчик
 		require_once $_SERVER["DOCUMENT_ROOT"] . '/include/exct/dtmf_handler.0.1.0.php';
