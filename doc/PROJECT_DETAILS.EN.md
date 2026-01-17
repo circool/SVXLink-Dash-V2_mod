@@ -193,14 +193,10 @@ During development, symlinks point to current versions. After development, symli
 ├── fake_log_msg                        # SvxLink test message generator
 ├── favicon.ico                         # Site icon
 ├── kill_ws_and_show_log.sh             # Stop WS and show logs
-├── kill_ws_server.sh                   # Stop WebSocket server
-├── logs/                               # Logs directory
 ├── sessions_clear                      # Clear sessions
 ├── update_simlink.sh                   # Update symlinks
 ├── websocket_server.log                # WebSocket server log
 ├── ws_state.php                        # WebSocket status
-├── svxlink_development_dashboard.conf  # Apache configuration
-├── svxlink-node.service                # Node.js service
 ├── include/                            # PHP include files
 │   ├── auth_config.php                 # Authorization configuration
 │   ├── auth_handler.php                # Authorization handler
@@ -227,7 +223,6 @@ During development, symlinks point to current versions. After development, symli
 │   ├── settings.php                    # Application settings
 │   ├── top_menu.php                    # Main command menu
 │   ├── update_simlink.sh               # Symlink update script
-│   ├── websocket.php                   # WebSocket utilities
 │   ├── websocket_client_config.php     # WebSocket client configuration
 │   ├── websocket_server.php            # WebSocket server (PHP)
 │   ├── exct/                           # Versioned sources
@@ -257,7 +252,8 @@ During development, symlinks point to current versions. After development, symli
 │       └── svxlink-audio-proxy-server.0.0.2.js # Audio Monitor 0.0.2
 ├── css/                                # Styles
 │   ├── css.php                         # Main styles
-│   ├── menu.0.2.2.php                  # Additional styles
+│   ├── css-mini.php                    # Min styles
+│   ├── menu.php                        # Additional styles
 │   ├── websocket_control.css           # WS control button styles
 │   ├── font-awesome.min.css            # Awesome Fonts
 │   └── font-awesome-4.7.0/

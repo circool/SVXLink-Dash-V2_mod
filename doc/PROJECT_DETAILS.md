@@ -231,14 +231,10 @@
 ├── fake_log_msg                        # Генератор тестовых сообщений svxlink
 ├── favicon.ico                         # Иконка сайта
 ├── kill_ws_and_show_log.sh             # Остановка WS и показ логов
-├── kill_ws_server.sh                   # Остановка WebSocket сервера
-├── logs/                               # Каталог логов
 ├── sessions_clear                      # Очистка сессий
 ├── update_simlink.sh                   # Обновление симлинков
 ├── websocket_server.log                # Лог WebSocket сервера
 ├── ws_state.php                        # Состояние WebSocket
-├── svxlink_development_dashboard.conf  # Конфигурация Apache
-├── svxlink-node.service                # Сервис для Node.js
 ├── include/                            # PHP включаемые файлы
 │   ├── auth_config.php                 # Конфигурация авторизации
 │   ├── auth_handler.php                # Обработчик авторизации
@@ -265,7 +261,6 @@
 │   ├── settings.php                    # Настройки приложения
 │   ├── top_menu.php                    # Основное меню команд
 │   ├── update_simlink.sh               # Скрипт обновления симлинков
-│   ├── websocket.php                   # WebSocket утилиты
 │   ├── websocket_client_config.php     # Конфигурация WebSocket клиента
 │   ├── websocket_server.php            # WebSocket сервер (PHP)
 │   ├── exct/                           # Версионированные источники
@@ -283,7 +278,7 @@
 ├── scripts/                            # JS скрипты
 │   ├── dashboard_ws_client.js          # WebSocket клиент состояний
 │   ├── dashboard_ws_server.js          # WebSocket сервер состояний
-│   ├── featherlight.js                 # Библиотека модальных окон
+│   ├── featherlight.js                 # Библиотека
 │   ├── jquery.min.js                   # jQuery библиотека
 │   ├── svxlink-audio-proxy-server.js   # WebSocket Audio Monitor :8001
 │   ├── restart_audio_proxy_server      # Перезапуск аудио сервера
@@ -295,7 +290,8 @@
 │       └── svxlink-audio-proxy-server.0.0.2.js # Audio Monitor 0.0.2
 ├── css/                                # Стили
 │   ├── css.php                         # Основной набор стилей
-│   ├── menu.0.2.2.php                  # Дополнения к основному набору
+│   ├── css-mini.php                    # Минимальный набор стилей
+│   ├── menu.php                        # Дополнения к основному набору
 │   ├── websocket_control.css           # Стили для кнопки управления WS
 │   ├── font-awesome.min.css            # Awesome Fonts
 │   └── font-awesome-4.7.0/
@@ -305,8 +301,6 @@
 │       └── scss/
 ├── fonts/                              # Шрифты
 │   ├── stylesheet.css
-│   ├── ...
-│   ├── ...
 │   └── ...
 ├── install/                            # Установочные скрипты
 │   ├── cli_setup.php                   # CLI Setup Script 0.1.1
