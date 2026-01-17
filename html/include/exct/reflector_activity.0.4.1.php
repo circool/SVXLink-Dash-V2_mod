@@ -28,7 +28,7 @@
 		// header('Content-Type: application/json');
 
 		// Просто перенаправляем в единый обработчик
-		require_once $_SERVER["DOCUMENT_ROOT"] . '/include/exct/dtmf_handler.0.1.0.php';
+		require_once $_SERVER["DOCUMENT_ROOT"] . '/include/dtmf_handler.php';
 		exit;
 	}
 
