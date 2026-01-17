@@ -7,11 +7,13 @@
  * @version 0.2.2
  * @date 2025.12.23
  * @author vladimir@tsurkanenko.ru
- * @note Новое в 0.2.2
+ * @since 0.2.2
  *  - Добавлены стили для WebSocket статуса в стиле меню (menuwebsocket)
  *  - 3 состояния: disconnected, connected, error с соответствующими иконками FontAwesome
  *  - Убрано цветовое выделение, используется стандартный стиль меню
  * nav-> leftnav
+ * @since 0.4.0
+ * Убраны стили для menuwebsocket
  */
 header("Content-type: text/css");
 ?>
@@ -19,7 +21,8 @@ header("Content-type: text/css");
 .leftnav {
 float: left;
 margin : -12px 0 0 0;
-padding : 0 3px 3px 10px;
+<!-- padding : 0 3px 3px 10px; -->
+padding : 0px 3px 3px 10px;
 width : 230px;
 background : #212529;
 font-weight : normal;
@@ -53,9 +56,27 @@ background: #a65d14;
 margin-top: -2px;
 }
 
-.menuaudio,
-menucdetails {
+.menuaudio, .menumacros, .menusettings, .menureflector, menuconnection {
 position: relative;
+}
+
+
+.menumacros:before {
+content: "\f0e7";
+font-family: FontAwesome;
+font-style: normal;
+font-weight: normal;
+text-decoration: inherit;
+padding-right: 0.2em;
+}
+
+.menusettings:before {
+content: "\f085";
+font-family: FontAwesome;
+font-style: normal;
+font-weight: normal;
+text-decoration: inherit;
+padding-right: 0.2em;
 }
 
 .menuaudio:before {
@@ -83,13 +104,17 @@ content: "\f028";
 /* динамик со звуком (FA) */
 }
 
-.menudetails:before {
+.menuconnection:before {
 content: "\f1c0";
 font-family: FontAwesome;
 font-style: normal;
 font-weight: normal;
 text-decoration: inherit;
 padding-right: 0.2em;
+}
+
+.icon-active:before {
+color: #2c7f2c;;
 }
 
 .grid-item.audio-monitor:before {
@@ -442,7 +467,7 @@ transform: translate(-50%, -50%);
 }
 }
 
-/* Стили для новой компоновки DTMF keypad */
+/* @deprecated Стили для новой компоновки DTMF keypad */
 .keypad-main-grid {
 display: grid;
 grid-template-columns: 3fr 1fr;
@@ -586,7 +611,7 @@ text-decoration: inherit;
 padding-right: 0.2em;
 }
 
-/* Стили для заблокированного тумблера */
+/* @deprecated Стили для заблокированного тумблера */
 .toggle:disabled+label {
 opacity: 0.5;
 cursor: not-allowed;
@@ -611,7 +636,7 @@ opacity: 0.7;
 font-style: italic;
 }
 
-/* === НОВЫЕ СТИЛИ ДЛЯ УПРАВЛЕНИЯ ЛИНКАМИ === */
+/* @deprecated === НОВЫЕ СТИЛИ ДЛЯ УПРАВЛЕНИЯ ЛИНКАМИ === */
 
 /* Стили для тумблера управления линками */
 .link-toggle {
@@ -658,7 +683,7 @@ opacity: 1;
 }
 }
 
-/* Стили для уведомлений линков */
+/* @deprecated Стили для уведомлений линков */
 #linkToastContainer {
 position: fixed;
 top: 20px;
@@ -700,7 +725,7 @@ background: #2e363f;
 border-left: 4px solid #1a2026;
 }
 
-/* Адаптивность для уведомлений линков */
+/* @deprecated Адаптивность для уведомлений линков */
 @media (max-width: 768px) {
 #linkToastContainer {
 top: 10px;
@@ -861,7 +886,7 @@ font-size: 13px;
 
 /* === НОВЫЕ СТИЛИ ДЛЯ УПРАВЛЕНИЯ БЛОКОМ ДАННЫХ СОЕДИНЕНИЙ === */
 
-/* Стили для блока данных соединений */
+/* @deprecated Стили для блока данных соединений */
 #conInfo {
 overflow: hidden;
 background: #212529;
@@ -869,7 +894,7 @@ border-radius: 4px;
 box-sizing: border-box;
 }
 
-/* Классы для анимации раскрытия/скрытия */
+/* @deprecated Классы для анимации раскрытия/скрытия */
 .coninfo-hidden {
 max-height: 0 !important;
 opacity: 0 !important;
@@ -887,7 +912,7 @@ border: 1px solid #3c3f47 !important;
 overflow: visible !important;
 }
 
-/* Плавная анимация раскрытия/скрытия */
+/* @deprecated Плавная анимация раскрытия/скрытия */
 #conInfo {
 transition:
 max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
@@ -897,7 +922,7 @@ padding 0.3s ease,
 border 0.3s ease;
 }
 
-/* Индикатор состояния в кнопке меню Connect Details */
+/* @deprecated Индикатор состояния в кнопке меню Connect Details */
 .menuradioinfo.active {
 color: #2c7f2c !important;
 background-color: rgba(44, 127, 44, 0.1) !important;
@@ -919,13 +944,13 @@ content: " \f0d8"; /* Стрелка вверх (FontAwesome) */
 transform: rotate(180deg);
 }
 
-/* Для предотвращения мерцания при загрузке */
+/* @deprecated Для предотвращения мерцания при загрузке */
 .coninfo-init {
 visibility: hidden;
 opacity: 0;
 }
 
-/* Адаптивность для блока соединений */
+/* @deprecated Адаптивность для блока соединений */
 @media (max-width: 768px) {
 #conInfo {
 margin-left: 5px;
@@ -938,7 +963,7 @@ margin-bottom: 8px !important;
 }
 }
 
-/* Анимация для контента внутри блока при обновлении */
+/* @deprecated Анимация для контента внутри блока при обновлении */
 #conInfo .divTable {
 animation: fadeInContent 0.3s ease;
 }
@@ -954,7 +979,7 @@ transform: translateY(0);
 }
 }
 
-/* Состояние загрузки для блока */
+/* @deprecated Состояние загрузки для блока */
 #conInfo.loading {
 position: relative;
 min-height: 50px;
@@ -991,7 +1016,6 @@ min-height: 0;
 color: #ffffff;
 border:0;
 text-align: center;
-
 margin: - 5px;
 background: #2c7f2c;
 }

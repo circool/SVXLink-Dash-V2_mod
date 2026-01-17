@@ -1,0 +1,28 @@
+/* websocket_control.css - стили для дополнительных кнопок управления WebSocket */
+
+.menuwebsocket:before {
+	content: "\f1eb";
+	font-family: FontAwesome;
+	font-style: normal;
+	font-weight: normal;
+	text-decoration: inherit;
+	padding-right: 0.2em;
+}
+.menuwebsocket-connected:before {
+	color: #2c7f2c;
+}
+.menuwebsocket-disconnected:before {
+	color: #8C0C26;
+}
+.menuwebsocket-connecting:before {
+	color: #a65d14;
+}
+
+
+.menuwebsocket
+{ 
+	position: relative;
+	display: inline-block;
+}
+
+
