@@ -13,7 +13,7 @@
  * - Добавлена поддержка константы SHOW_AUDIO_MONITOR
  * - Убраны кнопки переподключения к ws
  * @note Новое в 0.4.0
- * - Добавлено управление видимостью блока Reflectors при клике на кнопку
+ * - Добавлено управление видимостью блока Reflectors,Macros,Connect Details при клике на кнопку
  */
 $ver = 'top_menu 0.4.0';
 include_once $_SERVER["DOCUMENT_ROOT"] . '/include/init.php';
@@ -78,7 +78,7 @@ if (defined("SHOW_MACROS") && SHOW_MACROS) {
 
 <?php
 if (defined("SHOW_CON_DETAILS") && SHOW_CON_DETAILS) :?>
-	<a class="menuconnection" href="#"> <?= getTranslation('Connect Details') ?></a>';
+	<a class="menuconnection" href="#"> <?= getTranslation('Connect Details') ?></a>
 <?php endif ?>
 
 <?php
