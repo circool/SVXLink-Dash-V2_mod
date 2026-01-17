@@ -19,7 +19,7 @@ TimeoutStopSec=10
 Type=simple
 User=svxlink
 Group=svxlink
-ExecStart=/usr/bin/node /var/www/html/scripts/server.js
+ExecStart=/usr/bin/node /var/www/html/scripts/svxlink-audio-proxy-server.js
 Environment=NODE_ENV=production
 
 [Install]
