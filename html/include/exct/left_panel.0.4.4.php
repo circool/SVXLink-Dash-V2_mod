@@ -627,8 +627,7 @@ if (!empty($displayData['logics'])) {
 						<div class="divTableBody">
 							<div class="divTableRow center">
 								<div class="divTableHeadCell"><?= getTranslation("Reflector") ?></div>
-								<?php dlog("У рефлектора {$reflector['shortname']} тултип содержит {$reflector['tooltip_start']} ", 1, "ERROR"); ?>
-								<div id="logic_<?= $reflector['name'] ?>" class="divTableCell cell_content middle <?= $reflector['style'] ?>" <?= $cellStyleStr ?>><?php echo $reflector['tooltip_start'] . $reflector['shortname'] . $reflector['tooltip_end'] ?></div>
+									<div id="logic_<?= $reflector['name'] ?>" class="divTableCell cell_content middle <?= $reflector['style'] ?>" <?= $cellStyleStr ?>><?php echo $reflector['tooltip_start'] . $reflector['shortname'] . $reflector['tooltip_end'] ?></div>
 							</div>
 
 							<?php // @bookmark Линк рефлектора
