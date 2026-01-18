@@ -42,35 +42,35 @@
   - константы определяющие форматы
     + DASHBOARD_TIME_FORMAT, DASHBOARD_DATE_FORMAT  
   - константы определяющие содержимое 
-    + DASHBOARD_VERSION
-    + DASHBOARD_NAME
-    + DASHBOARD_TITLE
-    + SHOW_CON_DETAILS
-    + SHOW_RADIO_ACTIVITY
-    + SHOW_NET_ACTIVITY
-    + SHOW_REFLECTOR_ACTIVITY
-    + SHOW_RF_ACTIVITY, RF_ACTIVITY_LIMIT
-    + DEBUG, DEBUG_VERBOSE, DEBUG_LOG_FILE, LOG_LEVEL
+    + `DASHBOARD_VERSION`
+    + `DASHBOARD_NAME`
+    + `DASHBOARD_TITLE`
+    + `SHOW_CON_DETAILS`
+    + `SHOW_RADIO_ACTIVITY`
+    + `SHOW_NET_ACTIVITY`
+    + `SHOW_REFLECTOR_ACTIVITY`, `REFLECTOR_ACTIVITY_LIMIT`
+    + `SHOW_RF_ACTIVITY`, `RF_ACTIVITY_LIMIT`
+    + `DEBUG`, `DEBUG_VERBOSE`, `DEBUG_LOG_FILE`, `LOG_LEVEL`
   - константы определяющие настройки поведения
-    + UPDATE_INTERVAL
-    + WS_ENABLED        Работать с websocket сервером состояний
+    + `UPDATE_INTERVAL`
+    + `WS_ENABLED`        Работать с websocket сервером состояний
     + настроки для websocket
-      - WS_PORT
-      - WS_PATH
+      - `WS_PORT`
+      - `WS_PATH`
     + USE_CACHE         Глобально, оспользовать кеш или нет
     + LOG_CACHE_TTL_MS  Настройки времени жизни кеша для различных функций
   - константы определяющие настройки сессии
-      + SESSION_NAME
-      + SESSION_LIFETIME
-      + SESSION_PATH
-      + SESSION_ID
+      + `SESSION_NAME`
+      + `SESSION_LIFETIME`
+      + `SESSION_PATH`
+      + `SESSION_ID`
   - константы для конфигурации svxlink
-    + SVXLOGPATH
-    + SVXLOGPREFIX
-    + SVXLINK_LOG_PATH
-    + SVXCONFPATH
-    + SVXCONFIG
-    + TIMESTAMP_FORMAT @deprecated - нужно брать из конфигурации svxlink
+    + `SVXLOGPATH`
+    + `SVXLOGPREFIX`
+    + `SVXLINK_LOG_PATH`
+    + `SVXCONFPATH`
+    + `SVXCONFIG`
+    + `TIMESTAMP_FORMAT` @deprecated - нужно брать из конфигурации svxlink
 
 
   3.1.2.1. Выполняется чтение файла конфигурации svxlink и построение структуры компонентов (init.php)
@@ -270,9 +270,12 @@
 │   └── fn/                             # Функции и пакеты функций
 │       ├── logTailer.php               # Работа с последними записями журнала
 │       ├── getTranslation.php          # Работа с переводами
+│       ├── getLineTime.php             # Время из строки
+│       ├── formatDuration.php          # Форматирование продолжительности
 │       ├── dlog.php                    # Журналирование для отладки
 │       ├── parseXmlTags.php            # Парсит XML-теги строки журнала
 │       ├── getActualStatus.php         # Строит начальное состояние системы
+│       ├── getServiceStatus.php        # Состояние сервиса
 │       └── exct/                       # Версионированные источники
 │           ├── getActualStatus.0.4.0.php
 │           └── ...

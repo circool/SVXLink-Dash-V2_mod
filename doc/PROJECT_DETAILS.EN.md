@@ -40,7 +40,7 @@ On first launch, parameters from `settings.php` are analyzed and constants are i
 - **Content-defining constants**:  
   `DASHBOARD_VERSION`, `DASHBOARD_NAME`, `DASHBOARD_TITLE`,  
   `SHOW_CON_DETAILS`, `SHOW_RADIO_ACTIVITY`, `SHOW_NET_ACTIVITY`,  
-  `SHOW_REFLECTOR_ACTIVITY`, `SHOW_RF_ACTIVITY`, `RF_ACTIVITY_LIMIT`,  
+  `SHOW_REFLECTOR_ACTIVITY`, `, REFLECTOR_ACTIVITY_LIMIT`,`SHOW_RF_ACTIVITY`, `RF_ACTIVITY_LIMIT`,  
   `DEBUG`, `DEBUG_VERBOSE`, `DEBUG_LOG_FILE`, `LOG_LEVEL`
 - **Behavior-defining constants**:  
   `UPDATE_INTERVAL`, `WS_ENABLED`, `WS_PORT`, `WS_PATH`,  
@@ -232,9 +232,12 @@ During development, symlinks point to current versions. After development, symli
 │   └── fn/                             # Function packages
 │       ├── logTailer.php               # Log tailing
 │       ├── getTranslation.php          # Translation handling
+│       ├── getLineTime.php             # Time from log string
 │       ├── dlog.php                    # Debug logging
+│       ├── formatDuration.php          # Formatting duration string
 │       ├── parseXmlTags.php            # XML tag parsing
 │       ├── getActualStatus.php         # Build initial system state
+│       ├── getServiceStatus.php        # Service status
 │       └── exct/                       # Versioned sources
 │           ├── getActualStatus.0.4.0.php
 │           └── ...
