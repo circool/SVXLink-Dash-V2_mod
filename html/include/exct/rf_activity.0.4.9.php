@@ -72,6 +72,10 @@ function buildLocalActivityTable(): string
 		$func_start = microtime(true);
 		dlog("=== RF ACTIVITY 0.4.9 ===", 4, "DEBUG");
 	}
+	
+	if (isset($_SESSION['TIMEZONE'])) {
+		date_default_timezone_set($_SESSION['TIMEZONE']);
+	}
 
 	$rfResultLimit = RF_ACTIVITY_LIMIT . ' ' . getTranslation('Actions');
 	$logLinesCount = $_SESSION['log_tracker']['total_lines'] ?? 1000;
