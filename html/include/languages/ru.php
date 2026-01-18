@@ -78,6 +78,7 @@ return [
 	'NET Activity' => 'сетевой активности',
 	'New password' => 'Новый пароль',
 	'New username' => 'Новое имя пользователя',
+	'No activity history found' => 'Нет активности',
 	'Node' => 'Узел',
 	'Nodes' => 'Узлы',
 	'Password' => 'Пароль',
