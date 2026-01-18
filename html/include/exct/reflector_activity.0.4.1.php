@@ -12,6 +12,7 @@
 	 * - Упрощен AJAX обработчик, используется единый dtmf_handler.php
 	 * - Удалена сложная логика перестроения сессии
 	 * - Упрощена обработка ответов
+	 * - Добавлены исторические данные
 	 */
 
 	if (defined("DEBUG") && DEBUG) {
@@ -198,7 +199,16 @@
 			$required_condition = $reflector_name;
 			$or_conditions = ['Talker start on TG', 'Talker stop on TG'];
 			$limit = REFLECTOR_ACTIVITY_LIMIT * 5;
-			$session_log_size = countLogLines("Tobias Blomberg");
+			
+			if(isset($_SESSION['status']['service']['log_line_count']) && $_SESSION['status']['service']['log_line_count'] > 0){
+				$session_log_size = $_SESSION['status']['service']['log_line_count'];
+				// reflector_activity.0.4.1: Закончил работу за 0.015696048736572 мсек
+			} else {
+				$session_log_size = countLogLines("Tobias Blomberg");
+				// reflector_activity.0.4.1: Закончил работу за 0.31942486763 мсек
+			}
+			
+			
 			$refl_history = getLogTailFiltered($limit, $required_condition, $or_conditions, $session_log_size);
 
 			$result = [];
