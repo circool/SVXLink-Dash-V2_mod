@@ -586,8 +586,8 @@ if ($isAjax) {
 ?>
 <div id="rf_activity">
 	<div id="rf_activity_table_container">
-	<?php echo $tableHtml; ?>
-</div>
+		<?php echo $tableHtml; ?>
+	</div>
 </div>
 <br>
 <script>
