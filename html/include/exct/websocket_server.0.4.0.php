@@ -38,5 +38,5 @@ if (!$socket) {
 } else {
     // Сервер уже запущен
     fclose($socket);
-    if (defined("DEBUG") && DEBUG) dlog("WebSocket: Сервер уже работает на порту $port", 3, "INFO");
+    if (defined("DEBUG") && DEBUG) dlog("WebSocket: Сервер уже работает на порту $port", 4, "DEBUG");
 }

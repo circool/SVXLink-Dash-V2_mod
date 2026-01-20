@@ -14,7 +14,7 @@ function getServiceStatus() : array
 	if (defined("DEBUG") && DEBUG) {
 		$funct_start = microtime(true);
 		$ver = "getServiceStatus 0.1.11";
-		dlog("$ver: Начинаю выполнение", 3, "WARNING");
+		dlog("$ver: Начинаю выполнение", 4, "INFO");
 	}
 
 	if (defined('TIMESTAMP_FORMAT')) {
@@ -104,7 +104,7 @@ function getServiceStatus() : array
 
 	if (defined("DEBUG") && DEBUG) {
 		$funct_time = microtime(true) - $funct_start;
-		dlog("$ver: Закончил работу за $funct_time мсек", 3, "WARNING");
+		dlog("$ver: Закончил работу за $funct_time мсек", 3, "INFO");
 		unset($ver, $funct_start, $funct_time);
 	}
 	return $result;

@@ -3,8 +3,8 @@
 /** Обновление статуса сессии, логики, линков и модулей
  * @author vladimir@tsurkanenko.ru
  * @date 2026.01.16
- * @filesource /include/fn/exct/getActualStatus.0.4.2.php
- * @version 0.4.2
+ * @filesource /include/fn/exct/getActualStatus.0.4.3.php
+ * @version 0.4.3
 
  * Среднее время выполнения 450-480 ms
  * @since 0.1.13
@@ -40,7 +40,7 @@ function getActualStatus(bool $forceRebuild = false): array
 		require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/dlog.php';
 		$funct_start = microtime(true);
 		$ver = "getActualStatus 0.4.0";
-		dlog("$ver: Начинаю работу", 3, "WARNING");	
+		dlog("$ver: Начинаю работу", 4, "INFO");	
 	}
 
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.php';
@@ -372,7 +372,7 @@ function getActualStatus(bool $forceRebuild = false): array
 		$config_time = microtime(true) - $start;
 
 	} else {
-		if (defined("DEBUG") && DEBUG) dlog("$ver: Выполняю только обновление состояние", 3, "WARNING");
+		if (defined("DEBUG") && DEBUG) dlog("$ver: Выполняю только обновление состояния", 3, "WARNING");
 		$status = [
 			'link' => $_SESSION['status']['link'],
 			'logic' => $_SESSION['status']['logic'],
@@ -398,7 +398,7 @@ function getActualStatus(bool $forceRebuild = false): array
 	
 	// Получаем количество строк журнала для текущей сессии сервиса
 	$logCount = $status['service']['log_line_count'];
-	if (defined("DEBUG") && DEBUG) dlog("$ver: Активных строк в журнале $logCount", 3, "DEBUG");
+	if (defined("DEBUG") && DEBUG) dlog("$ver: Активных строк в журнале $logCount", 4, "DEBUG");
 
 
 	// @bookmark Логики и состояние их модулей (с клиентами)
@@ -447,7 +447,7 @@ function getActualStatus(bool $forceRebuild = false): array
 
 		// если получена пустая строка, тоже вычислять нечего
 		if (empty($serviceCommand)) {
-			if (defined("DEBUG") && DEBUG) dlog("$ver: Пустая строка, пропускаю " .  $serviceCommandTimestamp, 1, "ERROR");
+			if (defined("DEBUG") && DEBUG) dlog("$ver: Пустая строка, пропускаю " .  $serviceCommandTimestamp, 2, "WARNING");
 			continue;
 		}
 
@@ -493,7 +493,7 @@ function getActualStatus(bool $forceRebuild = false): array
 
 			//Убедимся что время распарсилось
 			if ($nodesTimestamp === false) {
-				if (defined("DEBUG") && DEBUG) dlog("$ver: Время не правильное, пропускаю данные о подключении узлов", 1, "ERROR");
+				if (defined("DEBUG") && DEBUG) dlog("$ver: Время не правильное, пропускаю данные о подключении узлов", 2, "WARNING");
 				continue;
 			}
 
@@ -830,7 +830,7 @@ function getActualStatus(bool $forceRebuild = false): array
 							// @bookmark Для модуля Frn
 							if ($moduleName === "Frn") {
 
-								if (defined("DEBUG") && DEBUG) dlog("$ver: Ищем сервер для $moduleName", 2, "DEBUG");
+								if (defined("DEBUG") && DEBUG) dlog("$ver: Ищем сервер для $moduleName", 4, "DEBUG");
 
 								$logFRNcount = countLogLines("Activating module Frn", $logCount);
 								$logFRN = getLogTail($logFRNcount);
@@ -991,7 +991,7 @@ function getActualStatus(bool $forceRebuild = false): array
 	
 	if (defined("DEBUG") && DEBUG) {
 		$funct_time = microtime(true) - $funct_start;
-		dlog("$ver: Закончил работу за $funct_time мсек", 3, "WARNING");
+		dlog("$ver: Закончил работу за $funct_time мсек", 3, "INFO");
 		unset($ver, $funct_start, $funct_time);
 	}
 

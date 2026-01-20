@@ -504,7 +504,7 @@ function buildLogicData(array $lp_status): array
 
 if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
 	$ver = "left_panel.php 0.4.3";
-	dlog("$ver: Начинаю работу", 3, "WARNING");
+	dlog("$ver: Начинаю работу", 4, "INFO");
 }
 
 
@@ -708,5 +708,5 @@ unset(
 
 if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
 	$func_time = microtime(true) - $func_start;
-	dlog("$ver: Закончил работу за $func_time msec", 3, "WARNING");
+	dlog("$ver: Закончил работу за $func_time msec", 3, "INFO");
 };

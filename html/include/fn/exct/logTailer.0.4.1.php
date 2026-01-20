@@ -1,82 +1,22 @@
 <?php
 
 /**
- * Периодически проверяет журнал в файловой системе
- * Формирует таблицу состояний и хранит ее в сессии php
- * - начало значимой части журнала (номер строки, временная метка)
- * - время последней проверки
- * - последняя строка полученная при предыдущем вызове (номер строки в журнале, временная метка)
- * @note Не используется пока (на будущее) 
- * @filesource /include/fn/logTailer.0.2.1.php
- * @version 0.2.1
- * @param : string $logPath
- * @использует : getLineTime($logLine) для получения времени стрики журнала
- * @return array $log
- *
- * ]
+ * Функции для работы с журналом svxlink
+ * @filesource @filesource /include/fn/logTailer.0.4.0.php
+ * @version 0.4.0
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
+ * @date 2026.01.18
  */
+
 if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
 	include_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/dlog.php';
 }
 
-function logTailer($logFile)
-{
-	$logTailerState = $_SESSION['LogTailerState'] ?? [];
 
-	// Получаем номер строки с конца для log_begin
-	$log_begin_cmd = "grep -n 'Tobias Blomberg' $logFile | tail -1";
-	$log_begin_info = shell_exec($log_begin_cmd);
-
-	// Парсим результат: "строка_номер:содержание"
-	$log_begin_line = '';
-	$log_begin_line_number = 0;
-
-	if (!empty($log_begin_info)) {
-		list($log_begin_line_number, $log_begin_line) = explode(':', $log_begin_info, 2);
-		$log_begin_line_number = (int)$log_begin_line_number;
-	}
-
-	$log_begin_time = getLineTime($log_begin_line);
-
-	// Получаем последнюю строку и ее номер
-	$total_lines_cmd = "wc -l < $logFile";
-	$total_lines = (int)shell_exec($total_lines_cmd);
-
-	$last_line = `tail -1 $logFile`;
-	$last_line_time = getLineTime($last_line);
-
-	// Вычисляем позиции от конца
-	$log_begin_pos_from_end = $total_lines - $log_begin_line_number + 1;
-	$last_line_pos_from_end = 1; // Последняя строка всегда имеет позицию 1
-
-	// Получаем строки от log_begin до конца файла
-	$lines_to_read = $total_lines - $log_begin_line_number + 1;
-	$logContent_cmd = "tail -{$lines_to_read} $logFile";
-	$logContent = shell_exec($logContent_cmd);
-	$logContent = explode("\n", trim($logContent));
-
-	$result = count($logContent) > 0;
-
-	$logTailerState = [
-		'lastPosition' => $last_line_pos_from_end,
-		'lastTimeCheck' => time(),
-		'firstLogTime' => $log_begin_time,
-		'firstLogLineNumber' => $log_begin_line_number,
-		'firstLogPositionFromEnd' => $log_begin_pos_from_end,
-		'lastLogTime' => $last_line_time,
-		'totalLines' => $total_lines,
-		'success' => $result
-	];
-
-	$_SESSION['LogTailerState'] = $logTailerState;
-
-	return $logContent;
-}
-
-/**
- * Возвращает последние N строк из лог-файла SVXLink
+/** Возвращает последние N строк из лог-файла SVXLink
+ * 
  * Использует системную команду tail для максимальной производительности
- * @filesource logTailer.0.1.1.php:getLogTail
+ * @filesource /include/fn/logTailer.0.4.0.php
  * @version 0.0.1
  * @param int $num_lines Количество строк для чтения с конца файла
  * @return array|false Массив строк (без символов конца строк) или false при ошибке
@@ -139,12 +79,10 @@ function getLogTail($num_lines)
 	return $lines;
 }
 
-/**
- * Возвращает количество строк после последнего вхождения паттерна в лог-файле
+/** Возвращает количество строк после последнего вхождения паттерна в лог-файле
+ * 
  * Использует fixed-string поиск (grep -F) для максимальной скорости
  * Запрещает wildcards и regex-символы в паттерне
- * @filesource logTailer.0.1.1.php:countLogLines
- * @note countLogLines
  * @version 0.1.18 - fixed-string поиск, запрет wildcards
  * @param string $pattern Подстрока для поиска (чувствительная к регистру)
  * @param int $analyze_lines Количество анализируемых строк:
@@ -155,7 +93,7 @@ function getLogTail($num_lines)
  * @todo Попытаться сократить время выполнения (около 0.23 мсек)
  * @note Для сокращения времени поиска можно искать не по всему файлу а по последнии n строкам, если в сессии есть $_SESSION['status']['service']['log_line_count']
  */
-function countLogLines(string $pattern, int $analyze_lines = 0): int
+function countLogLines(string $pattern, int $analyze_lines = 0): int|false
 {
 	$func_start = microtime(true);
 	$ver = "countLogLines 0.1.18";
@@ -163,26 +101,27 @@ function countLogLines(string $pattern, int $analyze_lines = 0): int
 	// ===== КОНФИГУРИРУЕМОЕ КЕШИРОВАНИЕ =====
 	$useCache = false;
 	$cacheDuration = 1000;
-
-
 	// ===== КОНЕЦ КЕШИРОВАНИЯ =====
 
 	if (defined("DEBUG") && DEBUG) {
 		dlog("$ver: Паттерн: '$pattern', Количество строк: $analyze_lines", 4, "DEBUG");
 	}
 
-	// Запрещаем wildcards и regex-символы
-	$forbidden_chars = ['*', '.', '?', '+', '[', ']', '(', ')', '{', '}', '^', '$', '|', '\\'];
 
-	foreach ($forbidden_chars as $char) {
-		if (str_contains($pattern, $char)) {
-			if (defined("DEBUG") && DEBUG) {
-				dlog("$ver: Запрещенный символ в паттерне $pattern: '$char'", 1, "ERROR");
-				dlog("$ver: Используйте только plain text для fixed-string поиска", 2, "WARNING");
-			}
-			return false;
-		}
-	}
+
+	// Запрещаем wildcards и regex-символы
+	// @since 0.4.0 - не проверяем на wildcard!
+	// $forbidden_chars = ['*', '.', '?', '+', '[', ']', '(', ')', '{', '}', '^', '$', '|', '\\'];
+
+	// foreach ($forbidden_chars as $char) {
+	// 	if (str_contains($pattern, $char)) {
+	// 		if (defined("DEBUG") && DEBUG) {
+	// 			dlog("$ver: Запрещенный символ в паттерне $pattern: '$char'", 1, "ERROR");
+	// 			dlog("$ver: Используйте только plain text для fixed-string поиска", 2, "WARNING");
+	// 		}
+	// 		return false;
+	// 	}
+	// }
 
 	if (!is_string($pattern) || trim($pattern) === '') {
 		if (defined("DEBUG") && DEBUG) dlog("$ver: Неверный паттерн", 1, "ERROR");
@@ -208,13 +147,12 @@ function countLogLines(string $pattern, int $analyze_lines = 0): int
 		return false;
 	}
 
-	// ===== FIXED-STRING ПОИСК (БЫСТРЫЙ) =====
-	// Используем grep -F для поиска фиксированной строки
+
 	// Экранируем только кавычки для shell
 	$shell_escaped_pattern = str_replace("'", "'\"'\"'", $pattern);
 
 	if (defined("DEBUG") && DEBUG) {
-		dlog("$ver: Fixed-string поиск паттерна: '$pattern'", 4, "DEBUG");
+		dlog("$ver:  Поиск паттерна: '$pattern'", 4, "DEBUG");
 	}
 
 	if ($analyze_lines === 0) {
@@ -247,7 +185,7 @@ function countLogLines(string $pattern, int $analyze_lines = 0): int
 				
 				if (defined("DEBUG") && DEBUG) {
 					$fuct_time = microtime(true) - $func_start;
-					dlog("$ver: Закончил работу за $fuct_time мсек, искал в последних $analyze_lines строках, вернул результат $result", 3, "WARNING");
+					dlog("$ver: Закончил работу за $fuct_time мсек, искал в последних $analyze_lines строках, вернул результат $result", 3, "INFO");
 				}
 				return $result;
 			}
@@ -274,21 +212,22 @@ function countLogLines(string $pattern, int $analyze_lines = 0): int
 				dlog("$ver: Строк после паттерна: $result", 4, "DEBUG");
 			
 				$fuct_time = microtime(true) - $func_start;
-				dlog("$ver: Закончил работу за $fuct_time мсек, искал в последних $analyze_lines строках, вернул результат $result", 3, "WARNING");
+				dlog("$ver: Закончил работу за $fuct_time мсек, искал в последних $analyze_lines строках, вернул результат $result", 3, "INFO");
 			}
 			return $result;
 		}
 	}
 
 	if (defined("DEBUG") && DEBUG) {
-		dlog("$ver: Паттерн не найден в файле", 2, 'WARNING');
+		dlog("$ver: Паттерн ($pattern) не найден в файле", 2, 'WARNING');
 	}
-
-	return false;
+	
+	$result = false;
+	return $result;
 }
 
-/**
- * Возвращает последние N строк из лог-файла SVXLink с фильтрацией по условиям
+/** Возвращает последние N строк из лог-файла SVXLink с фильтрацией по условиям
+ * 
  * @note getLogTailFiltered
  * @version 0.1.12
  * @param int $num_lines Сколько строк вернуть в результате
@@ -305,7 +244,7 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 	$func_start = microtime(true);
 	$ver = "getLogTailFiltered 1.2.0";
 	
-	// if (defined("DEBUG") && DEBUG) dlog("$ver: Начинаю работу", 3, "WARNING");
+	if (defined("DEBUG") && DEBUG) dlog("$ver: Начинаю работу", 4, "DEBUG");
 	
 	
 	// Проверка обязательных параметров
@@ -315,7 +254,7 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 	}
 
 	if (!is_array($or_conditions)) {
-		// if (defined("DEBUG") && DEBUG) dlog("$ver: or_conditions должен быть массивом", 1, "ERROR");
+		if (defined("DEBUG") && DEBUG) dlog("$ver: or_conditions должен быть массивом", 1, "ERROR");
 		return false;
 	}
 
@@ -324,7 +263,7 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 
 	if ($search_limit !== null) {
 		if (!is_numeric($search_limit)) {
-			// if (defined("DEBUG") && DEBUG) dlog("$ver: search_limit должен быть числом", 1, "ERROR");
+			if (defined("DEBUG") && DEBUG) dlog("$ver: search_limit должен быть числом", 1, "ERROR");
 			return false;
 		}
 
@@ -332,18 +271,18 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 
 		if ($search_limit == 0) {
 			$actual_search_limit = 100000;
-			// if (defined("DEBUG") && DEBUG) dlog("$ver: search_limit=$search_limit, использую значение по умолчанию: $actual_search_limit строк", 4, "DEBUG");
+			if (defined("DEBUG") && DEBUG) dlog("$ver: search_limit=$search_limit, использую значение по умолчанию: $actual_search_limit строк", 4, "DEBUG");
 		} else {
 			$actual_search_limit = abs($search_limit);
-			// if (defined("DEBUG") && DEBUG) dlog("$ver: Будет искать в последних $actual_search_limit строках файла", 4, "DEBUG");
+			if (defined("DEBUG") && DEBUG) dlog("$ver: Будет искать в последних $actual_search_limit строках файла", 4, "DEBUG");
 		}
 	} else {
-		// if (defined("DEBUG") && DEBUG) dlog("$ver: search_limit не указан, использую значение по умолчанию: $actual_search_limit строк", 3, "INFO");
+		if (defined("DEBUG") && DEBUG) dlog("$ver: search_limit не указан, использую значение по умолчанию: $actual_search_limit строк", 3, "INFO");
 	}
 
 	// Определение пути к файлу
 	if (!defined('SVXLOGPATH') || !defined('SVXLOGPREFIX')) {
-		// if (defined("DEBUG") && DEBUG) dlog("$ver: Путь к лог-файлу не определен", 1, "ERROR");
+		if (defined("DEBUG") && DEBUG) dlog("$ver: Путь к лог-файлу не определен", 1, "ERROR");
 		return false;
 	}
 
@@ -351,7 +290,7 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 	// if (defined("DEBUG") && DEBUG) dlog("$ver: Путь к файлу: $logPath", 4, "DEBUG");
 
 	if (!file_exists($logPath) || !is_readable($logPath)) {
-		// if (defined("DEBUG") && DEBUG) dlog("$ver: Файл не найден или недоступен", 1, "ERROR");
+		if (defined("DEBUG") && DEBUG) dlog("$ver: Файл не найден или недоступен", 1, "ERROR");
 		return false;
 	}
 
@@ -383,7 +322,7 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 
 		$output = shell_exec($command);
 		if ($output === null || $output === '') {
-			// if (defined("DEBUG") && DEBUG) dlog("$ver: Команда не вернула данных", 2, "WARNING");
+			if (defined("DEBUG") && DEBUG) dlog("$ver: Команда не вернула данных", 2, "WARNING");
 			return false;
 		}
 
@@ -392,7 +331,7 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 		
 		if (defined("DEBUG") && DEBUG) {
 			$func_time = microtime(true) - $func_start;
-			// dlog("$ver: Поиск без условий нашел " . count($lines) . " строк за $func_time мсек", 3, "WARNING");
+			dlog("$ver: Поиск без условий нашел " . count($lines) . " строк за $func_time мсек", 3, "WARNING");
 		}
 		return $lines;
 	}
@@ -476,12 +415,12 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 	return $lines;
 }
 
-/**
- * Отслеживает новые строки журнала с момента последнего вызова
+/** Отслеживает новые строки журнала с момента последнего вызова
+ * 
  * Использует tail -n +N для чтения от определенной позиции
  * Сохраняет состояние в сессии, обнаруживает ротацию логов
  * Кеширует результаты на CACHE_SIZE миллисекунд
- * 
+ * @filesource /include/fn/logTailer.0.4.0.php
  * @note trackNewLogLines
  * @version 0.1.16 - исправлена ошибка выхода за пределы файла
  * @param int $max_lines Максимальное количество строк для чтения (0 = без ограничений)
@@ -489,10 +428,10 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
  */
 function trackNewLogLines($max_lines = 1000)
 {
-	$ver = "trackNewLogLines 0.1.16";
-
 	if (defined("DEBUG") && DEBUG) {
-		dlog("$ver: Начинаю работу", 3, "WARNING"); 
+		$func_start = microtime(true);
+		$ver = "trackNewLogLines 0.4.0";
+		dlog("$ver: Начинаю работу", 4, "INFO"); 
 		dlog("$ver: ID сессии: " . session_id(), 4, "DEBUG");
 		dlog("$ver: Статус сессии: " . session_status(), 4, "DEBUG");
 	}
@@ -551,7 +490,7 @@ function trackNewLogLines($max_lines = 1000)
 		: 0;
 
 	if (defined("DEBUG") && DEBUG) {
-		dlog("$ver: Текущее количество строк в файле: $current_total_lines", 3, "DEBUG");
+		dlog("$ver: Текущее количество строк в файле: $current_total_lines", 4, "DEBUG");
 	}
 
 	// Работа с сессией
@@ -596,14 +535,14 @@ function trackNewLogLines($max_lines = 1000)
 		$func_start_line = max(1, $current_total_lines - $max_lines + 1);
 
 		if (defined("DEBUG") && DEBUG) {
-			dlog("$ver: Первый запуск или сброс. Начинаем с: $func_start_line строки журнала", 2, "INFO");
+			dlog("$ver: Первый запуск или сброс. Начинаем с: $func_start_line строки журнала", 3, "INFO");
 		}
 	}
 
 	// Проверяем, есть ли что читать
 	if ($func_start_line > $current_total_lines) {
 		if (defined("DEBUG") && DEBUG) {
-			dlog("$ver: Нет новых строк (start_line=$func_start_line > current_total_lines=$current_total_lines)", 3, "INFO");
+			dlog("$ver: Нет новых строк (start_line=$func_start_line > current_total_lines=$current_total_lines)", 4, "DEBUG");
 		}
 
 		// Обновляем состояние (файл мог уменьшиться)
@@ -721,15 +660,15 @@ function trackNewLogLines($max_lines = 1000)
 	if (!$sessionWasActive && session_status() === PHP_SESSION_ACTIVE) {
 		session_write_close();
 	}
-
+	if (defined("DEBUG") && DEBUG) {
+		$func_time = microtime(true) - $func_start;
+		dlog("$ver: Закончил работу за $func_time msec", 3, "INFO");
+	}
 	return $result;
 }
 
 
-/**
- * @filesource getLastLineNumber.0.2.1.php
- * 
- * Возвращает номер последней строки в лог-файле SvxLink
+/** Возвращает номер последней строки в лог-файле SvxLink
  * Использует awk для максимальной производительности
  * 
  * @param string $logPath Полный путь к лог-файлу
@@ -770,31 +709,5 @@ function getLogLastLineNumber(): int {
     return (int)$lineNumber;
 }
 
-function getServiceStatusLogLine(): array
-{
-	$logPath = SVXLOGPATH . SVXLOGPREFIX;
-
-	$command = 'tac ' . escapeshellarg($logPath) .
-		' | grep -m 1 -E "Tobias Blomberg|SIGTERM"';
-
-	$output = shell_exec($command);
-
-	if ($output === null || trim($output) === '') {
-		return ['is_active' => false];
-	}
-
-	$line = trim($output);
-	$is_active = (strpos($line, 'Tobias Blomberg') !== false);
-	$line_timestamp = getLineTime($line);
-
-	return [
-		'is_active' => $is_active,
-		'start' => $line_timestamp ?: 0,
-		'duration' => $line_timestamp ? time() - $line_timestamp : 0,
-		'name' => defined("SERVICE_TITLE") ? SERVICE_TITLE : "SvxLink",
-		'timestamp_format' => defined('TIMESTAMP_FORMAT') ? TIMESTAMP_FORMAT : '',
-		'log_line_count' => getLogLastLineNumber()
-	];
-}
 
 ?>

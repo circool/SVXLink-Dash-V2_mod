@@ -43,7 +43,7 @@ function renderRadioActivityTable()
 {
 	$func_start = microtime(true);
 	$ver = "radio_activity.0.4.0::renderRadioActivityTable";
-	if (defined("DEBUG") && DEBUG && function_exists("dlog")) dlog("$ver: Начинаю работу", 3, "WARNING");
+	if (defined("DEBUG") && DEBUG && function_exists("dlog")) dlog("$ver: Начинаю работу", 4, "INFO");
 	// Проверяем наличие данных в сессии
 	if (!isset($_SESSION['status']['logic'])) {
 		return '';
@@ -149,7 +149,7 @@ function renderRadioActivityTable()
 	}
 	if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
 		$func_time = microtime(true) - $func_start;
-		dlog("$ver: Закончил работу за $func_time msec", 3, "WARNING");
+		dlog("$ver: Закончил работу за $func_time msec", 3, "INFO");
 	}
 	return $html;
 }

@@ -18,7 +18,7 @@
 	if (defined("DEBUG") && DEBUG) {
 		$funct_start = microtime(true);
 		$ver = 'reflector_activity.0.4.1';
-		dlog("$ver: Начинаю выполнение", 2, "WARNING");
+		dlog("$ver: Начинаю выполнение", 4, "DEBUG");
 	}
 
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/init.php';
@@ -276,13 +276,13 @@
 		<?php
 		if (defined("DEBUG") && DEBUG) {
 			$funct2_start = microtime(true);			
-			dlog("$ver: Начинаю поиск истории рефлектора $refl_name", 3, "WARNING");
+			dlog("$ver: Начинаю поиск истории рефлектора $refl_name", 4, "DEBUG");
 		}
 		$history = getReflectorHistory($refl_name);
 
 		if (defined("DEBUG") && DEBUG) {
 			$funct2_time = microtime(true) - $funct2_start;			
-			dlog("$ver: Поиск истории $refl_name вернул " . count($history) . " записей за $funct2_time мсек" , 3, "WARNING");
+			dlog("$ver: Поиск истории $refl_name вернул " . count($history) . " записей за $funct2_time мсек" , 4, "DEBUG");
 		}
 		?>
 
@@ -451,7 +451,7 @@
 	unset($refl_logics, $refl_logic, $refl_links, $refl_name, $linkData, $status, $logicName, $newState, $activateCmd, $deactivateCmd, $dtmfPath, $isLinkConnected, $isToggleEnabled, $foundLinkName, $sourceLogicName, $linkName, $link, $toggleId, $checkedAttr, $disabledAttr, $titleText, $textColor, $selectedTG, $monitoringTG, $tempMonitoringTG, $hosts,);
 	if (defined("DEBUG") && DEBUG) {
 		$funct_time = microtime(true) - $funct_start;
-		dlog("$ver: Закончил работу за $funct_time мсек", 3, "WARNING");
+		dlog("$ver: Закончил работу за $funct_time мсек", 3, "INFO");
 		unset($ver, $funct_start, $funct_time);
 	}
 	?>

@@ -29,7 +29,7 @@ if (defined("DEBUG") && DEBUG){
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/dlog.php';
 	$func_start = microtime(true);
 	$ver = "init.0.4.0";
-	dlog("$ver: Начинаю работу", 3, "WARNING");
+	dlog("$ver: Начинаю работу", 4, "INFO");
 }
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getActualStatus.php';
@@ -61,7 +61,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 if (defined("DEBUG") && DEBUG) {
-	dlog("Система инициирована, версия " . DASHBOARD_VERSION, 1, "INFO");
+	dlog("Система инициирована, версия " . DASHBOARD_VERSION, 3, "INFO");
 }
 
 // Устанавливаем часовой пояс
@@ -89,18 +89,19 @@ if (!isset($_SESSION['status'])) {
 	}	
 
 	$actualStatus = getActualStatus(true);
-	$_SESSION['status'] = $actualStatus;
-
+	
 } else {
 	if (defined("DEBUG") && DEBUG) dlog("$ver: Система уже инициирована, выполняю быстрое обновление статуса", 3, "INFO");
 	$actualStatus = getActualStatus(false);
-	$_SESSION['status'] = $actualStatus;
 }
+
+$_SESSION['status'] = $actualStatus;
+
 unset($actualStatus);
 
 // Сбрасываем кеш логов
 trackNewLogLines(1);
-if (defined("DEBUG") && DEBUG) dlog("$ver: Указатель последней записи лога сброшен в конец журнала", 4, "INFO");
+if (defined("DEBUG") && DEBUG) dlog("$ver: Указатель последней записи лога сброшен в конец журнала", 3, "INFO");
 
 
 
@@ -111,7 +112,7 @@ unset($socket, $command, $serverScript, $logFile, $systemTimezone, $port, $host,
 
 if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
 	$func_time = microtime(true) - $func_start;
-	dlog("$ver: Закончил работу за $func_time msec", 3, "WARNING");
+	dlog("$ver: Закончил работу за $func_time msec", 3, "INFO");
 	unset($ver);
 }
 

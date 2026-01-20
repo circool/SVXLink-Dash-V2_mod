@@ -19,21 +19,24 @@ header("Content-type: text/css");
 ?>
 
 .leftnav {
-float: left;
-margin : -12px 0 0 0;
-<!-- padding : 0 3px 3px 10px; -->
-padding : 0px 3px 3px 10px;
-width : 230px;
-background : #212529;
-font-weight : normal;
+	float: left;
+	margin : -12px 0 0 0;
+	<!-- padding : 0 3px 3px 10px; -->
+	padding : 0px 3px 3px 10px;
+	width : 230px;
+	background : #212529;
+	font-weight : normal;
+}
 
+.footer{
+	margin: 0;
 }
 
 #local_activity table tr:hover td, 
 #local_activity table tr:hover td a
 {
-background-color: #3c3f47;
-color: #ffffff;
+	background-color: #3c3f47;
+	color: #ffffff;
 }
 
 

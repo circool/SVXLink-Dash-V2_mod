@@ -232,10 +232,12 @@ During development, symlinks point to current versions. After development, symli
 │   └── fn/                             # Function packages
 │       ├── logTailer.php               # Log tailing
 │       ├── getTranslation.php          # Translation handling
+│       ├── compareTimestampMilis.php   # 
 │       ├── getLineTime.php             # Time from log string
 │       ├── dlog.php                    # Debug logging
 │       ├── formatDuration.php          # Formatting duration string
 │       ├── parseXmlTags.php            # XML tag parsing
+│       ├── removeTimestamp.php         # Remove timestamp from log line
 │       ├── getActualStatus.php         # Build initial system state
 │       ├── getServiceStatus.php        # Service status
 │       └── exct/                       # Versioned sources

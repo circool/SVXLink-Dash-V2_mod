@@ -10,7 +10,7 @@
 // Инициализация сессии с теми же параметрами, что и в основной системе
 if (session_status() === PHP_SESSION_NONE) {
     require_once $_SERVER["DOCUMENT_ROOT"] . '/include/settings.php';
-    session_set_cookie_params(SESSION_LIFETIME, SESSION_PATH);
+    // session_set_cookie_params(SESSION_LIFETIME, SESSION_PATH);
     session_name(SESSION_NAME);
     session_id(SESSION_ID);
     session_start();
@@ -21,6 +21,7 @@ if (session_status() === PHP_SESSION_NONE) {
 /**
  * Получение пути к DTMF устройству
  * @return string|null Путь к устройству или null если не найден
+ * @deprecated Это костыль который нужно пофиксить
  */
 function getDtmfPath() {
     // 1. Пробуем из сессии (самый быстрый способ)
@@ -32,7 +33,7 @@ function getDtmfPath() {
     if (isset($_SESSION['status']['logic'])) {
         foreach ($_SESSION['status']['logic'] as $logic) {
             if (!empty($logic['dtmf_cmd'])) {
-                $_SESSION['DTMF_CTRL_PTY'] = $logic['dtmf_cmd'];
+                // $_SESSION['DTMF_CTRL_PTY'] = $logic['dtmf_cmd'];
                 return $logic['dtmf_cmd'];
             }
         }
@@ -90,7 +91,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Получаем путь к DTMF устройству
-        $dtmfPath = getDtmfPath();
+        // @todo Костыль - решить как получить сессию тут
+        // 
+        if( isset($_SESSION['DTMF_CTRL_PTY']) ) {
+            $dtmfPath = $_SESSION['DTMF_CTRL_PTY'];
+        } else {
+            $dtmfPath = '/dev/shm/dtmf_ctrl';
+        }
         
         if (empty($dtmfPath)) {
             $response = ['status' => 'error', 'message' => 'DTMF path not configured'];

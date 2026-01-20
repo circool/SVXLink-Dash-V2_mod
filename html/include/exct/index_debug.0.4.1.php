@@ -18,11 +18,14 @@ require_once $_SERVER["DOCUMENT_ROOT"] . "/include/init.php";
 require_once $_SERVER["DOCUMENT_ROOT"] . "/include/fn/getTranslation.php";
 // $_SESSION['dashboard_lang'] = 'ru';
 if (isset($_SERVER['HTTP_ACCEPT_LANGUAGE'])) $_SESSION['dashboard_lang'] = $_SERVER['HTTP_ACCEPT_LANGUAGE'];
+
 if (defined("DEBUG") && DEBUG) {
 	require_once $_SERVER["DOCUMENT_ROOT"] . "/include/fn/dlog.php";
 	$main_funct_start = microtime(true);
 	$main_ver = "index_debug.php 0.4.1";
-	dlog("$main_ver: Начинаю работу", 3, "WARNING");
+	dlog("----------------------------------------------------", 3, "INFO");
+	dlog("$main_ver: Начинаю работу", 3, "INFO");
+	dlog("----------------------------------------------------", 3, "INFO");
 }
 
 
@@ -170,7 +173,9 @@ if (!file_exists($auth_file)) {
 			<?php
 			if (defined("DEBUG") && DEBUG) {
 				$main_funct_time = microtime(true) - $main_funct_start;
-				dlog("$main_ver: Закончил работу за $main_funct_time мсек", 3, "WARNING");
+				dlog("----------------------------------------------------", 3, "INFO");
+				dlog("$main_ver: Закончил работу за $main_funct_time мсек", 3, "INFO");
+				dlog("----------------------------------------------------", 3, "INFO");
 				unset($main_ver, $main_funct_start, $main_funct_time);
 			}
 			?>

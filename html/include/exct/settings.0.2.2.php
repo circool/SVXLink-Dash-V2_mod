@@ -62,7 +62,7 @@ define('SHOW_RADIO_ACTIVITY', true);
 define('SHOW_REFLECTOR_ACTIVITY', true); 
 define('REFLECTOR_ACTIVITY_LIMIT', 6); 
 define('SHOW_NET_ACTIVITY', true);
-define('NET_ACTIVITY_LIMIT', 6);
+define('NET_ACTIVITY_LIMIT', 15);
 define('SHOW_RF_ACTIVITY', true);
 define('RF_ACTIVITY_LIMIT', 6);
 // WebSocket
@@ -74,7 +74,7 @@ if (WS_ENABLED) {
 }
 
 // Глобально, использовать кеш или нет
-define("USE_CACHE", true);
+define("USE_CACHE", false);
 // Настройки времени жизни кеша для различных функций
 define("LOG_CACHE_TTL_MS", 1000);
 
