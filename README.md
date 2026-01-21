@@ -59,7 +59,20 @@ The real-time audio monitoring system (WebSocket server and client) is preserved
 - Reflectors, Talkgroups, Links management
 - Composite device error analysis
 
+![Device](./readme_images/device_condition.jpg)
+
+![Echolink details](./readme_images/echolink_details.jpg)
+
+![Frn mode](./readme_images/frn_screen.jpg)
+
+![Modules](./readme_images/modules.jpg)
+
+![Echolink](./readme_images/el_panel.jpg)
+
+![Echolink](./readme_images/frn_panel.jpg)
+
 ![Reflector's talkgroups](./readme_images/links.jpg)
+
 ![Composide device with error](./readme_images/multi_devices.jpg)
 
 ### Preserved Audio Monitoring System
