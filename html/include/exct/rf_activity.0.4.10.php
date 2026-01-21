@@ -1,27 +1,27 @@
 <?php
 
 /**
- * @filesource /include/exct/rf_activity.0.4.9.php
- * @version 0.4.9
+ * @filesource /include/exct/rf_activity.0.4.11.php
+ * @version 0.4.11
  * @description RF Activity - поиск контекста по урезанным временным меткам с AJAX-обновлением
- * @note Добавлено динамическое обновление каждые SLOW_UPDATE_INTERVAL (3000 мс)
+ * @note Изменения в 0.4.11:
+ * - Добавлен контейнер для обновляемых данных с id="rf_activity_content"
+ * - Заголовок вынесен из обновляемой части
+ * @todo Слишком долгое выполнение - 0.93 s - оптимизировать
  */
 
-// Если это AJAX-запрос, возвращаем только таблицу без JavaScript
-$isAjax = isset($_GET['ajax']) && $_GET['ajax'] == 1;
+// AJAX режим - минимальная инициализация
+if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+	// Устанавливаем заголовок
+	header('Content-Type: text/html; charset=utf-8');
 
-// Для AJAX-запросов используем минимальный набор зависимостей
-if ($isAjax) {
-	// Определяем корень документа
+	// Минимальные зависимости для AJAX режима
 	$docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/var/www/html';
 
-	// Подключаем settings.php для констант
-	$settingsFile = $docRoot . '/include/settings.php';
-	if (file_exists($settingsFile)) {
-		require_once $settingsFile;
-	}
+	// Подключаем settings для констант
+	require_once $docRoot . '/include/settings.php';
 
-	// Подключаем только необходимые файлы
+	// Подключаем необходимые файлы
 	$requiredFiles = [
 		'/include/fn/getTranslation.php',
 		'/include/fn/logTailer.php',
@@ -36,7 +36,7 @@ if ($isAjax) {
 		}
 	}
 
-	// Подключаем dlog только если DEBUG включен и файл существует
+	// Подключаем dlog если DEBUG включен
 	if (defined("DEBUG") && DEBUG) {
 		$dlogFile = $docRoot . '/include/fn/dlog.php';
 		if (file_exists($dlogFile)) {
@@ -44,35 +44,38 @@ if ($isAjax) {
 		}
 	}
 
-	// Инициализация сессии только для чтения
-	if (session_status() === PHP_SESSION_NONE) {
-		session_name(SESSION_NAME);
-		session_start();
-	}
-
 	// Сразу освобождаем сессию
-	session_write_close();
-} else {
-	// Обычный режим - подключаем как обычно
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.php';
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.php';
-
-
-	if (defined("DEBUG") && DEBUG) {
-		include_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/dlog.php';
+	if (session_status() === PHP_SESSION_ACTIVE) {
+		session_write_close();
 	}
+
+	// В AJAX режиме возвращаем только таблицу без заголовка
+	echo buildLocalActivityTable();
+	exit;
+}
+
+// Обычный режим - полная инициализация
+if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
+	$ver = "rf_activity 0.4.11";
+	dlog("$ver: Начинаю работу", 4, "INFO");
+	$func_start = microtime(true);
+}
+
+require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
+require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.php';
+require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.php';
+
+if (defined("DEBUG") && DEBUG) {
+	include_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/dlog.php';
 }
 
 function buildLocalActivityTable(): string
 {
-	global $isAjax;
-
-	if (!$isAjax && defined("DEBUG") && DEBUG && function_exists("dlog")) {
+	if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
 		$func_start = microtime(true);
-		dlog("=== RF ACTIVITY 0.4.9 ===", 4, "DEBUG");
+		dlog("=== RF ACTIVITY 0.4.11 ===", 4, "DEBUG");
 	}
-	
+
 	if (isset($_SESSION['TIMEZONE'])) {
 		date_default_timezone_set($_SESSION['TIMEZONE']);
 	}
@@ -92,14 +95,14 @@ function buildLocalActivityTable(): string
 		return generateEmptyTable($rfResultLimit);
 	}
 
-	if (!$isAjax && defined("DEBUG") && DEBUG && function_exists("dlog")) {
+	if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
 		dlog("Найдено squelch строк: " . count($squelch_lines), 4, "DEBUG");
 	}
 
 	// 2. Парсим squelch и находим пары
 	$squelch_pairs = findSquelchPairs($squelch_lines);
 
-	if (!$isAjax && defined("DEBUG") && DEBUG && function_exists("dlog")) {
+	if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
 		dlog("Найдено пар OPEN/CLOSED (≥2сек): " . count($squelch_pairs), 4, "DEBUG");
 	}
 
@@ -110,7 +113,7 @@ function buildLocalActivityTable(): string
 	// 3. Получаем поисковые паттерны для всех пар
 	$search_patterns = getSearchPatternsFromPairs($squelch_pairs);
 
-	if (!$isAjax && defined("DEBUG") && DEBUG && function_exists("dlog")) {
+	if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
 		dlog("Уникальных поисковых паттернов: " . count($search_patterns), 4, "DEBUG");
 	}
 
@@ -122,7 +125,7 @@ function buildLocalActivityTable(): string
 		$logLinesCount
 	);
 
-	if (!$isAjax && defined("DEBUG") && DEBUG && function_exists("dlog")) {
+	if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
 		$context_count = is_array($context_lines) ? count($context_lines) : 0;
 		dlog("Найдено строк контекста: " . $context_count, 4, "DEBUG");
 	}
@@ -130,7 +133,7 @@ function buildLocalActivityTable(): string
 	// 5. Парсим контекстные строки
 	$parsed_context = parseContextLines($context_lines);
 
-	if (!$isAjax && defined("DEBUG") && DEBUG && function_exists("dlog")) {
+	if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
 		dlog("Распарсено контекстных событий: " . count($parsed_context), 4, "DEBUG");
 	}
 
@@ -173,7 +176,7 @@ function buildLocalActivityTable(): string
 	// 8. Генерируем HTML
 	$html = generateActivityTable($activity_rows, $rfResultLimit);
 
-	if (!$isAjax && defined("DEBUG") && DEBUG && function_exists("dlog")) {
+	if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
 		$func_time = microtime(true) - $func_start;
 		dlog("=== ЗАВЕРШЕНО за {$func_time} мсек ===", 4, "DEBUG");
 	}
@@ -473,11 +476,7 @@ function determineLogicAndModule(int $open_time, int $close_time, string $device
 
 function generateActivityTable(array $activity_rows, string $rfResultLimit): string
 {
-	$html = '<div class="larger" style="vertical-align: bottom; font-weight:bold;text-align:left;margin-top:12px;">';
-	$html .= getTranslation('Last') . " " . $rfResultLimit . " " . getTranslation('RF Activity');
-	$html .= '</div>';
-
-	$html .= '<table class="divTable" style="word-wrap: break-word; white-space:normal;">';
+	$html = '<table class="divTable" style="word-wrap: break-word; white-space:normal;">';
 	$html .= '<tbody class="divTableBody">';
 	$html .= '<tr>';
 	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Date') . '<span><b>' . getTranslation('Date') . '</b></span></a></th>';
@@ -534,11 +533,7 @@ function generateActivityTable(array $activity_rows, string $rfResultLimit): str
 
 function generateEmptyTable(string $rfResultLimit): string
 {
-	$html = '<div class="larger" style="vertical-align: bottom; font-weight:bold;text-align:left;margin-top:12px;">';
-	$html .= getTranslation('Last') . " " . $rfResultLimit . " " . getTranslation('RF Activity');
-	$html .= '</div>';
-
-	$html .= '<table class="divTable" style="word-wrap: break-word; white-space:normal;">';
+	$html = '<table class="divTable" style="word-wrap: break-word; white-space:normal;">';
 	$html .= '<tbody class="divTableBody">';
 	$html .= '<tr>';
 	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Date') . '<span><b>' . getTranslation('Date') . '</b></span></a></th>';
@@ -574,79 +569,22 @@ function generateEmptyTable(string $rfResultLimit): string
 
 // Сначала получаем HTML таблицы
 $tableHtml = buildLocalActivityTable();
+$rfResultLimit = RF_ACTIVITY_LIMIT . ' ' . getTranslation('Actions');
 
-if ($isAjax) {
-	// Для AJAX-запросов возвращаем только HTML таблицы
-	header('Content-Type: text/html; charset=utf-8');
-	echo $tableHtml;
-	exit;
-}
-
-// Для обычных запросов выводим таблицу + JavaScript для автообновления
+// Обычный режим - выводим полную структуру
 ?>
 <div id="rf_activity">
-	<div id="rf_activity_table_container">
+	<div class="larger" style="vertical-align: bottom; font-weight:bold;text-align:left;margin-top:12px;">
+		<?php echo getTranslation('Last') . " " . $rfResultLimit . " " . getTranslation('RF Activity'); ?>
+	</div>
+	<div id="rf_activity_content">
 		<?php echo $tableHtml; ?>
 	</div>
 </div>
 <br>
-<script>
-	(function() {
-		'use strict';
 
-		const container = document.getElementById('rf_activity_table_container');
-		if (!container) {
-			console.warn('RF Activity container not found');
-			return;
-		}
-
-		let isUpdating = false;
-		const updateInterval = <?php echo defined('SLOW_UPDATE_INTERVAL') ? SLOW_UPDATE_INTERVAL : 3000; ?>;
-
-		function updateRfActivityTable() {
-			if (isUpdating) return;
-
-			isUpdating = true;
-
-			// Используем правильный путь к файлу через symlink
-			const url = '/include/rf_activity.php?ajax=1&t=' + Date.now();
-
-			fetch(url)
-				.then(response => {
-					if (!response.ok) {
-						throw new Error('Network response was not ok: ' + response.status);
-					}
-					return response.text();
-				})
-				.then(html => {
-					container.innerHTML = html;
-					isUpdating = false;
-				})
-				.catch(error => {
-					console.error('Error updating RF activity:', error);
-					isUpdating = false;
-				});
-		}
-
-		// Обновляем сразу при загрузке (небольшая задержка для инициализации)
-		setTimeout(updateRfActivityTable, 1500);
-
-		// Периодическое обновление
-		let intervalId = setInterval(updateRfActivityTable, updateInterval);
-
-		// Останавливаем обновление при скрытии страницы для экономии ресурсов
-		document.addEventListener('visibilitychange', function() {
-			if (document.hidden) {
-				clearInterval(intervalId);
-			} else {
-				// При возвращении на страницу обновляем сразу и запускаем интервал заново
-				setTimeout(updateRfActivityTable, 500);
-				intervalId = setInterval(updateRfActivityTable, updateInterval);
-			}
-		});
-
-		// Экспортируем функцию для ручного обновления (опционально)
-		window.updateRfActivityTable = updateRfActivityTable;
-
-	})();
-</script>
+<?php
+if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
+	$func_time = microtime(true) - $func_start;
+	dlog("$ver: Закончил работу за $func_time msec", 3, "INFO");
+}
