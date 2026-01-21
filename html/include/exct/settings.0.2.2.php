@@ -15,7 +15,7 @@ define("DEBUG", true);
 if (defined("DEBUG")) {
 
     if (!defined("DEBUG_VERBOSE")) {
-        define("DEBUG_VERBOSE", 3);
+        define("DEBUG_VERBOSE", 2);
     }
     define('DEBUG_LOG_FILE', '/tmp/svxlink-debug.log');
     // define ('DEBUG_LOG_TO_APACHE', '/var/log/apache2/svxlink_development.error.log');
@@ -83,4 +83,4 @@ define("AUTH_FILE", '/etc/svxlink/dashboard/auth.ini');
 define("AUTH_SETUP", 'install/setup_auth.php');
 
 // Интервал обновления для динамических элементов
-define("SLOW_UPDATE_INTERVAL", 5000);
+define("UPDATE_INTERVAL", 5000);
