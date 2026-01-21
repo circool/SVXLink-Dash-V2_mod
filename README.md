@@ -4,7 +4,7 @@
 
 ❌  Please do not download this fork until it is announced to be ready!
     
-    To satisfy interest, an intermediate version (partially working) is available in this branch
+    To satisfy interest, an intermediate version (is beta-testing ready) is available in this branch
 
 # Svxlink Dashboard
 
