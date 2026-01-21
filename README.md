@@ -75,30 +75,6 @@ The real-time audio monitoring system (WebSocket server and client) is preserved
 
 The audio monitoring system was preserved from the original SVXLink-Dashboard-V2:
 
-#### Core Components:
-
-1. **Node.js WebSocket Server** (`server.js`)
-   - Source: From original project
-   - Port: 8001
-   - Audio capture via ALSA Loopback
-   - PCM audio streaming
-
-2. **JavaScript Audio Client** (`pcm-player.min.js`)
-   - Web Audio API for playback
-   - Multiple sample rate support (48kHz/32kHz)
-   - Auto-reconnection capability
-
-3. **ALSA Loopback Integration**
-   - Virtual sound device for audio capture
-   - SVXLink integration
-
-4. **Systemd Service** (`svxlink-node.service`)
-   - Automatic startup and monitoring
-
-#### Data Flow Architecture (Preserved):
-
-SVXLink → ALSA Loopback → Node.js WS Server → Browser → Web Audio API
-
 
 ## Technical Notes
 
