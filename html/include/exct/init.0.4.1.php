@@ -57,12 +57,8 @@ if (session_status() === PHP_SESSION_NONE) {
 	session_set_cookie_params(SESSION_LIFETIME, SESSION_PATH);
 	session_name(SESSION_NAME);
 	session_start();
-	if (defined("DEBUG") && DEBUG) dlog("$ver: Запустил сессию", 3, "DEBUG");
 }
 
-if (defined("DEBUG") && DEBUG) {
-	dlog("Система инициирована, версия " . DASHBOARD_VERSION, 3, "INFO");
-}
 
 // Устанавливаем часовой пояс
 if (file_exists('/etc/timezone')) {

@@ -8,7 +8,7 @@
  */
 ?>
 <script>
-	// Единая функция отправки DTMF команд
+	// Функция отправки DTMF команд
 	function sendDtmfCommand(command, source = 'unknown') {
 		return fetch('/include/exct/dtmf_handler.0.1.0.php', {
 				method: 'POST',
@@ -28,7 +28,7 @@
 			});
 	}
 
-	// Единая функция показа уведомлений
+	// Функция показа уведомлений
 	function showToast(message, type, containerId = 'globalToastContainer') {
 		// Проверяем, существует ли уже контейнер для тостов
 		let toastContainer = document.getElementById(containerId);
