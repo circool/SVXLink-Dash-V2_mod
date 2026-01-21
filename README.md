@@ -138,41 +138,9 @@ This is a clean-room implementation inspired by the original SVXLink-Dashboard-V
 3. **Management system** - New approaches
 4. **Component integration** - Different implementation
 
-## Installation & Audio Setup
+## Installation
 
-The audio system uses the same configuration as the original:
-
-### Prerequisites:
-```bash
-# Install Node.js (if not installed)
-sudo apt install nodejs npm
-
-# Install ws module
-sudo npm install -g ws
-
-# Configure ALSA Loopback
-sudo nano /etc/modules
-# Add: snd_aloop
-sudo systemctl enable svxlink-node.service
-sudo systemctl start svxlink-node.service
-sudo systemctl status svxlink-node.service
-```
-
-### Using the Audio System:
-
-Open the dashboard in your browser
-Look for the "Monitor" button (speaker icon)
-Click to activate audio streaming
-Button turns green when successfully connected
-
-## Acknowledgments
-
-### Audio System preserved from the original project:
-
-WebSocket Server (server.js) - Original implementation
-Audio Client (pcm-player.min.js) - Original implementation
-ALSA Configuration - Method from original project
-Thanks to the authors of the original SVXLink-Dashboard-V2 for creating an effective audio monitoring system.
+See `doc/INSTALL.md`
 
 ## For Original Version Users
 
