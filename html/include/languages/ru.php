@@ -26,6 +26,7 @@ return [
 	'Close' => 'Закрыть',
 	'Conference' => 'Конференция',
 	'Connect Details' => 'Подробности соединения',
+	'Connection Details' => 'Подробности соединения',
 	'Confirm new password' => 'Подтвердите пароль',
 	'Contacts' => 'Контакты',
 	'Country' => 'Страна',
