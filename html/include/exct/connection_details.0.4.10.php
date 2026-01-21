@@ -342,18 +342,18 @@ function getConnectionDetailsTable(): string
 					}
 
 					$html .= '</tbody></table>';
-					$html .= '<br>';
+					// $html .= '<br>';
 				}
 				// EchoLink
 				elseif ($isEchoLinkModule) {
-					$html .= '<div>';
+					// $html .= '<div>';
 					foreach ($logic['details'] as $message) {
 						// if (!empty(trim($message))) {
 							$html .= '<div class="mode_flex">' . $message . '</div>';
 						// }
 					}
-					$html .= '</div>';
-					$html .= '<br>';
+					// $html .= '</div>';
+					// $html .= '<br>';
 				}
 			}
 		}
