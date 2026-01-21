@@ -229,6 +229,12 @@ function getEchoLinkMsg($nodeName): array
 					if (strpos($line, "Trailing chat data") !== false) {
 						break;
 					};
+					if (strpos($line, "EchoLink QSO state changed to CONNECTED") !== false) {
+						break;
+					};
+					if (strpos($line, "Turning the transmitter") !== false) {
+						break;
+					};
 
 					$clearedLine = removeTimestamp($line);
 					if (!empty($clearedLine)) {
