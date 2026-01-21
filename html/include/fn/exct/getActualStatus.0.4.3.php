@@ -856,7 +856,7 @@ function getActualStatus(bool $forceRebuild = false): array
 										break;
 									}
 									if ($isServerStateFound) {
-										dlog("$ver: Найдена строка с данными о сервере $logFRNline", 4, "DEBUG");
+										if (defined("DEBUG") && DEBUG) dlog("$ver: Найдена строка с данными о сервере $logFRNline", 4, "DEBUG");
 
 										$frnServerIdArray = parseXmlTags($logFRNline);
 										if (!isset($frnServerIdArray)) {
