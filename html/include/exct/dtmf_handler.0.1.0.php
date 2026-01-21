@@ -18,36 +18,6 @@ if (session_status() === PHP_SESSION_NONE) {
 
 // header('Content-Type: application/json');
 
-/**
- * Получение пути к DTMF устройству
- * @return string|null Путь к устройству или null если не найден
- * @deprecated Это костыль который нужно пофиксить
- */
-function getDtmfPath() {
-    // 1. Пробуем из сессии (самый быстрый способ)
-    if (isset($_SESSION['DTMF_CTRL_PTY']) && !empty($_SESSION['DTMF_CTRL_PTY'])) {
-        return $_SESSION['DTMF_CTRL_PTY'];
-    }
-    
-    // 2. Пробуем из данных статуса в сессии
-    if (isset($_SESSION['status']['logic'])) {
-        foreach ($_SESSION['status']['logic'] as $logic) {
-            if (!empty($logic['dtmf_cmd'])) {
-                // $_SESSION['DTMF_CTRL_PTY'] = $logic['dtmf_cmd'];
-                return $logic['dtmf_cmd'];
-            }
-        }
-    }
-    
-    // 3. По умолчанию
-    $defaultPath = '/dev/shm/dtmf_ctrl';
-    if (file_exists($defaultPath)) {
-        $_SESSION['DTMF_CTRL_PTY'] = $defaultPath;
-        return $defaultPath;
-    }
-    
-    return null;
-}
 
 /**
  * Отправка команды в DTMF устройство
@@ -91,12 +61,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         // Получаем путь к DTMF устройству
-        // @todo Костыль - решить как получить сессию тут
-        // 
         if( isset($_SESSION['DTMF_CTRL_PTY']) ) {
             $dtmfPath = $_SESSION['DTMF_CTRL_PTY'];
         } else {
-            $dtmfPath = '/dev/shm/dtmf_ctrl';
+            error_log("dtmf_handler: Session not initialised!");
         }
         
         if (empty($dtmfPath)) {

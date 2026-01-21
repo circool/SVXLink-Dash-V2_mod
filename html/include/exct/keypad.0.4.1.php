@@ -11,6 +11,8 @@
  * - Удалена сложная логика перестроения сессии
  * - Удалены устаревшие функции и зависимости
  */
+require_once $_SERVER["DOCUMENT_ROOT"] . '/include/init.php';
+
 
 // Обработка AJAX запросов - ДОЛЖНА БЫТЬ ПЕРВОЙ
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_keypad'])) {
