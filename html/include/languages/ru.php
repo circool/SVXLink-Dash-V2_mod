@@ -55,6 +55,7 @@ return [
 	'Host' => 'Узел',
 	'HW Info' => 'Информация о системе',
 	'History' => 'История',
+	'gateway' => 'шлюз',
 	'Language' => 'Язык',
 	'Last Activity' => 'Последние вызовы',
 	'Last Call' => 'Последний вызов',
