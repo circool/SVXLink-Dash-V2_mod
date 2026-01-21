@@ -40,22 +40,6 @@ function getTimestamp() {
 	return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
 }
 
-// function log(message, level = 'INFO') {
-// 	const timestamp = getTimestamp();
-// 	const logMessage = `[${timestamp}] [${level}] ${message}`;
-// 	console.log(logMessage);
-
-// 	// Отправка сообщения всем подключенным клиентам
-// 	if (global.serverInstance && global.serverInstance.clients && global.serverInstance.clients.size > 0) {
-// 		global.serverInstance.broadcast({
-// 			type: 'log_message',
-// 			level: level,
-// 			message: message,
-// 			timestamp: new Date().toISOString(),
-// 			source: 'WS Server v4'
-// 		});
-// 	}
-// }
 function log(message, level = 'DEBUG') {
 	const logLevels = {
 		'ERROR': 1,
@@ -128,7 +112,7 @@ class StateManager {
 	// @bookmark Запустить таймер
 	startTimer(key, metadata = {}) {
 		const now = Date.now();
-		
+
 		// Проверяем, нет ли уже таймера с таким же elementId
 		for (const [existingKey, existingTimer] of this.timers) {
 			if (existingTimer.metadata.elementId === metadata.elementId && existingKey !== key) {
@@ -136,7 +120,7 @@ class StateManager {
 				this.timers.delete(existingKey);
 			}
 		}
-		
+
 		this.timers.set(key, {
 			startTime: now,
 			lastUpdate: now,
@@ -248,33 +232,6 @@ class ConnectionHandler {
 		}
 		log(`Установлены связи: ${this.connections.size} связей ${sourceKey} с ${targetKey}`);
 	}
-
-	// Быстрый доступ к специфическим связям
-	// getModuleLogics(moduleName) {
-	// 	return this.getAllFrom(moduleName);
-	// }
-
-	// getLinkLogics(linkName) {
-	// 	return this.getAllTo(linkName);
-	// }
-
-	// getLogicModules(logicName) {
-	// 	return this.getAllTo(logicName);
-	// }
-
-	// getLogicLinks(logicName) {
-	// 	return this.getAllFrom(logicName).filter(item =>
-	// 		item.startsWith('Link') || item.startsWith('link_')
-	// 	);
-	// }
-
-	// Проверить, есть ли активные линки у логики
-	// hasActiveLinksForLogic(logicName) {
-	// 	const relatedLinks = this.getAllFrom(logicName).filter(link =>
-	// 		link.startsWith('Link') || link.startsWith('link_')
-	// 	);
-	// 	return relatedLinks.length > 0;
-	// }
 }
 
 // @bookmark ПАРСЕР КОМАНД
@@ -380,7 +337,7 @@ class CommandParser {
 				handler: (match) => {
 					const timestamp = match[1];
 					const logic = match[2];
-					
+
 					this.sm.startTimer(`logic_${logic}`, {
 						elementId: `logic_${logic}`,
 						replaceStart: ':</b>',
@@ -511,27 +468,27 @@ class CommandParser {
 				regex: /^(.+?): (\S+): Disconnected/,
 				handler: (match) => {
 					const logic = match[2];
-					
+
 					// У рефлектора нет таймера!
 					//this.sm.stopTimer(`logic_${logic}`);
 
 					// Остановить таймеры для подключенных узлов и удалить связки с логикой
 					const nodes = this.connections.getAllTo(logic);
-					for (let i = 0; i < nodes.length; i++) { 
-						const node = nodes[i];						
+					for (let i = 0; i < nodes.length; i++) {
+						const node = nodes[i];
 						this.connections.remove(node, logic);
-						this.sm.stopTimer(`logic_${logic}_node_${node}`);	
+						this.sm.stopTimer(`logic_${logic}_node_${node}`);
 					}
 
 					return [
 						// Показать рефлектор отключенным
 						{ id: `logic_${logic}`, action: 'remove_class', class: 'active-mode-cell,paused-mode-cell,disabled-mode-cell' },
 						{ id: `logic_${logic}`, action: 'add_class', class: 'inactive-mode-cell' },
-						
+
 						// Удалить все подключенные узлы
 						{ id: `logic_${logic}_nodes_header`, action: 'replace_content', payload: ['[', ']', ''] },
 						{ id: `logic_${logic}_nodes`, action: 'remove_child' },
-						
+
 						// Очистить разговорные группы
 						{ id: `logic_${logic}_groups`, action: 'remove_child', ignoreClass: 'monitored,default' },
 					];
@@ -552,8 +509,8 @@ class CommandParser {
 
 					// Извлекаем позывные (убираем суффиксы -1, -T и т.д.)
 					// const callsigns = nodes.map(node => {
-						// Убираем всё после дефиса
-						// return node.split('-')[0];
+					// Убираем всё после дефиса
+					// return node.split('-')[0];
 					// });
 
 					log(`У рефлектора ${logic} ${nodes.length} подключенный(х) узлов`, 'INFO');
@@ -579,18 +536,18 @@ class CommandParser {
 						{
 							id: `logic_${logic}_nodes`,
 							action: 'set_content',
-							payload: ''  
+							payload: ''
 						},
 						{
 							id: `logic_${logic}_nodes_header`,
 							action: 'set_content',
-							payload: `Nodes [${nodes.length}]`  
+							payload: `Nodes [${nodes.length}]`
 						}
 					);
 
 					// Добавляем каждый узел: устанавливаем связь с логикой, добавляем таймер
 					for (let i = 0; i < nodes.length; i++) {
-						const node = nodes[i];      
+						const node = nodes[i];
 						this.connections.add(node, logic);
 						this.sm.startTimer(`logic_${logic}_node_${node}`, {
 							elementId: `logic_${logic}_node_${node}`,
@@ -641,13 +598,13 @@ class CommandParser {
 				handler: (match) => {
 					const logic = match[2];
 					const group = match[3];
-					
+
 					return [
 						{ id: `radio_logic_${logic}_callsign`, action: 'set_content', payload: '' },
 						{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: '' },
 						{ id: `device_${logic}_tx_status`, action: 'set_content', payload: '' },
 						{ id: `device_${logic}_tx_status`, action: 'remove_class', class: 'active-mode-cell' },
-						
+
 						// Скрыть строку устройств рефлектора
 						{ id: `radio_logic_${logic}`, action: 'add_parent_class', class: 'hidden' }
 					];
@@ -664,7 +621,7 @@ class CommandParser {
 					// Останавливаем таймер, удаляем связку с логикой, удаляем из списка узлов
 					this.sm.stopTimer(`logic_${logic}_node_${node}`);
 					this.connections.remove(node, logic);
-					
+
 					return [
 						{
 							id: `logic_${logic}_node_${node}`,
@@ -687,9 +644,9 @@ class CommandParser {
 						replaceEnd: '<br>',
 						type: 'node'
 					});
-					
+
 					this.connections.add(node, logic);
-					
+
 					return [
 						{
 							target: `logic_${logic}_nodes`,
@@ -757,7 +714,7 @@ class CommandParser {
 							id: `logic_${logic}_groups`,
 							action: 'replace_child_classes',
 							oldClass: 'active-mode-cell',
-							class: 'disabled-mode-cell',					
+							class: 'disabled-mode-cell',
 						},
 						// Попытаться добавить новый элемент (будет проигнорировано при наличии)
 						{
@@ -767,7 +724,7 @@ class CommandParser {
 							class: 'mode_flex column',
 							style: 'border: .5px solid #3c3f47;',
 							title: group,
-							payload: group,						
+							payload: group,
 						},
 						// Установить у выбранной группы состояние active-mode-cell
 						{
@@ -793,7 +750,7 @@ class CommandParser {
 					return [
 						{
 							action: 'add_child',
-							target: `logic_${logic}_groups`,							
+							target: `logic_${logic}_groups`,
 							id: `logic_${logic}_group_${group}`,
 							class: 'mode_flex column paused-mode-cell monitored',
 							style: 'border: .5px solid #3c3f47;',
@@ -811,7 +768,7 @@ class CommandParser {
 					const logic = match[2];
 					const group = match[3];
 					return [
-						{							
+						{
 							action: 'add_child',
 							target: `logic_${logic}_groups`,
 							id: `logic_${logic}_group_${group}`,
@@ -1041,8 +998,8 @@ class CommandParser {
 								style: 'border: .5px solid #3c3f47;',
 								payload: `${getTimerTooltip(node, "0 s")}`
 							},
-							
-							
+
+
 							{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: `EchoLink:  ${node}` },
 						);
 					}
@@ -1154,7 +1111,7 @@ class CommandParser {
 							{ id: `logic_${logic}_module_Frn`, action: 'add_class', class: 'active-mode-cell' },
 							{ id: `logic_${logic}_active`, action: 'remove_class', class: 'hidden' },
 							{ id: `logic_${logic}_active_header`, action: 'set_content', payload: 'Frn [1]' },
-							
+
 							{
 								target: `logic_${logic}_active_content`,
 								action: 'add_child',
@@ -1237,7 +1194,7 @@ class CommandParser {
 					const commands = [
 						{ id: `link_${link}`, action: 'remove_class', class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell,disabled-mode-cell' },
 						{ id: `link_${link}`, action: 'add_class', class: 'active-mode-cell' },
-						
+
 						{ id: `toggle-link-state-${link}`, action: "set_checkbox_state", state: "on" }
 					];
 
@@ -1267,7 +1224,7 @@ class CommandParser {
 						{ id: `link_${link}`, action: 'remove_class', class: 'active-mode-cell,paused-mode-cell,inactive-mode-cell,disabled-mode-cell' },
 						{ id: `link_${link}`, action: 'add_class', class: 'disabled-mode-cell' },
 						// { id: `link_${link}`, action: 'remove_parent_class', class: 'link-active' },
-						
+
 						{ id: `toggle-link-state-${link}`, action: "set_checkbox_state", state: "off" }
 					];
 
@@ -1316,17 +1273,11 @@ class CommandParser {
 		const trimmed = line.trim();
 
 		// 1. Если в режиме ожидания позывного (пакетный режим)
-		// Добавить разбор строк
-		// 14 Jan 2026 05:02:41.016: ->R2ADU-L Moscow 145.4625 #88.5
-		// 14 Jan 2026 05:02:51.749: R2ADU>test
-		// Нужно оменять формат вывода - для сообщений с позывным обрамлять его <b> </b>
-
 		if (this.isPacketMessageMode) {
-			
-			if (this.packetType == "EchoLink") { 
+
+			if (this.packetType == "EchoLink") {
 				// Проверяем на известные признаки окончания пакетов
-				// SMS в Echolink завершается [TIMESTAMP]: Trailing chat data: {различные варианты, напр <0c><11><ce>+}
-				if (trimmed.includes('Trailing chat data:')) { 
+				if (trimmed.includes('Trailing chat data:')) {
 					this.isPacketMessageMode = false;
 				}
 				// Искать > в строке, но только если нет <
@@ -1399,10 +1350,10 @@ class CommandParser {
 				}
 				// Если не -> и не основной паттерн - остаёмся в режиме ожидания
 				return null;
-			} else if (this.packetType == "Frn") {  
+			} else if (this.packetType == "Frn") {
 
 			};
-			
+
 		}
 
 		// Обычный режим парсинга (не пакетный)
@@ -1479,6 +1430,9 @@ class StatefulWebSocketServerV4 {
 		this.isMonitoring = false;
 		this.shutdownTimer = null;
 		this.durationTimer = null;
+
+		// Простой буфер для чтения строк
+		this.lineBuffer = '';
 
 		// WebSocket состояние (полученное из PHP)
 		this.wsState = {
@@ -1798,7 +1752,7 @@ class StatefulWebSocketServerV4 {
 
 			// Формируем HTML как в DOM
 			const serviceHtml = getTimerTooltip(service.name, serviceDurationText);
-			
+
 			commands.push({
 				id: `service`,
 				action: 'set_content',
@@ -1905,7 +1859,7 @@ class StatefulWebSocketServerV4 {
 		});
 
 		this.stats.clientsConnected++;
-		
+
 		log(`Сервер v${this.config.version}: Клиент ${clientId} подключен с ${clientIp} (всего: ${this.clients.size})`, 'DEBUG');
 
 		// 1. Отправка приветственного сообщения
@@ -2031,32 +1985,8 @@ class StatefulWebSocketServerV4 {
 		this.tailProcess = spawn('tail', ['-F', '-n', '0', this.config.log.path]);
 		this.isMonitoring = true;
 
-		let logBuffer = [];
-		let bufferTimer = null;
-
 		this.tailProcess.stdout.on('data', (data) => {
-			const lines = data.toString().split('\n').filter(line => line.trim());
-			// @debug СРАЗУ логируем что прочитали
-			// lines.forEach(line => {
-			// 	console.log(`[TAIL RAW] ${line}`);
-			// });
-			// @debug
-
-			if (lines.length > 0) {
-				logBuffer.push(...lines);
-
-				if (bufferTimer) {
-					clearTimeout(bufferTimer);
-				}
-
-				bufferTimer = setTimeout(() => {
-					if (logBuffer.length > 0) {
-						this.processLogBuffer(logBuffer);
-						logBuffer = [];
-					}
-					bufferTimer = null;
-				}, this.config.log.bufferTimeout);
-			}
+			this.processTailData(data);
 		});
 
 		this.tailProcess.stderr.on('data', (data) => {
@@ -2071,6 +2001,12 @@ class StatefulWebSocketServerV4 {
 			log(`Tail process stopped. Code: ${code}, Signal: ${signal}`, 'INFO');
 			this.isMonitoring = false;
 
+			// Обрабатываем остатки в буфере при закрытии tail
+			if (this.lineBuffer.trim()) {
+				this.processLogBuffer([this.lineBuffer]);
+				this.lineBuffer = '';
+			}
+
 			// Перезапуск если есть клиенты
 			if (this.clients.size > 0) {
 				setTimeout(() => this.startLogMonitoring(), 2000);
@@ -2078,6 +2014,28 @@ class StatefulWebSocketServerV4 {
 		});
 
 		log('Запущен мониторинг журнала', 'DEBUG');
+	}
+
+	processTailData(data) {
+		// Добавляем данные в буфер
+		this.lineBuffer += data.toString();
+
+		const lines = [];
+		let newlineIndex;
+
+		// Извлекаем все полные строки (оканчивающиеся на \n)
+		while ((newlineIndex = this.lineBuffer.indexOf('\n')) !== -1) {
+			const line = this.lineBuffer.substring(0, newlineIndex).trim();
+			if (line) {
+				lines.push(line);
+			}
+			this.lineBuffer = this.lineBuffer.substring(newlineIndex + 1);
+		}
+
+		// Обрабатываем полные строки
+		if (lines.length > 0) {
+			this.processLogBuffer(lines);
+		}
 	}
 
 	stopLogMonitoring() {
