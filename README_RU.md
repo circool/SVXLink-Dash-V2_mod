@@ -1,4 +1,4 @@
-![Статус проекта](https://img.shields.io/badge/Статус-В_работе-red?style=flat)
+![Статус проекта](https://img.shields.io/badge/Статус-Тестируется-red?style=flat)
 ![Версия](https://img.shields.io/badge/Версия-0.4.x-red?style=flat)
 ![Лицензия](https://img.shields.io/badge/Лицензия-GNU_FDL_v1.3-green?style=flat)
 
