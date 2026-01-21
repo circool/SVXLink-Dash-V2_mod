@@ -447,7 +447,7 @@ function getActualStatus(bool $forceRebuild = false): array
 
 		// если получена пустая строка, тоже вычислять нечего
 		if (empty($serviceCommand)) {
-			if (defined("DEBUG") && DEBUG) dlog("$ver: Пустая строка, пропускаю " .  $serviceCommandTimestamp, 2, "WARNING");
+			if (defined("DEBUG") && DEBUG) dlog("$ver: Пустая строка, пропускаю " .  $serviceCommandTimestamp, 4, "WARNING");
 			continue;
 		}
 
@@ -533,10 +533,10 @@ function getActualStatus(bool $forceRebuild = false): array
 
 				foreach ($logLineTM as $index => $line) {
 					if (empty($line)) {
-						if (defined("DEBUG") && DEBUG) dlog("$ver: пропускаю запись  $index как пустую", 2, "WARNING");
+						if (defined("DEBUG") && DEBUG) dlog("$ver: пропускаю запись  $index как пустую", 4, "DEBUG");
 						continue;
 					}
-					if (defined("DEBUG") && DEBUG) dlog("$ver: работаю с  $index : $line", 2, "WARNING");
+					if (defined("DEBUG") && DEBUG) dlog("$ver: работаю с  $index : $line", 4, "DEBUG");
 
 
 					if (preg_match('/#(\d+)$/', $line, $matches)) {
@@ -647,7 +647,7 @@ function getActualStatus(bool $forceRebuild = false): array
 
 							// @bookmark Для модуля EchoLink
 							if ($moduleName === "EchoLink") {
-								if (defined("DEBUG") && DEBUG) dlog("$ver: Ищу подключенные узлы модуля $moduleName", 2, "DEBUG");
+								if (defined("DEBUG") && DEBUG) dlog("$ver: Ищу подключенные узлы модуля $moduleName", 4, "DEBUG");
 
 								// @version 0.3.2
 								// Оптимизируем количество вызовов countLogLines 
