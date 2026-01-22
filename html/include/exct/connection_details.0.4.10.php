@@ -370,7 +370,7 @@ function getConnectionDetailsTable(): string
 		<?php echo getConnectionDetailsTable(); ?>
 	</div>
 </div>
-
+<br>
 <?php
 if (defined("DEBUG") && DEBUG) {
 	$funct_time = microtime(true) - $funct_start;
