@@ -479,13 +479,13 @@ function generateActivityTable(array $activity_rows, string $rfResultLimit): str
 	$html = '<table class="divTable" style="word-wrap: break-word; white-space:normal;">';
 	$html .= '<tbody class="divTableBody">';
 	$html .= '<tr>';
-	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Date') . '<span><b>' . getTranslation('Date') . '</b></span></a></th>';
-	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Time') . '<span><b>' . getTranslation('Local Time') . '</b></span></a></th>';
+	$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Date') . '<span><b>' . getTranslation('Date') . '</b></span></a></th>';
+	$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Time') . '<span><b>' . getTranslation('Local Time') . '</b></span></a></th>';
 	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Caller') . '<span><b>' . getTranslation('Who is source of transmission') . '</b></span></a></th>';
 	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Transmission destination') . '<span><b>' . getTranslation("Frn Server, Reflector's Talkgroup, Echolink Node, Conference etc.") . '</b></span></a></th>';
 	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Logic') . '<span><b>' . getTranslation('Active Logic') . '</b></span></a></th>';
 	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Module') . '<span><b>' . getTranslation('Active module') . '</b></span></a></th>';
-	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration in Seconds') . '</b></span></a></th>';
+	$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration in Seconds') . '</b></span></a></th>';
 	$html .= '</tr>';
 
 	if (empty($activity_rows)) {

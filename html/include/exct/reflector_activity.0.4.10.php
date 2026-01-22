@@ -84,6 +84,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_link'])) {
  */
 function getReflectorActivityContent(): string
 {
+	if (isset($_SESSION['TIMEZONE'])) {
+		date_default_timezone_set($_SESSION['TIMEZONE']);
+	}
 	// Получаем данные из сессии
 	$status = $_SESSION['status'];
 	$refl_logics = $status['logic'] ?? [];
@@ -215,7 +218,8 @@ function getReflectorActivityContent(): string
 		$html .= '<table style="word-wrap: break-word; white-space:normal;">';
 		$html .= '<tbody>';
 		$html .= '<tr>';
-		$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Date/Time') . '<span><b>' . getTranslation('Current Date and Time') . '</b></span></a></th>';
+		$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Date') . '<span><b>' . getTranslation('Current Date') . '</b></span></a></th>';
+		$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Time') . '<span><b>' . getTranslation('Current Time') . '</b></span></a></th>';
 		$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Selected Talkgroup') . '<span><b>' . getTranslation('Talkgroup') . '</b></span></th>';
 		$html .= '<th><a class="tooltip" href="#">' . getTranslation('Monitored Talkgroups') . '<span><b>' . getTranslation('Talkgroups') . '</b></span></th>';
 		$html .= '<th><a class="tooltip" href="#">' . getTranslation('Temporary Monitored Talkgroups') . '<span><b>' . getTranslation('Talkgroups') . '</b></span></th>';
@@ -225,7 +229,8 @@ function getReflectorActivityContent(): string
 		$html .= '</tr>';
 
 		$html .= '<tr>';
-		$html .= '<td>' . htmlspecialchars(date('d.m.y H:i')) . '</td>';
+		$html .= '<td>' . htmlspecialchars(date('d.m.y')) . '</td>';
+		$html .= '<td>' . htmlspecialchars(date('H:i:s')) . '</td>';
 		$html .= '<td>' . htmlspecialchars($selectedTG) . '</td>';
 		$html .= '<td>' . htmlspecialchars($monitoringTG) . '</td>';
 		$html .= '<td>' . htmlspecialchars($tempMonitoringTG) . '</td>';

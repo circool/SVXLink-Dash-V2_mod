@@ -57,6 +57,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 	// Сразу освобождаем сессию
 	session_write_close();
 
+	
+
 	// В AJAX режиме возвращаем только таблицу
 	echo getNetActivityTable();
 	exit;
@@ -286,6 +288,10 @@ function getNetActivityActions(): array
  */
 function getNetActivityTable(): string
 {
+	if (isset($_SESSION['TIMEZONE'])) {
+		date_default_timezone_set($_SESSION['TIMEZONE']);  
+	}
+
 	$net_data = getNetActivityActions();
 
 	$html = '<table style="word-wrap: break-word; white-space:normal;">';
