@@ -53,22 +53,26 @@ function buildLogicData(array $lp_status): array
 	// Функция для получения стиля ячейки
 	$getCellStyle = function ($active, $connected, $hasConnected = false) {
 		if ($hasConnected) {
-			return $active
-				? ($connected ? "active-mode-cell" : "inactive-mode-cell")
-				: ($connected ? "paused-mode-cell" : "disabled-mode-cell");
+	
+			if ($active) {
+				return $connected ? "active-mode-cell" : "paused-mode-cell";
+			} else {
+
+				return "disabled-mode-cell";
+			}
+		} else {
+
+			return $active ? "active-mode-cell" : "disabled-mode-cell";
 		}
-		return $active
-			? ($connected ? "active-mode-cell" : "paused-mode-cell")
-			: "disabled-mode-cell";
 	};
 
 	// @bookmark 1. Сервис
-	$durationHtml = $lp_service['duration'] > 0 ? formatDuration($lp_service['duration']) : '';
+	$durationHtml = formatDuration($lp_service['duration'] > 0 ? $lp_service['duration'] : 0);
 	$data['service'] = [
 		'name' => $lp_service['name'],
 		'style' => $lp_service['is_active'] ? 'active-mode-cell' : 'inactive-mode-cell',
-		'has_duration' => $lp_service['duration'] > 0,
-		'duration' => $lp_service['duration'],
+		// 'has_duration' => $lp_service['duration'] > 0,
+		// 'duration' => $lp_service['duration'],
 		'tooltip_start' => '<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br></span>',
 		'tooltip_end' => '</a>'
 	];
@@ -111,14 +115,15 @@ function buildLogicData(array $lp_status): array
 
 		if (!empty($logic['module'])) {
 			foreach ($logic['module'] as $moduleName => $module) {
-				$moduleClass = $getCellStyle($module['is_active'], $module['is_connected'], true);
-				$durationHtml = $module['duration'] > 0 ? formatDuration($module['duration']) : '';
+				$moduleCanConnected = $module['name'] == "EchoLink" || $module['name'] == "Frn";
+				$moduleClass = $getCellStyle($module['is_active'], $module['is_connected'], $moduleCanConnected);
+				$durationHtml = formatDuration( $module['duration'] > 0 ? $module['duration'] : 0);
 				$moduleData = [
 					'name' => $module['name'],
 					'style' => $moduleClass,
-					'has_duration' => $module['duration'] > 0,
-					'duration' => $module['duration'],
-					'is_active' => $module['is_active'],
+					// 'has_duration' => $module['duration'] > 0,
+					// 'duration' => $module['duration'],
+					// 'is_active' => $module['is_active'],
 					'tooltip_start' => $module['duration'] > 0 ?
 						'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br></span>' : '',
 					'tooltip_end' => $module['duration'] > 0 ? '</a>' : ''
@@ -141,17 +146,19 @@ function buildLogicData(array $lp_status): array
 		$activeModuleNodes = [];
 		if ($activeModule && !empty($activeModule['connected_nodes'])) {
 			foreach ($activeModule['connected_nodes'] as $nodeName => $nodeData) {
+				$durationHtml =formatDuration(!empty($nodeData['start']) ? time() - $nodeData['start'] : 0);
+
 				$nodeInfo = [
 					'parent' => $activeModule['name'],
 					'name' => $nodeName,
-					'start_time' => $nodeData['start'] ?? 0,
+					// 'start_time' => $nodeData['start'] ?? 0,
 					'type' => $nodeData['type'] ?? '',
 					'callsign' => $nodeData['callsign'] ?? '',
-					'has_uptime' => !empty($nodeData['start']),
-					'uptime' => !empty($nodeData['start']) ? time() - $nodeData['start'] : 0,
+					// 'has_uptime' => !empty($nodeData['start']),
+					// 'uptime' => !empty($nodeData['start']) ? time() - $nodeData['start'] : 0,
 					'tooltip_start' => !empty($nodeData['start']) ?
 						'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' .
-						formatDuration(time() - $nodeData['start']) .
+						$durationHtml .
 						(!empty($nodeData['type']) ? '<br>' . htmlspecialchars($nodeData['type']) : '') .
 						(!empty($nodeData['callsign']) ? ' ' . htmlspecialchars($nodeData['callsign']) : '') .
 						'</span>' : '',
@@ -242,13 +249,14 @@ function buildLogicData(array $lp_status): array
 						$reflectorNodes = [];
 						if (!empty($reflector['connected_nodes'])) {
 							foreach ($reflector['connected_nodes'] as $nodeName => $nodeData) {
+								$durationHtml = formatDuration(empty($nodeData['start']) ? 0 : time() - $nodeData['start']);
 								$nodeInfo = [
 									'name' => $nodeName,
-									'start' => $nodeData['start'] ?? 0,
-									'has_uptime' => !empty($nodeData['start']),
-									'uptime' => !empty($nodeData['start']) ? time() - $nodeData['start'] : 0,
+									// 'start' => $nodeData['start'] ?? 0,
+									// 'has_uptime' => !empty($nodeData['start']),
+									// 'uptime' => !empty($nodeData['start']) ? time() - $nodeData['start'] : 0,
 									'tooltip_start' => !empty($nodeData['start']) ?
-										'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . formatDuration(time() - $nodeData['start']) . '<br></span>' : '',
+										'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br></span>' : '',
 									'tooltip_end' => !empty($nodeData['start']) ? '</a>' : ''
 								];
 
@@ -259,7 +267,7 @@ function buildLogicData(array $lp_status): array
 						if ($shortname === '') {
 							$shortname = $reflector['name'];
 						}
-						$durationHtml = $logic['duration'] > 0 ? formatDuration($logic['duration']) : '';
+						$durationHtml = formatDuration($logic['duration'] > 0 ? $logic['duration'] : 0);
 						$relatedReflectors[$reflectorName] = [
 							'shortname' => $shortname,
 							'name' => $reflector['name'],
@@ -278,8 +286,9 @@ function buildLogicData(array $lp_status): array
 					$linkClass = $getCellStyle($link['is_connected'], $link['is_active'],  false);
 
 					// Формируем содержимое tooltip для линка
+					$durationHtml = formatDuration($link['duration'] > 0 ? $link['duration'] : 0);
 					$tooltipParts = [];
-					$durationHtml = $link['duration'] > 0 ? $link['duration'] : '';
+					
 
 					if (!empty($link['timeout'])) $tooltipParts[] = 'Timeout: ' . $link['timeout'] . " s.";
 					if (!empty($link['source']['announcement_name'])) $tooltipParts[] = 'Source: ' . $link['source']['announcement_name'];
@@ -287,7 +296,7 @@ function buildLogicData(array $lp_status): array
 					if (!empty($link['source']['command']['activate_command'])) $tooltipParts[] = 'Activate: ' . $link['source']['command']['activate_command'];
 					if (!empty($link['source']['command']['deactivate_command'])) $tooltipParts[] = 'Deactivate: ' . $link['source']['command']['deactivate_command'];
 
-					$hasTooltip = !empty($tooltipParts) || $link['duration'] > 0;
+					// $hasTooltip = !empty($tooltipParts) || $link['duration'] > 0;
 					$shortname = trim(str_replace($excl, '', $linkName));
 					if ($shortname === '') {
 						$shortname = $linkName;
@@ -299,7 +308,8 @@ function buildLogicData(array $lp_status): array
 						'style' => $linkClass,
 						'tooltip_start' => '<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br>' .
 							implode(' | ', $tooltipParts) . '</span>',
-						'tooltip_end' => $hasTooltip ? '</a>' : ''
+						// 'tooltip_end' => $hasTooltip ? '</a>' : ''
+						'tooltip_end' => '</a>'
 					];
 				}
 			}
@@ -310,13 +320,13 @@ function buildLogicData(array $lp_status): array
 		if ($shortname === '') {
 			$shortname = $logic['name'];
 		}
-		$durationHtml = $logic['duration'] > 0 ? $logic['duration'] : '';
+		$durationHtml = formatDuration($logic['duration'] > 0 ? $logic['duration'] : 0);
 		$data['logics'][$logicName] = [
 			'shortname' => $shortname,
 			'name' => $logic['name'],
 			'style' => $logicClass,
-			'has_duration' => $logic['duration'] > 0,
-			'duration' => $logic['duration'],
+			// 'has_duration' => $logic['duration'] > 0,
+			// 'duration' => $logic['duration'],
 			'tooltip_start' => '<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br></span>',
 			'tooltip_end' => '</a>',
 			'modules' => $modules,
@@ -385,13 +395,13 @@ function buildLogicData(array $lp_status): array
 			$reflectorNodes = [];
 			if (!empty($reflector['connected_nodes'])) {
 				foreach ($reflector['connected_nodes'] as $nodeName => $nodeData) {
-
+					$durationHtml = formatDuration(empty($nodeData['start']) ? '0' : time() - $nodeData['start']);
 					$nodeInfo = [
 						'name' => $nodeName,
-						'start' => $nodeData['start'] ?? 0,
-						'has_uptime' => !empty($nodeData['start']),
-						'uptime' => !empty($nodeData['start']) ? time() - $nodeData['start'] : 0,
-						'tooltip_start' => '<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . formatDuration(time() - $nodeData['start']) . '<br></span>',
+						// 'start' => $nodeData['start'] ?? 0,
+						// 'has_uptime' => !empty($nodeData['start']),
+						// 'uptime' => !empty($nodeData['start']) ? time() - $nodeData['start'] : 0,
+						'tooltip_start' => '<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br></span>',
 						'tooltip_end' => !empty($nodeData['start']) ? '</a>' : ''
 					];
 
@@ -420,7 +430,7 @@ function buildLogicData(array $lp_status): array
 						$shortname = $linkName;
 					}
 
-					$durationHtml = $link['duration'] > 0 ? $link['duration'] : '';
+					$durationHtml = formatDuration($link['duration'] > 0 ? $link['duration'] : '0');
 
 					$reflectorLinks[$linkName] = [
 						'shortname' => $shortname,
@@ -439,7 +449,7 @@ function buildLogicData(array $lp_status): array
 
 			$shortname = trim(str_replace($excl, "", $reflector['name']));
 			if ($shortname === '') {
-				$shortname = $reflector['name']; // или значение по умолчанию
+				$shortname = $reflector['name']; 
 			}
 
 			$data['unconnected_reflectors'][$reflectorName] = [
@@ -480,13 +490,13 @@ function buildLogicData(array $lp_status): array
 				if ($shortname === '') {
 					$shortname = $linkName;
 				}
-				$durationHtml = $link['duration'] > 0 ? formatDuration($link['duration']) : '';
+				$durationHtml = formatDuration( $link['duration'] > 0 ? $link['duration'] : 0);
 				$data['unconnected_links'][$linkName] = [
 					'shortname' => $shortname,
 					'name' => $linkName,
 					'style' => $linkClass,
-					'has_duration' => $link['duration'] > 0,
-					'duration' => $link['duration'],
+					// 'has_duration' => $link['duration'] > 0,
+					// 'duration' => $link['duration'],
 					'has_tooltip' => $hasTooltip,
 					'tooltip_parts' => $tooltipParts,
 					'tooltip_start' => '<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br>' .
