@@ -1,7 +1,7 @@
 /**
- * @filesource /scripts/exct/dashboard_ws_client.0.4.2.js
- * @version 0.4.2
- * @date 2026.01.09
+ * @filesource /scripts/exct/dashboard_ws_client.0.4.3.js
+ * @version 0.4.3
+ * @date 2026.01.22
  * @author vladimir@tsurkanenko.ru
  * @description WebSocket клиент с полной поддержкой системы команд DOM v4.0
  * 
@@ -205,7 +205,7 @@ class DashboardWebSocketClientV4 {
 		this.reconnectAttempts++;
 		const delay = this.config.reconnectDelay * this.reconnectAttempts;
 
-		this.log('WARNING', `Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
+		this.log('INFO', `Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
 		this.updateStatus('reconnecting', `Reconnecting... (${this.reconnectAttempts})`);
 
 		this.reconnectTimer = setTimeout(() => {
