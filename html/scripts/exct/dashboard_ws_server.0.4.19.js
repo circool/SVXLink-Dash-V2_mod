@@ -131,12 +131,42 @@ class StateManager {
 	}
 
 	// @bookmark Остановить таймер
+	// stopTimer(key) {
+	// 	const existed = this.timers.delete(key);
+	// 	if (existed) {
+	// 		log(`Остановлен таймер: ${key}`);
+	// 	}
+	// 	return existed;
+	// }
+	// @bookmark Остановить таймер - ищет точное совпадение, если нет - удаляет все начинающиеся с ключа
 	stopTimer(key) {
-		const existed = this.timers.delete(key);
-		if (existed) {
+		// Сначала проверяем точное совпадение
+		if (this.timers.has(key)) {
+			this.timers.delete(key);
 			log(`Остановлен таймер: ${key}`);
+			// ищем все таймеры, которые начинаются с этого ключа
+			const stoppedTimers = [];
+
+			for (const [timerKey, timer] of this.timers.entries()) {
+				if (timerKey.startsWith(key)) {
+					this.timers.delete(timerKey);
+					stoppedTimers.push(timerKey);
+				}
+			}
+
+			if (stoppedTimers.length > 0) {
+				log(`Остановлено ${stoppedTimers.length} таймеров (по префиксу "${key}"): ${stoppedTimers.join(', ')}`);
+				return true;
+			}
+			
+			return true;
 		}
-		return existed;
+
+		
+
+		// Если ничего не найдено
+		log(`Таймер не найден: ${key}`, 'DEBUG');
+		return false;
 	}
 
 	// @bookmark Установить время старта таймера
@@ -1100,7 +1130,7 @@ class CommandParser {
 					}
 
 					for (const logic of allLogics) {
-						this.sm.startTimer(`logic_${logic}_node_${node}`, {
+						this.sm.startTimer(`logic_${logic}_module_Frn_node_${node}`, {
 							elementId: `logic_${logic}_node_${node}`,
 							replaceStart: ':</b>',
 							replaceEnd: '<br>',
