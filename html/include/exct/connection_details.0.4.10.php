@@ -346,13 +346,13 @@ function getConnectionDetailsTable(): string
 				}
 				// EchoLink
 				elseif ($isEchoLinkModule) {
-					// $html .= '<div>';
+					$html .= '<div class="message_block">';
 					foreach ($logic['details'] as $message) {
 						// if (!empty(trim($message))) {
 							$html .= '<div class="mode_flex">' . $message . '</div>';
 						// }
 					}
-					// $html .= '</div>';
+					$html .= '</div>';
 					// $html .= '<br>';
 				}
 			}
@@ -374,6 +374,6 @@ function getConnectionDetailsTable(): string
 <?php
 if (defined("DEBUG") && DEBUG) {
 	$funct_time = microtime(true) - $funct_start;
-	dlog("$ver: Закончил работу за $funct_time мсек", 3, "INFO");
+	dlog("$ver: Закончил работу за $funct_time мсек", 1, "INFO");
 	unset($ver, $funct_start, $funct_time);
 }

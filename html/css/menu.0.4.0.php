@@ -19,24 +19,24 @@ header("Content-type: text/css");
 ?>
 
 .leftnav {
-	float: left;
-	margin : -12px 0 0 0;
-	<!-- padding : 0 3px 3px 10px; -->
-	padding : 0px 3px 3px 10px;
-	width : 230px;
-	background : #212529;
-	font-weight : normal;
+float: left;
+margin : -12px 0 0 0;
+<!-- padding : 0 3px 3px 10px; -->
+padding : 0px 3px 3px 10px;
+width : 230px;
+background : #212529;
+font-weight : normal;
 }
 
 .footer{
-	margin: 0;
+margin: 0;
 }
 
-#local_activity table tr:hover td, 
+#local_activity table tr:hover td,
 #local_activity table tr:hover td a
 {
-	background-color: #3c3f47;
-	color: #ffffff;
+background-color: #3c3f47;
+color: #ffffff;
 }
 
 
@@ -1074,3 +1074,19 @@ margin-right: 10px;
 .debug-warning { color: #ff8800; }
 .debug-info { color: #4ec9b0; }
 .debug-debug { color: #888; }
+
+
+.message_block {
+	width: 100%;
+	max-width: 800px;
+	margin: 0 auto 4px auto;
+	padding: 10px;
+	box-sizing: border-box;
+	border: 1px solid #555555;
+	border-radius: 4px;
+}
+
+.message_block .mode_flex:first-child {
+	font-weight: bold;
+	color: #ff8800; 
+}
