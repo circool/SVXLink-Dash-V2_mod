@@ -8,7 +8,7 @@
 function getLineTime(string $line): int
 {
 	$timeZone = isset($_SESSION['TIMEZONE']) ? $_SESSION['TIMEZONE'] : "UTC";
-
+	
 	// Ищем позицию ": " в строке
 	$pos = strpos($line, ': ');
 
