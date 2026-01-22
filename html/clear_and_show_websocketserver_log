@@ -1,0 +1,1 @@
+sudo truncate -s0 websocket_server.log && sudo tail -f websocket_server.log
