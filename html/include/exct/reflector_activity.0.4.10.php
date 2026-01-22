@@ -330,7 +330,8 @@ function getReflectorActivityContent(): string
 		$html .= '<table style="word-wrap: break-word; white-space:normal;">';
 		$html .= '<tbody>';
 		$html .= '<tr>';
-		$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Date/Time') . '<span><b>' . getTranslation('Current Date and Time') . '</b></span></a></th>';
+		$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Date') . '<span><b>' . getTranslation('Current Date') . '</b></span></a></th>';
+		$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Time') . '<span><b>' . getTranslation('Current Time') . '</b></span></a></th>';
 		$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Selected Talkgroup') . '<span><b>' . getTranslation('Talkgroup') . '</b></span></th>';
 		$html .= '<th><a class="tooltip" href="#">' . getTranslation('Callsign') . '<span><b>' . getTranslation('Talker') . '</b></span></th>';
 		$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration in Seconds') . '</b></span></a></th>';
@@ -338,12 +339,13 @@ function getReflectorActivityContent(): string
 
 		if (empty($history)) {
 			$html .= '<tr>';
-			$html .= '<td colspan="4" style="text-align: center;">' . getTranslation('No activity history found') . '</td>';
+			$html .= '<td colspan="5" style="text-align: center;">' . getTranslation('No activity history found') . '</td>';
 			$html .= '</tr>';
 		} else {
 			foreach ($history as $event) {
 				$html .= '<tr>';
-				$html .= '<td>' . htmlspecialchars(date('d.m.y H:i', $event['end'])) . '</td>';
+				$html .= '<td>' . htmlspecialchars(date('d.m.y', $event['end'])) . '</td>';
+				$html .= '<td>' . htmlspecialchars(date('H:i:s', $event['end'])) . '</td>';
 				$html .= '<td>' . htmlspecialchars($event['tg']) . '</td>';
 				$html .= '<td>' . htmlspecialchars($event['callsign']) . '</td>';
 				$html .= '<td>' . formatDuration($event['duration']) . '</td>';
