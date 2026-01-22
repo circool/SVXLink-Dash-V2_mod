@@ -170,8 +170,14 @@
   - `name`: string (logicName)
   - `is_active`: bool
   - `callsign`: string
-  - `rx`: string (устройство RX)
-  - `tx`: string (устройство TX)
+  - `rx`: array [
+      'name' : string 
+      'start' : int
+    ]
+  - `tx`: array [
+      'name' : string 
+      'start' : int
+    ]
   - `macros`: array [key,value]
   - `type`: string
   - `dtmf_cmd`: string
@@ -226,24 +232,18 @@
 ├── index.php                           # Основная страница (продакшн)
 ├── index_debug.php                     # Основная страница для отладочного режима
 ├── backup.sh                           # Скрипт резервного копирования
-├── clear_and_show_apache_error_log     # Просмотр логов Apache
-├── clear_and_show_dashboard_debug_log  # Очистка и показ отладочных логов
-├── clear_ans_show_websocketserver_log  # Показ логов WebSocket сервера
-├── fake_log_msg                        # Генератор тестовых сообщений svxlink
 ├── favicon.ico                         # Иконка сайта
-├── kill_ws_and_show_log.sh             # Остановка WS и показ логов
-├── sessions_clear                      # Очистка сессий
-├── update_simlink.sh                   # Обновление симлинков
-├── websocket_server.log                # Лог WebSocket сервера
 ├── ws_state.php                        # Состояние WebSocket
 ├── include/                            # PHP включаемые файлы
+│   ├── exct/                           # Версионированные источники
+│   │   └── ...                         
+│   ├── ajax_update.php                 # AJAX обновление
 │   ├── auth_config.php                 # Конфигурация авторизации
 │   ├── auth_handler.php                # Обработчик авторизации
 │   ├── authorise.php                   # Авторизация
 │   ├── browserdetect.php               # Подстройка под браузер
 │   ├── change_password.php             # Смена пароля
 │   ├── connection_details.php          # Детальная информация о текущем соединении
-│   ├── debug_page.php                  # Отладочные данные
 │   ├── dtmf_handler.php                # Обработчик DTMF команд
 │   ├── footer.php                      # Подвал
 │   ├── init.php                        # Основная инициализация
@@ -262,50 +262,34 @@
 │   ├── session_header.php              # Легковесное открытие сессии
 │   ├── settings.php                    # Настройки приложения
 │   ├── top_menu.php                    # Основное меню команд
-│   ├── update_simlink.sh               # Скрипт обновления симлинков
 │   ├── websocket_client_config.php     # Конфигурация WebSocket клиента
 │   ├── websocket_server.php            # WebSocket сервер (PHP)
-│   ├── exct/                           # Версионированные источники
-│   │   ├── auth_config.0.0.1.php
-│   │   └── ...
 │   └── fn/                             # Функции и пакеты функций
-│       ├── logTailer.php               # Работа с последними записями журнала
-│       ├── getTranslation.php          # Работа с переводами
-│       ├── getLineTime.php             # Время из строки
-│       ├── formatDuration.php          # Форматирование продолжительности
+│       ├── exct/                       # Версионированные источники
+│       │   └── ...
 │       ├── dlog.php                    # Журналирование для отладки
-│       ├── parseXmlTags.php            # Парсит XML-теги строки журнала
-│       ├── removeTimestamp.php         # Удаляет временную метку из строки лога
-│       ├── compareTimestampMilis.php   # Разница между м.сек временной метки
+│       ├── formatDuration.php          # Форматирование продолжительности
 │       ├── getActualStatus.php         # Строит начальное состояние системы
+│       ├── getLineTime.php             # Время из строки
 │       ├── getServiceStatus.php        # Состояние сервиса
-│       └── exct/                       # Версионированные источники
-│           ├── getActualStatus.0.4.0.php
-│           └── ...
+│       ├── getTranslation.php          # Работа с переводами
+│       ├── logTailer.php               # Работа с последними записями журнала
+│       ├── parseXmlTags.php            # Парсит XML-теги строки журнала
+│       └── removeTimestamp.php         # Удаляет временную метку из строки лога
 ├── scripts/                            # JS скрипты
+│   ├── exct/                           # Версионированные источники
+│   │   └── ...
 │   ├── dashboard_ws_client.js          # WebSocket клиент состояний
 │   ├── dashboard_ws_server.js          # WebSocket сервер состояний
 │   ├── featherlight.js                 # Библиотека
 │   ├── jquery.min.js                   # jQuery библиотека
-│   ├── svxlink-audio-proxy-server.js   # WebSocket Audio Monitor :8001
-│   ├── restart_audio_proxy_server      # Перезапуск аудио сервера
-│   ├── show_audio_proxy_server_log     # Показ логов аудио сервера
-│   ├── update_simlink.sh               # Обновление симлинков
-│   └── exct/                           # Версионированные источники
-│       ├── dashboard_ws_server.4.17.js # WebSocket сервер версия 4.17
-│       ├── dashboard_ws_client.4.2.js  # WebSocket клиент версия 4.2
-│       └── svxlink-audio-proxy-server.0.0.2.js # Audio Monitor 0.0.2
+│   └── svxlink-audio-proxy-server.js   # WebSocket Audio Monitor
 ├── css/                                # Стили
+│   ├── css-mini.php                    # Стили
 │   ├── css.php                         # Основной набор стилей
-│   ├── css-mini.php                    # Минимальный набор стилей
 │   ├── menu.php                        # Дополнения к основному набору
 │   ├── websocket_control.css           # Стили для кнопки управления WS
-│   ├── font-awesome.min.css            # Awesome Fonts
-│   └── font-awesome-4.7.0/
-│       ├── css/
-│       ├── fonts/
-│       ├── less/
-│       └── scss/
+│   └── font-awesome.min.css            # Awesome Fonts
 ├── fonts/                              # Шрифты
 │   ├── stylesheet.css
 │   └── ...

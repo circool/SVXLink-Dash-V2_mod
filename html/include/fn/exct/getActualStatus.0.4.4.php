@@ -33,6 +33,8 @@
  * 	Реализован разбор макросов логики
  * @since 0.4.2
  * 	Добавлена фильтрация закоментированных строк при парсигне конфига
+ * @since 0.4.4
+ *  Добавлены состояния для устройств (приемники и передатчики для каждой логики) ('name','start')
  */
 function getActualStatus(bool $forceRebuild = false): array
 {
@@ -69,12 +71,6 @@ function getActualStatus(bool $forceRebuild = false): array
 			],
 			'callsign' => "ERROR",
 		];
-
-		// if (defined("DEBUG") && DEBUG) dlog("$ver: Проверка часового пояса ({$_SESSION['TIMEZONE']}) из сессии", 4, "DEBUG");
-
-		// date_default_timezone_set($_SESSION['TIMEZONE']);
-
-
 
 		// @bookmark Конфигурация
 
@@ -280,14 +276,34 @@ function getActualStatus(bool $forceRebuild = false): array
 				}
 			}
 
+			// $item = [
+			// 	'start' => 0,
+			// 	'duration' => 0,
+			// 	'name' => $_logic,
+			// 	'is_active' => false,
+			// 	'callsign' => $svxconfig[$_logic]['CALLSIGN'] ?? 'N0CALL',
+			// 	'rx' => $rxProcessed,
+			// 	'tx' => $txProcessed,
+			// 	'macros' => $macroses,
+			// 	'type' => $svxconfig[$_logic]['TYPE'] ?? 'NOT SET',
+			// 	'dtmf_cmd' => $svxconfig[$_logic]['DTMF_CTRL_PTY'] ?? '',
+			// 	'is_connected' => false
+			// ];
+			// @since 0.4.4
 			$item = [
 				'start' => 0,
 				'duration' => 0,
 				'name' => $_logic,
 				'is_active' => false,
 				'callsign' => $svxconfig[$_logic]['CALLSIGN'] ?? 'N0CALL',
-				'rx' => $rxProcessed,
-				'tx' => $txProcessed,
+				'rx' => [
+					'name' => $rxProcessed,
+					'start' => 0
+				],
+				'tx' => [
+					'name' => $txProcessed,
+					'start' => 0
+				],
 				'macros' => $macroses,
 				'type' => $svxconfig[$_logic]['TYPE'] ?? 'NOT SET',
 				'dtmf_cmd' => $svxconfig[$_logic]['DTMF_CTRL_PTY'] ?? '',
@@ -897,6 +913,39 @@ function getActualStatus(bool $forceRebuild = false): array
 					}
 				}
 			}
+
+			// @bookmark Состояние передатчика и приемника
+			if(isset($logic['rx']) && !empty($logic['rx']['name'])){
+				$required_condition = $logic['rx']['name'];
+				
+				$or_conditions = ["The squelch is"];
+				$dev_last_action = getLogTailFiltered(1, $required_condition, $or_conditions, $logCount);
+
+				if($dev_last_action !== false) {
+					// ищем расширенную строку на случай если кому-то взбредет назвать устройство OPEN...
+					if(strpos($dev_last_action[0], "s OPEN") !== false){
+						$logic['rx']['start'] = getLineTime($dev_last_action[0]);
+					} else {
+						$logic['rx']['start'] = 0;
+					}
+				}
+			}
+			if(isset($logic['tx']) && !empty($logic['tx']['name'])){
+				$required_condition = $logic['tx']['name'];
+				
+				$or_conditions = ["Turning the transmitter"];
+				$dev_last_action = getLogTailFiltered(1, $required_condition, $or_conditions, $logCount);
+
+				if($dev_last_action !== false) {
+					
+					if(strpos($dev_last_action[0], "r ON") !== false){
+						$logic['tx']['start'] = getLineTime($dev_last_action[0]);
+					} else {
+						$logic['tx']['start'] = 0;
+					}
+				}
+			}
+
 		}
 
 		if (defined("DEBUG") && DEBUG) dlog("$ver: Логика $logicName активна? ({$logic['is_active']}) подключена? ({$logic['is_connected']})", 4, "DEBUG");

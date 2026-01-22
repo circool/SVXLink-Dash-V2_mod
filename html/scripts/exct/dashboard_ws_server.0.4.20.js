@@ -1,7 +1,7 @@
 /**
- * @filesource /scripts/exct/dashboard_ws_server.0.4.17.js
- * @version 0.4.17
- * @date 2026.01.16
+ * @filesource /scripts/exct/dashboard_ws_server.0.4.20.js
+ * @version 0.4.20
+ * @date 2026.01.22
  * @description Stateful WebSocket сервер для SvxLink Dashboard
  */
 
@@ -103,7 +103,13 @@ class StateManager {
 		}
 
 		// Более 1 часа: HH:MM:SS
-		const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+		// const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+		// const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+		// const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+		// return `${hours}:${minutes}:${seconds}`;
+
+		// Более 1 часа: H:MM:SS (без лидирующего нуля для часов)
+		const hours = Math.floor(totalSeconds / 3600);
 		const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
 		const seconds = (totalSeconds % 60).toString().padStart(2, '0');
 		return `${hours}:${minutes}:${seconds}`;
@@ -130,13 +136,36 @@ class StateManager {
 		return now;
 	}
 
-	// @bookmark Остановить таймер
+	// @since 0.4.19
+	// @bookmark Остановить таймер - удаляет все таймеры которые начинаются с key
 	stopTimer(key) {
-		const existed = this.timers.delete(key);
-		if (existed) {
+		// Сначала проверяем точное совпадение
+		if (this.timers.has(key)) {
+			this.timers.delete(key);
 			log(`Остановлен таймер: ${key}`);
+			// ищем все таймеры, которые начинаются с этого ключа
+			const stoppedTimers = [];
+
+			for (const [timerKey, timer] of this.timers.entries()) {
+				if (timerKey.startsWith(key)) {
+					this.timers.delete(timerKey);
+					stoppedTimers.push(timerKey);
+				}
+			}
+
+			if (stoppedTimers.length > 0) {
+				log(`Остановлено ${stoppedTimers.length} таймеров (по префиксу "${key}"): ${stoppedTimers.join(', ')}`);
+				return true;
+			}
+			
+			return true;
 		}
-		return existed;
+
+		
+
+		// Если ничего не найдено
+		log(`Таймер не найден: ${key}`, 'DEBUG');
+		return false;
 	}
 
 	// @bookmark Установить время старта таймера
@@ -1100,7 +1129,7 @@ class CommandParser {
 					}
 
 					for (const logic of allLogics) {
-						this.sm.startTimer(`logic_${logic}_node_${node}`, {
+						this.sm.startTimer(`logic_${logic}_module_Frn_node_${node}`, {
 							elementId: `logic_${logic}_node_${node}`,
 							replaceStart: ':</b>',
 							replaceEnd: '<br>',

@@ -73,16 +73,16 @@ try {
 
 			// 6.2 Устройства RX/TX
 			if (!empty($logic['rx'])) {
-				$response['data']['devices'][$logic['rx']] = [
-					'start' => 0,
+				$response['data']['devices'][$logic['rx']['name']] = [
+					'start' => $logic['rx']['start'],
 					'type' => 'RX',
 					'logic' => $logicName
 				];
 			}
 
 			if (!empty($logic['tx'])) {
-				$response['data']['devices'][$logic['tx']] = [
-					'start' => 0,
+				$response['data']['devices'][$logic['tx']['name']] = [
+					'start' => $logic['tx']['start'],
 					'type' => 'TX',
 					'logic' => $logicName
 				];
