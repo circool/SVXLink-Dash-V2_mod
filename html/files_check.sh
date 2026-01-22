@@ -9,85 +9,86 @@ PROJECT_ROOT="${1:-/var/www/html}"
 
 # Проверяем существование корневой директории
 if [ ! -d "$PROJECT_ROOT" ]; then
-    echo "Ошибка: Корневая директория проекта не найдена: $PROJECT_ROOT"
+    echo "Error: Root dir not found: $PROJECT_ROOT"
     exit 1
 fi
 
 cd "$PROJECT_ROOT"
 
 echo "============================================="
-echo "Проверка файловой структуры SvxLink Dashboard"
-echo "Корневая директория: $PROJECT_ROOT"
-echo "Время проверки: $(date)"
+echo "Checking SvxLink Dashboard file structure"
+echo "Root directory: $PROJECT_ROOT"
+echo "Check time: $(date)"
 echo "============================================="
 
 # Массив файлов для проверки (основные файлы из документации)
 declare -A files_to_check=(
     # Корневые файлы
-    ["index.php"]="Основная страница (продакшн)"
-    ["index_debug.php"]="Основная страница для отладочного режима"
-    ["backup.sh"]="Скрипт резервного копирования"
-    ["favicon.ico"]="Иконка сайта"
-    ["ws_state.php"]="Состояние WebSocket"
+    ["index.php"]="Main page (prod)"
+    ["index_debug.php"]="Main page for beta-testing"
+    ["backup.sh"]="Backup script"
+    ["favicon.ico"]="Icon"
+    ["ws_state.php"]="WebSocket state"
 
     
     # Директории
-    ["include/"]="PHP включаемые файлы"
-    ["scripts/"]="JS скрипты"
-    ["css/"]="Стили"
-    ["fonts/"]="Шрифты"
-    ["install/"]="Установочные скрипты"
-    ["config/"]="Конфигурационные файлы"
+    ["include/"]="PHP files"
+    ["scripts/"]="JS scripts"
+    ["css/"]="CSS Styles"
+    ["fonts/"]="Fonts"
+    ["install/"]="Installation scripts (todo)"
+    ["config/"]="Configuration files"
     
     # Основные файлы в include/
-    ["include/auth_config.php"]="Конфигурация авторизации"
-    ["include/auth_handler.php"]="Обработчик авторизации"
-    ["include/authorise.php"]="Авторизация"
-    ["include/browserdetect.php"]="Подстройка под браузер"
-    ["include/change_password.php"]="Смена пароля"
-    ["include/connection_details.php"]="Детальная информация о текущем соединении"
-    ["include/dtmf_handler.php"]="Обработчик DTMF команд" 
-    ["include/footer.php"]="Подвал" 
-    ["include/init.php"]="Основная инициализация"
-    ["include/js_utils.php"]="JavaScript утилиты"
-    ["include/keypad.php"]="DTMF клавиатура"
-    ["include/left_panel.php"]="Левая панель состояний"
-    ["include/logout.php"]="Выход из системы"
-    ["include/macros.php"]="Макросы"
-    ["include/monitor.php"]="Мониторинг аудио"
-    ["include/macros.php"]="Макросы"
-    ["include/net_activity.php"]="История сетевой активности"
-    ["include/radio_activity.php"]="Состояние приемника/передатчика"
-    ["include/reflector_activity.php"]="Данные рефлекторов"
-    ["include/reset_auth.php"]="Сброс авторизации"
-    ["include/rf_activity.php"]="История событий локальной активности"
-    ["include/session_header.php"]="Легковесное открытие сессии"
-	["include/settings.php"]="Настройки приложения"
-	["include/top_menu.php"]="Основное меню команд"
-	["include/websocket_client_config.php"]="Конфигурация WebSocket клиента"
-	["include/websocket_server.php"]="Проверка и запуск WebSocket сервера"
-	["include/fn/dlog.php"]="Дебаг сообщения"
-	["include/fn/formatDuration.php"]="Форматирование строки длительности"
-	["include/fn/getActualStatus.php"]="Строит начальное состояние системы"
-	["include/fn/getLineTime.php"]="Время из строки"
-	["include/fn/getServiceStatus.php"]="Состояние сервиса"
-	["include/fn/getTranslation.php"]="Работа с переводами"
-	["include/fn/logTailer.php"]="Работа с последними записями журнала"
-	["include/fn/parseXmlTags.php"]="Парсит XML-теги строки журнала"
+    ["include/ajax_update.php"]="AJAX update"
+    ["include/auth_config.php"]="Authentification configuration"
+    ["include/auth_handler.php"]="Authentification handler"
+    ["include/authorise.php"]="Authentification"
+    ["include/browserdetect.php"]="Browser detect"
+    ["include/change_password.php"]="Password changer"
+    ["include/connection_details.php"]="Connection details"
+    ["include/dtmf_handler.php"]="DTMF command handler" 
+    ["include/footer.php"]="Footer" 
+    ["include/init.php"]="Main init"
+    ["include/js_utils.php"]="JavaScript utils"
+    ["include/keypad.php"]="DTMF keypad"
+    ["include/left_panel.php"]="Left panel (status panel)"
+    ["include/logout.php"]="Logout handler"
+    ["include/macros.php"]="Macros"
+    ["include/monitor.php"]="Audio monitor"
+    ["include/net_activity.php"]="Network activity history"
+    ["include/radio_activity.php"]="Radio activity state"
+    ["include/reflector_activity.php"]="Reflectors activity state & history"
+    ["include/reset_auth.php"]="Authorisation killer"
+    ["include/rf_activity.php"]="Local activity history"
+    ["include/session_header.php"]="Light session open"
+	["include/settings.php"]="Main settings constants"
+	["include/top_menu.php"]="Top menu"
+	["include/websocket_client_config.php"]="WebSocket client configuration"
+	["include/websocket_server.php"]="WebSocket server handler"
+	["include/fn/dlog.php"]="Debug logger"
+	["include/fn/formatDuration.php"]="Time string formatting"
+	["include/fn/getActualStatus.php"]="Actualizer state"
+	["include/fn/getLineTime.php"]="Time parser"
+	["include/fn/getServiceStatus.php"]="Service state checker"
+	["include/fn/getTranslation.php"]="Translate tool"
+	["include/fn/logTailer.php"]="Log handler"
+	["include/fn/parseXmlTags.php"]="XML-parser"
+	["include/fn/removeTimestamp.php"]="Timestamp remover"
 	
     
     # Основные файлы в scripts/
-    ["scripts/dashboard_ws_client.js"]="WebSocket клиент состояний"
-    ["scripts/dashboard_ws_server.js"]="WebSocket сервер состояний"
-    ["scripts/featherlight.js"]="Библиотека"
+    ["scripts/dashboard_ws_client.js"]="WebSocket client"
+    ["scripts/dashboard_ws_server.js"]="WebSocket server"
+    ["scripts/featherlight.js"]="Library"
     ["scripts/svxlink-audio-proxy-server.js"]="WebSocket Audio Monitor"
-    ["scripts/jquery.min.js"]="jQuery библиотека"
+    ["scripts/jquery.min.js"]="jQuery lib"
     
     # Основные файлы в css/
-    ["css/css-mini.php"]="Минимальный набор стилей"
-    ["css/css.php"]="Основной набор стилей"
-    ["css/menu.php"]="Дополнения к основному набору"
-    ["css/websocket_control.css"]="Стили для кнопки управления WS"
+    ["css/css-mini.php"]="Styles"
+    ["css/css.php"]="Main style set"
+    ["css/menu.php"]="Addition styles"
+    ["css/websocket_control.css"]="Styles for WS button WS"
     ["css/font-awesome.min.css"]="Awesome Fonts"
 )
 
@@ -98,7 +99,7 @@ missing=0
 symlinks=0
 broken_symlinks=0
 
-echo -e "\n=== Проверка основных файлов ===\n"
+echo -e "\n=== Main files checking ===\n"
 
 # Функция проверки
 check_item() {
@@ -110,10 +111,10 @@ check_item() {
     if [[ "$path" == */ ]]; then
         # Это директория
         if [ -d "$path" ]; then
-            echo "✓ Директория: $description ($path)"
+            echo "Dir: $description ($path)"
             ((found++))
         else
-            echo "❌ Отсутствует директория: $description ($path)"
+            echo "❌ Missing dir: $description ($path)"
             ((missing++))
         fi
     else
@@ -122,22 +123,22 @@ check_item() {
             # Симлинк
             ((symlinks++))
             if [ -e "$path" ]; then
-                target=$(readlink -f "$path" 2>/dev/null || echo "не удалось прочитать")
-                echo "✓ Симлинк: $description"
-                echo "  → Указывает на: $target"
+                target=$(readlink -f "$path" 2>/dev/null || echo "read error")
+                echo "Symlink: $description"
+                echo "  → Point to: $target"
                 ((found++))
             else
-                echo "❌ Битый симлинк: $description ($path)"
+                echo "❌ Broken symlink: $description ($path)"
                 ((broken_symlinks++))
                 ((missing++))
             fi
         elif [ -f "$path" ]; then
             # Обычный файл
-            echo "✓ Файл: $description ($path)"
+            echo "File: $description ($path)"
             ((found++))
         else
             # Файл отсутствует
-            echo "❌ Отсутствует: $description ($path)"
+            echo "❌ Missing: $description ($path)"
             ((missing++))
         fi
     fi
@@ -148,67 +149,65 @@ for filepath in "${!files_to_check[@]}"; do
     check_item "$filepath" "${files_to_check[$filepath]}"
 done
 
-echo -e "\n=== Дополнительные проверки ===\n"
+echo -e "\n=== Additional checks ===\n"
 
 # Проверка лог файла svxlink
-echo "Проверка лог файла SvxLink:"
+echo "SvxLink log file:"
 if [ -f "/var/log/svxlink" ]; then
-    echo "  ✓ /var/log/svxlink существует"
+    echo "  /var/log/svxlink found"
 else
-    echo "  ❌ /var/log/svxlink не существует"
+    echo "  ❌ /var/log/svxlink not found"
 fi
 
 # Проверка конфигурации svxlink
-echo -e "\nПроверка конфигурации SvxLink:"
+echo -e "\nSvxLink configuration file:"
 if [ -d "/etc/svxlink" ]; then
-    echo "  ✓ Директория /etc/svxlink существует"
+    echo "  Dir /etc/svxlink exist"
     if [ -f "/etc/svxlink/svxlink.conf" ]; then
-        echo "  ✓ Конфиг svxlink.conf существует"
+        echo "  Config svxlink.conf exist"
     fi
 else
-    echo "  ❌ Директория /etc/svxlink не существует"
+    echo "  ❌ Dir /etc/svxlink not found"
 fi
 
 # Проверка сервисов
-echo -e "\nПроверка системных сервисов:"
+echo -e "\nSystem service check:"
 
 check_service() {
     local service="$1"
     if systemctl is-active --quiet "$service" 2>/dev/null; then
-        echo "  ✓ $service: активен"
+        echo "  $service: is active"
     else
-        echo "  ❌ $service: не активен"
+        echo "  ❌ $service: not active"
     fi
 }
 
 check_service "apache2"
 check_service "svxlink-audio-proxy.service"
 
-echo -e "\n=== Статистика ===\n"
+echo -e "\n=== Summary ===\n"
 
-echo "Всего проверено: $total"
-echo "Найдено: $found"
-echo "Отсутствует: $missing"
-echo "Симлинков: $symlinks"
-echo "Битых симлинков: $broken_symlinks"
+echo "Total checked: $total"
+echo "Found: $found"
+echo "Missing: $missing"
+echo "Symlinks: $symlinks"
+echo "Broken symlinks: $broken_symlinks"
 
 if [ $total -gt 0 ]; then
     percentage=$((found * 100 / total))
-    echo "Процент наличия: $percentage%"
+    echo "Ready percent: $percentage%"
 fi
 
-echo -e "\n=== Краткий отчет ===\n"
+echo -e "\n=== Short ===\n"
 
 if [ $missing -eq 0 ] && [ $broken_symlinks -eq 0 ]; then
-    echo "✅ Все основные файлы присутствуют и симлинки целы!"
-elif [ $missing -lt 5 ]; then
-    echo "⚠️  Отсутствует несколько файлов ($missing)"
+    echo "✅ All essential files are in place, and the symbolic links are valid!"
 else
-    echo "❌ Отсутствует много файлов ($missing)"
+    echo "❌ Several files are missing ($missing)"
 fi
 
 if [ $broken_symlinks -gt 0 ]; then
-    echo "❌ Обнаружены битые симлинки: $broken_symlinks"
+    echo "❌ Found broken symlinks: $broken_symlinks"
 fi
 
 echo -e "\n============================================="
