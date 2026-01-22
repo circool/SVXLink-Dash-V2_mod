@@ -413,7 +413,7 @@ class CommandParser {
 							replaceEnd: ' )',
 							type: 'device'
 						});
-						log(`Время строки - инициатора: ${debug_timestamp}`);
+						// log(`Время строки - инициатора: ${debug_timestamp}`);
 						return [
 							{ id: `device_${device}_tx_status`, action: 'set_content', payload: 'TRANSMIT ( 0 s )' },
 							{ id: `device_${device}_tx_status`, action: 'add_class', class: 'inactive-mode-cell' },
@@ -421,7 +421,7 @@ class CommandParser {
 
 					} else {
 						this.sm.stopTimer(`device_${device}`);
-						log(`Время строки - инициатора: ${debug_timestamp}`);
+						// log(`Время строки - инициатора: ${debug_timestamp}`);
 						return [
 							{ id: `device_${device}_tx_status`, action: 'set_content', payload: 'STANDBY' },
 							{ id: `device_${device}_tx_status`, action: 'remove_class', class: 'inactive-mode-cell' },
@@ -445,14 +445,14 @@ class CommandParser {
 							replaceEnd: ' )',
 							type: 'device'
 						});
-						log(`Время строки - инициатора: ${debug_timestamp}`);
+						// log(`Время строки - инициатора: ${debug_timestamp}`);
 						return [
 							{ id: `device_${device}_rx_status`, action: 'set_content', payload: 'RECEIVE ( 0 s )' },
 							{ id: `device_${device}_rx_status`, action: 'add_class', class: 'active-mode-cell' },
 						];
 					} else {
 						this.sm.stopTimer(`device_${device}`);
-						log(`Время строки - инициатора: ${debug_timestamp}`);
+						// log(`Время строки - инициатора: ${debug_timestamp}`);
 						return [
 							{ id: `device_${device}_rx_status`, action: 'set_content', payload: 'STANDBY' },
 							{ id: `device_${device}_rx_status`, action: 'remove_class', class: 'active-mode-cell' },
