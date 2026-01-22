@@ -294,7 +294,7 @@ function getNetActivityTable(): string
 	$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Date') . '<span><b>' . getTranslation('Date') . '</b></span></a></th>';
 	$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Time') . '<span><b>' . getTranslation('Time') . '</b></span></a></th>';
 	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Source') . '<span><b>' . getTranslation('Source') . '</b></span></a></th>';
-	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration') . '</b></span></a></th>';
+	$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration') . '</b></span></a></th>';
 	$html .= '</tr>';
 	$html .= '</thead>';
 	$html .= '<tbody>';

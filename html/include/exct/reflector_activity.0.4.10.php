@@ -209,17 +209,19 @@ function getReflectorActivityContent(): string
 			$hosts = implode(', ', $hosts);
 		}
 
+		$duration = empty($refl_logic['duration']) ? '' : formatDuration($refl_logic['duration']);
+		
 		// @bookmark Таблица линка/рефлектора 
 		$html .= '<table style="word-wrap: break-word; white-space:normal;">';
 		$html .= '<tbody>';
 		$html .= '<tr>';
 		$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Date/Time') . '<span><b>' . getTranslation('Current Date and Time') . '</b></span></a></th>';
 		$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Selected Talkgroup') . '<span><b>' . getTranslation('Talkgroup') . '</b></span></th>';
-		$html .= '<th class="noMob"><a class="tooltip" href="#">' . getTranslation('Monitored Talkgroups') . '<span><b>' . getTranslation('Talkgroups') . '</b></span></th>';
-		$html .= '<th class="noMob"><a class="tooltip" href="#">' . getTranslation('Temporary Monitored Talkgroups') . '<span><b>' . getTranslation('Talkgroups') . '</b></span></th>';
+		$html .= '<th><a class="tooltip" href="#">' . getTranslation('Monitored Talkgroups') . '<span><b>' . getTranslation('Talkgroups') . '</b></span></th>';
+		$html .= '<th><a class="tooltip" href="#">' . getTranslation('Temporary Monitored Talkgroups') . '<span><b>' . getTranslation('Talkgroups') . '</b></span></th>';
 		$html .= '<th><a class="tooltip" href="#">' . getTranslation('Logic') . '<span><b>' . getTranslation('Linked Logic') . '</b></span></a></th>';
 		$html .= '<th><a class="tooltip" href="#">' . getTranslation('Host') . '<span><b>' . getTranslation('Host') . '</b></span></a></th>';
-		$html .= '<th><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration in Seconds') . '</b></span></a></th>';
+		$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration in Seconds') . '</b></span></a></th>';
 		$html .= '</tr>';
 
 		$html .= '<tr>';
@@ -229,7 +231,7 @@ function getReflectorActivityContent(): string
 		$html .= '<td>' . htmlspecialchars($tempMonitoringTG) . '</td>';
 		$html .= '<td>' . htmlspecialchars($sourceLogicName) . '</td>';
 		$html .= '<td>' . htmlspecialchars($hosts) . '</td>';
-		$html .= '<td></td>';
+		$html .= '<td>' . htmlspecialchars($duration) . '</td>';
 		$html .= '</tr>';
 		$html .= '</tbody>';
 		$html .= '</table>';
@@ -325,7 +327,7 @@ function getReflectorActivityContent(): string
 		$html .= '<tr>';
 		$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Date/Time') . '<span><b>' . getTranslation('Current Date and Time') . '</b></span></a></th>';
 		$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Selected Talkgroup') . '<span><b>' . getTranslation('Talkgroup') . '</b></span></th>';
-		$html .= '<th class="noMob"><a class="tooltip" href="#">' . getTranslation('Callsign') . '<span><b>' . getTranslation('Talker') . '</b></span></th>';
+		$html .= '<th><a class="tooltip" href="#">' . getTranslation('Callsign') . '<span><b>' . getTranslation('Talker') . '</b></span></th>';
 		$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration in Seconds') . '</b></span></a></th>';
 		$html .= '</tr>';
 

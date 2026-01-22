@@ -263,7 +263,7 @@ function getConnectionDetailsTable(): string
 	$html .= '<tr>';
 	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Logic') . '<span><b>' . getTranslation('Source') . '</b></span></a></th>';
 	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Destination') . '<span><b>' . getTranslation('Destination of transmission') . '</b></span></a></th>';
-	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration') . '</b></span></a></th>';
+	$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration') . '</b></span></a></th>';
 	$html .= '</tr>';
 	$html .= '</thead>';
 	$html .= '<tbody>';
@@ -273,7 +273,7 @@ function getConnectionDetailsTable(): string
 			$html .= '<tr>';
 			$html .= '<td>' . htmlspecialchars($logic['name']) . '</td>';
 			$html .= '<td>' . htmlspecialchars($logic['destination']) . '</td>';
-			$html .= '<td>' . formatDuration($logic['duration']) . '</td>';
+			$html .= '<td >' . formatDuration($logic['duration']) . '</td>';
 			$html .= '</tr>';
 		}
 	} else {
