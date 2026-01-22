@@ -236,7 +236,7 @@ function countLogLines(string $pattern, int $analyze_lines = 0): int|false
  * @param int|null $search_limit Сколько строк проверять (глубина разбора)
  * @return array|false При отсутствии результата, неправильных параметрах, ошибке получения журнала.
  */
-function getLogTailFiltered($num_lines, $required_condition = null, $or_conditions = [], $search_limit = null)
+function getLogTailFiltered($num_lines, $required_condition = null, $or_conditions = [], $search_limit = null) : array|false
 {
 	if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
 		include_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/dlog.php';
@@ -249,7 +249,11 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 	
 	// Проверка обязательных параметров
 	if (!is_int($num_lines) || $num_lines <= 0) {
-		// if (defined("DEBUG") && DEBUG) dlog("$ver: Неверное количество возвращаемых строк: $num_lines", 1, "ERROR");
+		if (defined("DEBUG") && DEBUG) {
+			dlog("$ver: Неверное количество возвращаемых строк: $num_lines", 1, "ERROR");
+		} else {
+			error_log("Wrong quantity in 1 param in getLogTailFiltered - $num_lines");
+		}
 		return false;
 	}
 
