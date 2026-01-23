@@ -100,7 +100,7 @@ Manager for temporal states and timers.
 
 `stopTimer(key)`
 
-**Purpose:** Stop and remove a timer.
+**Purpose:** Stop and remove a timer (and app child timers too).
 
 **Parameters:**
 - `key` (String) - Timer key to stop

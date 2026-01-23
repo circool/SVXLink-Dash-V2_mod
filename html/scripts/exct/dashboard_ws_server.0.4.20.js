@@ -14,7 +14,7 @@ const { match } = require('assert');
 
 // @bookmark  КОНСТАНТЫ И КОНФИГУРАЦИЯ
 const CONFIG = {
-	version: '0.4.17',
+	version: '0.4.20',
 	ws: {
 		host: '0.0.0.0',
 		port: 8080,
@@ -101,12 +101,6 @@ class StateManager {
 			const seconds = (totalSeconds % 60).toString().padStart(2, '0');
 			return `${minutes}:${seconds}`;
 		}
-
-		// Более 1 часа: HH:MM:SS
-		// const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
-		// const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
-		// const seconds = (totalSeconds % 60).toString().padStart(2, '0');
-		// return `${hours}:${minutes}:${seconds}`;
 
 		// Более 1 часа: H:MM:SS (без лидирующего нуля для часов)
 		const hours = Math.floor(totalSeconds / 3600);
