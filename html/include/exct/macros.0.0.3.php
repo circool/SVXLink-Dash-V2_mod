@@ -15,12 +15,11 @@
 
 
 		echo '<div class="divTable" ><div class="divTableBody">';
-		// echo '<div>';
+		
 		foreach ($m_logic as $logic) {
 			if (isset($logic['macros']) && !empty($logic['macros'])) {
 				$macros = $logic['macros'];
-				// ksort($macros);
-				// echo '<div class="divTableBody">';
+				
 				echo '<div class="divTableRow">';
 
 				// Колонка с именем логики
@@ -35,15 +34,16 @@
 				foreach ($macros as $key => $value) {
 					$styleColor = '';
 
-					if (strpos($value, "EchoLink") !== false) $styleColor = 'background-color:#1c381c;';
-					if (strpos($value, "MetarInfo") !== false) $styleColor = 'background-color:rgb(75, 35, 75);';
-					if (strpos($value, "MetarParrot") !== false) $styleColor = 'background-color: #999966;';
+					if (strpos($value, "EchoLink") !== false) $styleColor = 'background-color: #1c381c;';
+					if (strpos($value, "Metar") !== false) $styleColor = 'background-color: #4b2b4b;';
+					if (strpos($value, "Parrot") !== false) $styleColor = 'background-color: #4e4e14;';
+					if (strpos($value, "Help") !== false) $styleColor = 'background-color: #6c5cac;';
 
-					echo '<button style="' . $styleColor . '" class="button macro-button" 
-                            title="' . htmlspecialchars('D' . $key . ' -> ' . $value) . '" 
+					echo '<a class="tooltip"><span><b>Macro:</b>' . htmlspecialchars($value) . '</span><button style="' . $styleColor . '" class="button macro-button" 
+                             
                             data-command="' . htmlspecialchars('D' . $key . '#') . '" 
                             data-logic="' . htmlspecialchars($logic['name']) . '">' .
-						htmlspecialchars($value) . '</button>';
+						htmlspecialchars('D' . $key) . '</button></a>';
 				}
 
 				echo '</div>';
@@ -53,7 +53,6 @@
 			}
 		}
 
-		// echo '</div>';
 		echo '</div>';
 	} else {
 		echo '<div>';
@@ -187,14 +186,4 @@
 			}, 300);
 		}, 3000);
 	}
-
-	// Пример из оригинального файла (оставляем для обратной совместимости)
-	// document.querySelectorAll('.button').forEach((button, index) => {
-	// 	// Если это не макрос-кнопка, оставляем оригинальный обработчик
-	// 	if (!button.classList.contains('macro-button')) {
-	// 		button.addEventListener('click', () => {
-	// 			alert(`Вы нажали кнопку ${index + 1}`);
-	// 		});
-	// 	}
-	// });
 </script>
