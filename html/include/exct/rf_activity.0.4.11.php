@@ -7,7 +7,6 @@
  * @note Изменения в 0.4.11:
  * - Добавлен контейнер для обновляемых данных с id="rf_activity_content"
  * - Заголовок вынесен из обновляемой части
- * @todo Слишком долгое выполнение - 0.93 s - оптимизировать
  */
 
 // AJAX режим - минимальная инициализация
@@ -43,7 +42,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 			require_once $dlogFile;
 		}
 	}
-
+	
 	// Сразу освобождаем сессию
 	if (session_status() === PHP_SESSION_ACTIVE) {
 		session_write_close();
@@ -81,7 +80,9 @@ function buildLocalActivityTable(): string
 	}
 
 	$rfResultLimit = RF_ACTIVITY_LIMIT . ' ' . getTranslation('Actions');
-	$logLinesCount = $_SESSION['log_tracker']['total_lines'] ?? 1000;
+	
+	$logLinesCount = $_SESSION['service']['log_line_count'] ?? 10000;
+	// $logLinesCount = $_SESSION['log_tracker']['total_lines'] ?? 10000;
 
 	// 1. Получаем squelch события
 	$squelch_lines = getLogTailFiltered(
@@ -588,3 +589,5 @@ if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
 	$func_time = microtime(true) - $func_start;
 	dlog("$ver: Закончил работу за $func_time msec", 3, "INFO");
 }
+
+unset($tableHtml, $rfResultLimit);

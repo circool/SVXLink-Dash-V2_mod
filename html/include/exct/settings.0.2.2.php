@@ -62,7 +62,7 @@ define('SHOW_RADIO_ACTIVITY', true);
 define('SHOW_REFLECTOR_ACTIVITY', true); 
 define('REFLECTOR_ACTIVITY_LIMIT', 6); 
 define('SHOW_NET_ACTIVITY', true);
-define('NET_ACTIVITY_LIMIT', 15);
+define('NET_ACTIVITY_LIMIT', 10);
 define('SHOW_RF_ACTIVITY', true);
 define('RF_ACTIVITY_LIMIT', 6);
 // WebSocket
@@ -73,14 +73,19 @@ if (WS_ENABLED) {
     define("WS_PATH", '/ws');
 }
 
-// Глобально, использовать кеш или нет
-define("USE_CACHE", false);
-// Настройки времени жизни кеша для различных функций
-define("LOG_CACHE_TTL_MS", 1000);
+// Использовать кеш или нет (используется единственной функцией countLogLines)
+define("USE_CACHE", true);
+if(USE_CACHE) {
+    // Время жизни кеша
+    define("LOG_CACHE_TTL_MS", 1000);  
+}
+
+
+
 
 // Настройка аутентификации
 define("AUTH_FILE", '/etc/svxlink/dashboard/auth.ini');
 define("AUTH_SETUP", 'install/setup_auth.php');
 
 // Интервал обновления для динамических элементов
-define("UPDATE_INTERVAL", 5000);
+define("UPDATE_INTERVAL", 2000);

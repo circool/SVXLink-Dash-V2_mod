@@ -10,7 +10,6 @@
  * @note Изменения в 0.4.11:
  * - Добавлен контейнер для обновляемых данных с id="connection_details_content"
  * - Заголовок вынесен из обновляемой части
- * @todo Реализовать динамическое обновление
  */
 
 // AJAX режим - минимальная инициализация
@@ -56,7 +55,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 	}
 
 	// Сразу освобождаем сессию
-	session_write_close();
+	// session_write_close();
 
 	// В AJAX режиме возвращаем только табличную часть
 	echo getConnectionDetailsTable();
@@ -64,7 +63,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 }
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/removeTimestamp.php';
-// require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/compareTimestampMilis.php';
+
 
 if (defined("DEBUG") && DEBUG) {
 	$funct_start = microtime(true);

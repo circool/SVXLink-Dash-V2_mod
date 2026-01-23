@@ -41,7 +41,7 @@ function getActualStatus(bool $forceRebuild = false): array
 	if (defined("DEBUG") && DEBUG) {
 		require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/dlog.php';
 		$funct_start = microtime(true);
-		$ver = "getActualStatus 0.4.0";
+		$ver = "getActualStatus 0.4.4";
 		dlog("$ver: Начинаю работу", 4, "INFO");	
 	}
 

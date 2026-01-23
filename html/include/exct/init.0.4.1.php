@@ -95,14 +95,6 @@ $_SESSION['status'] = $actualStatus;
 
 unset($actualStatus);
 
-// Сбрасываем кеш логов
-trackNewLogLines(1);
-if (defined("DEBUG") && DEBUG) dlog("$ver: Указатель последней записи лога сброшен в конец журнала", 3, "INFO");
-
-
-
-
-
 
 unset($socket, $command, $serverScript, $logFile, $systemTimezone, $port, $host, $errno, $errstr);
 
