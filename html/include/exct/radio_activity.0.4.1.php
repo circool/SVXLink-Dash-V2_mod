@@ -138,7 +138,7 @@ function renderRadioActivityTable()
 			}
 		}
 
-		if (defined("DEBUG") && DEBUG && function_exists("dlog")) dlog("$ver: Рендеринг строки для $logicName, ($rxDevice)/($txDevice)", 1, "DEBUG");
+		if (defined("DEBUG") && DEBUG && function_exists("dlog")) dlog("$ver: Рендеринг строки для $logicName, ($rxDevice)/($txDevice)", 4, "DEBUG");
 
 		// @bookmark Рендерим строку таблицы
 		$html .= '<div class="divTableRow ' . $rowClass .  '">';
