@@ -9,6 +9,7 @@
 ## Optional Settings
 
 3. For DTMF control, ensure that the SVXlink logic has the `DTMF_CTRL_PTY` parameter set to `/dev/shm/dtmf_ctrl` or another path.
+
 4.1. For audio monitoring, configure multiple devices for the logic's `TX` device.
 
 ```svxlink.conf
@@ -18,6 +19,7 @@
 TX=MultiTx
 ...
 ```
+
 4.2. Add the device itself (similar to [TX1])
 
 ```svxlink.conf
