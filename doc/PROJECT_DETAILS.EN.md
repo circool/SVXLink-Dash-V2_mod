@@ -1,7 +1,10 @@
 # SvxLink Dashboard by R2ADU – Project Documentation
 
-Last Updated: 2026-01-17  
+Last Updated: 2026-01-23  
+
 Version: 0.4.x
+
+**Note**: The English documentation is updated on a secondary basis when there is free time. For up-to-date information, please refer to the Russian-language source
 
 ## 1. Project Purpose
 
@@ -137,8 +140,14 @@ Service state data is stored in the session (a single session with a fixed ID is
 - `name`: string (logicName)
 - `is_active`: bool
 - `callsign`: string
-- `rx`: string (RX device)
-- `tx`: string (TX device)
+- `rx`: array [
+      'name' : string 
+      'start' : int
+    ]
+  - `tx`: array [
+      'name' : string 
+      'start' : int
+    ]
 - `macros`: array [key,value]
 - `type`: string
 - `dtmf_cmd`: string
