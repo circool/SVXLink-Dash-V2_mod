@@ -39,12 +39,12 @@ if (session_status() === PHP_SESSION_NONE) {
 	session_start();
 }
 
-if (session_status() === PHP_SESSION_NONE) {
-	session_name(SESSION_NAME);
-	session_start();
-}
+// if (session_status() === PHP_SESSION_NONE) {
+// 	session_name(SESSION_NAME);
+// 	session_start();
+// }
 
-// 3. Обновляем статус (ТОЛЬКО ЭТО нужно из init)
+// 3. Обновляем статус
 require_once $docRoot . '/include/fn/getActualStatus.php';
 
 if (!isset($_SESSION['status'])) {
