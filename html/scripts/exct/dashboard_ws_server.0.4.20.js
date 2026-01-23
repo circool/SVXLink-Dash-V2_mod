@@ -130,7 +130,7 @@ class StateManager {
 		return now;
 	}
 
-	// @since 0.4.19
+	// @since 0.4.20
 	// @bookmark Остановить таймер - удаляет все таймеры которые начинаются с key
 	stopTimer(key) {
 		// Сначала проверяем точное совпадение
@@ -1614,7 +1614,7 @@ class StatefulWebSocketServerV4 {
 				const startTime = info.start * 1000;
 
 				this.stateManager.startTimer(`device_${device}_TX`, {
-					elementId: `device_${device}tx_status`,
+					elementId: `device_${device}_tx_status`,
 					replaceStart: '( ',
 					replaceEnd: ' )',
 					type: 'device_TX'
@@ -1622,7 +1622,7 @@ class StatefulWebSocketServerV4 {
 				this.stateManager.setTimerStart(`device_${device}_TX`, startTime);
 
 				this.stateManager.startTimer(`device_${device}_RX`, {
-					elementId: `device_${device}rx_status`,
+					elementId: `device_${device}_rx_status`,
 					replaceStart: '( ',
 					replaceEnd: ' )',
 					type: 'device_RX'
