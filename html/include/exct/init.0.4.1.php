@@ -95,7 +95,7 @@ $_SESSION['status'] = $actualStatus;
 
 unset($actualStatus);
 
-
+	
 unset($socket, $command, $serverScript, $logFile, $systemTimezone, $port, $host, $errno, $errstr);
 
 if (defined("DEBUG") && DEBUG && function_exists("dlog")) {

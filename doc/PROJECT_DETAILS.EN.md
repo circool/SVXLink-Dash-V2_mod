@@ -37,9 +37,8 @@ Multiple clients (administrators and observers) may connect to the dashboard. Ob
 ### 3.1. Initialization
 On first launch, parameters from `settings.php` are analyzed and constants are initialized in `init.php`.
 
-#### 3.1.1. Settings
-- **Format-defining constants**:  
-  `DASHBOARD_TIME_FORMAT`, `DASHBOARD_DATE_FORMAT`
+#### 3.1.1. Settings in `settings.php`
+
 - **Content-defining constants**:  
   `DASHBOARD_VERSION`, `DASHBOARD_NAME`, `DASHBOARD_TITLE`,  
   `SHOW_CON_DETAILS`, `SHOW_RADIO_ACTIVITY`, `SHOW_NET_ACTIVITY`,  
@@ -248,7 +247,6 @@ During development, symlinks point to current versions. After development, symli
 │       ├── parseXmlTags.php            # XML tag parsing
 │       ├── removeTimestamp.php         # Remove timestamp from log line
 │       ├── getActualStatus.php         # Build initial system state
-│       ├── getServiceStatus.php        # Service status
 │       └── exct/                       # Versioned sources
 │           ├── getActualStatus.0.4.0.php
 │           └── ...

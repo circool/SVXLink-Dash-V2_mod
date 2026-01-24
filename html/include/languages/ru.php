@@ -1,5 +1,5 @@
 <?php
-
+return [];
 return [
 	'About' => 'О системе',
 	'Actions' => 'событий',

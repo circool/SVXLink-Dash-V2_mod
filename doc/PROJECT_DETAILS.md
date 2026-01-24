@@ -1,6 +1,6 @@
 # Документация по проекту SvxLink Dashboard by R2ADU
 
-Дата обновления 23.01.2026
+Дата обновления 24.01.2026
 
 Версия 0.4.x
 
@@ -40,21 +40,21 @@
 
 3.1. При первом запуске выполняется анализ параметров из settings.php и инициализкция констант в init.php
   
-  3.1.1. settings
-  - константы определяющие форматы
-    + `DASHBOARD_TIME_FORMAT`, `DASHBOARD_DATE_FORMAT`  
-  - константы определяющие содержимое 
+  3.1.1. Настройки в `settings.php`
+  - константы определяющие содержимое заголовков
     + `DASHBOARD_VERSION`
     + `DASHBOARD_NAME`
     + `DASHBOARD_TITLE`
+  - константы определяющие содержимое 
     + `SHOW_CON_DETAILS`
     + `SHOW_RADIO_ACTIVITY`
-    + `SHOW_NET_ACTIVITY`
+    + `SHOW_NET_ACTIVITY`, `NET_ACTIVITY_LIMIT`
     + `SHOW_REFLECTOR_ACTIVITY`, `REFLECTOR_ACTIVITY_LIMIT`
     + `SHOW_RF_ACTIVITY`, `RF_ACTIVITY_LIMIT`
+  - константы определяющие состояние отладки
     + `DEBUG`, `DEBUG_VERBOSE`, `DEBUG_LOG_FILE`, `LOG_LEVEL`
   - константы определяющие настройки поведения
-    + `UPDATE_INTERVAL`
+    + `UPDATE_INTERVAL`   Интервал обновления динамически обновляемых частей 
     + `WS_ENABLED`        Работать с websocket сервером состояний
     + настроки для websocket
       - `WS_PORT`
@@ -72,7 +72,7 @@
     + `SVXLINK_LOG_PATH`
     + `SVXCONFPATH`
     + `SVXCONFIG`
-    + `TIMESTAMP_FORMAT` @deprecated - нужно брать из конфигурации svxlink
+    
 
 
   3.1.2.1. Выполняется чтение файла конфигурации svxlink и построение структуры компонентов (init.php)
@@ -273,7 +273,6 @@
 │       ├── formatDuration.php          # Форматирование продолжительности
 │       ├── getActualStatus.php         # Строит начальное состояние системы
 │       ├── getLineTime.php             # Время из строки
-│       ├── getServiceStatus.php        # Состояние сервиса
 │       ├── getTranslation.php          # Работа с переводами
 │       ├── logTailer.php               # Работа с последними записями журнала
 │       ├── parseXmlTags.php            # Парсит XML-теги строки журнала

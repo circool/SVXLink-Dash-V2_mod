@@ -2,9 +2,9 @@
 
 /** Обновление статуса сессии, логики, линков и модулей
  * @author vladimir@tsurkanenko.ru
- * @date 2026.01.16
- * @filesource /include/fn/exct/getActualStatus.0.4.3.php
- * @version 0.4.3
+ * @date 2026.01.24
+ * @filesource /include/fn/exct/getActualStatus.0.4.5.php
+ * @version 0.4.5
 
  * Среднее время выполнения 450-480 ms
  * @since 0.1.13
@@ -35,20 +35,30 @@
  * 	Добавлена фильтрация закоментированных строк при парсигне конфига
  * @since 0.4.4
  *  Добавлены состояния для устройств (приемники и передатчики для каждой логики) ('name','start')
+ * @since 0.4.5
+ *  Отказ от отдельной функции getServiceStatus
+ *  Первое выполнение - 0.6 сек, последующие - 0.2 сек
  */
 function getActualStatus(bool $forceRebuild = false): array
 {
 	if (defined("DEBUG") && DEBUG) {
 		require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/dlog.php';
 		$funct_start = microtime(true);
-		$ver = "getActualStatus 0.4.4";
-		dlog("$ver: Начинаю работу", 4, "INFO");	
+		$ver = "getActualStatus 0.4.5";
+		dlog("$ver: Начинаю работу", 4, "INFO");
 	}
 
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.php';
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getServiceStatus.php';
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getLineTime.php';
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/parseXmlTags.php';
+	
+	// Принудительно перечитываем конфигурацию если в сессии нет исходных данных
+	if(!$forceRebuild){
+		if(isset($_SESSION['status']) === false ){
+			if (defined("DEBUG") && DEBUG) dlog("$ver: Принудительно включаю полный пересчет", 1, "WARNING");
+			$forceRebuild = true;
+		}
+	}
 
 	if ($forceRebuild) {
 		$start = microtime(true);
@@ -62,14 +72,14 @@ function getActualStatus(bool $forceRebuild = false): array
 				'start' => 0,
 				'name' => $has_error,
 				'is_active' => false,
-				'timestamp_format' => 'YYYY-MM-DD HH:MM:SS',
+				'timestamp_format' => '%d %b %Y %H:%M:%S.%f',
 			],
 			'radio_status' => [
-				'status' => "ERROR",
+				'status' => "LOG ERROR",
 				'duration' => 0,
 				'start' => time(),
 			],
-			'callsign' => "ERROR",
+			'callsign' => "LOG ERROR",
 		];
 
 		// @bookmark Конфигурация
@@ -99,15 +109,15 @@ function getActualStatus(bool $forceRebuild = false): array
 			}
 
 			if ($has_error === '') {
-				// Фильтруем комментарии одной строкой
+				// Фильтруем комментарии
 				$filteredLines = array_filter($lines, function ($line) {
 					$trimmed = ltrim($line);
 					return $trimmed !== '' && $trimmed[0] !== '#' && $trimmed[0] !== ';';
 				});
 
 				$svxconfig = parse_ini_string(implode("\n", $filteredLines), true, INI_SCANNER_RAW);
-				if (defined("DEBUG") && DEBUG) dlog("$ver: Начинаю разбор конфигурации из $config_file", 4, "DEBUG");
-				// $svxconfig = parse_ini_file($config_file, true, INI_SCANNER_RAW);
+				if (defined("DEBUG") && DEBUG) dlog("$ver: Начинаю разбор конфигурации из $config_file", 1, "DEBUG");
+
 
 				if ($svxconfig === false) {
 					// Получение последней ошибки PHP
@@ -117,16 +127,19 @@ function getActualStatus(bool $forceRebuild = false): array
 					if (defined("DEBUG") && DEBUG) dlog("$ver: Будет создана пустая аварийная заглушка ", 2, "WARNING");
 					$has_error = $error;
 				}
-			
 			}
-
-			
 		}
 
 		// Возвращаем заглушку если не удалось получить конфиг
 		if ($has_error != '') {
+			return $stub;
+		}
 
-
+		// Проверяем обязательные параметры конфигурации
+		
+		// Наличие формата для временных меток журнала
+		if(!isset($svxconfig['GLOBAL']['TIMESTAMP_FORMAT'])){		
+			$stub['service']['name'] = 'PARAMS MISSING';
 			return $stub;
 		}
 
@@ -136,7 +149,7 @@ function getActualStatus(bool $forceRebuild = false): array
 		// Получаем логику
 		$logics = isset($svxconfig['GLOBAL']['LOGICS']) ?
 			array_filter(array_map('trim', explode(",", $svxconfig['GLOBAL']['LOGICS'])), 'strlen') : [];
-		
+
 		if (empty($logics)) {
 			if (defined("DEBUG") && DEBUG) dlog("$ver: $logics: logics empty", 1, "ERROR");
 			error_log(print_r($svxconfig, true));
@@ -228,7 +241,7 @@ function getActualStatus(bool $forceRebuild = false): array
 			$_dtmf_cmd = '';
 			if (isset($svxconfig[$_logic]['DTMF_CTRL_PTY'])) {
 				$_dtmf_cmd = $svxconfig[$_logic]['DTMF_CTRL_PTY'];
-				$_SESSION['DTMF_CTRL_PTY'] = $_dtmf_cmd; // @todo Убрать отсуда и подумать где его инициировать @since 0.1.14
+				$_SESSION['DTMF_CTRL_PTY'] = $_dtmf_cmd;
 			}
 
 			// Получаем имя RX устройства из конфигурации логики
@@ -276,20 +289,6 @@ function getActualStatus(bool $forceRebuild = false): array
 				}
 			}
 
-			// $item = [
-			// 	'start' => 0,
-			// 	'duration' => 0,
-			// 	'name' => $_logic,
-			// 	'is_active' => false,
-			// 	'callsign' => $svxconfig[$_logic]['CALLSIGN'] ?? 'N0CALL',
-			// 	'rx' => $rxProcessed,
-			// 	'tx' => $txProcessed,
-			// 	'macros' => $macroses,
-			// 	'type' => $svxconfig[$_logic]['TYPE'] ?? 'NOT SET',
-			// 	'dtmf_cmd' => $svxconfig[$_logic]['DTMF_CTRL_PTY'] ?? '',
-			// 	'is_connected' => false
-			// ];
-			// @since 0.4.4
 			$item = [
 				'start' => 0,
 				'duration' => 0,
@@ -366,7 +365,7 @@ function getActualStatus(bool $forceRebuild = false): array
 			'duration' => 0,
 			'name' => SERVICE_TITLE,
 			'is_active' => false,
-			'timestamp_format' => $svxconfig['GLOBAL']['TIMESTAMP_FORMAT'] ?? 'YYYY-MM-DD HH:MM:SS',
+			'timestamp_format' => $svxconfig['GLOBAL']['TIMESTAMP_FORMAT'],
 		];
 
 		// Получаем глобальный позывной конфигурации
@@ -386,22 +385,83 @@ function getActualStatus(bool $forceRebuild = false): array
 
 		// Вычисляем время выполнения
 		$config_time = microtime(true) - $start;
-
 	} else {
-		if (defined("DEBUG") && DEBUG) dlog("$ver: Выполняю только обновление состояния", 3, "WARNING");
+		// Читаем существующий каркас из сессии
+		if (defined("DEBUG") && DEBUG) dlog("$ver: Выполняю только обновление состояния", 3, "INFO");
 		$status = [
 			'link' => $_SESSION['status']['link'],
 			'logic' => $_SESSION['status']['logic'],
-			'service' => [ /* шаблон service */],
+			'service' => $_SESSION['status']['service'],
 			'multiple_device' => $_SESSION['status']['multiple_device'],
 			'callsign' => $_SESSION['status']['callsign']
 		];
 	}
 
 	// @bookmark Заполнение конфигурации данными
-	$status['service'] = getServiceStatus();
-
+	// $status['service'] = getServiceStatus();
+	// Сначала определяемся с состоянием сервиса
 	
+	// Выясняем, есть ли в сессии старые данные о размере лога 
+	if (isset($_SESSION['status']['service']['log_line_count'])) {
+		$count = $_SESSION['status']['service']['log_line_count'] + 100;
+	} else {
+		$count = null;
+	}
+
+	$or_conditions[] = "Tobias Blomberg";
+	$or_conditions[] = "SIGTERM";
+
+	$logLines = getLogTailFiltered(1, null,	$or_conditions, $count);
+	unset($or_conditions);
+
+	// Строк не получено ни одной
+	if ($logLines === false) {
+		if (defined("DEBUG") && DEBUG) dlog("$ver: Ошибка получения журнала или в нем не найдено записей.", 1, "ERROR");
+		$status['service']['name'] = "LOG PARSE ERROR";
+		return $status;
+	}
+
+	// ??? Строка получена, но она пустая ???
+	$logStatusLine = trim($logLines[0]);
+	if (empty($logStatusLine)) {
+		if (defined("DEBUG") && DEBUG) dlog("$ver: В журнале не найдено сигналов о состоянии сервиса", 1, "ERROR");
+		$status['service']['name'] = "LOG PARSE ERROR";
+		return $status;
+	}
+	
+	// Строка получена, она не пустая, но временная метка не парсится
+	$line_timestamp = getLineTime($logStatusLine);
+	if ($line_timestamp === false) {
+		if (defined("DEBUG") && DEBUG) dlog("$ver: Не удалось получить время из строки $logStatusLine", 1, "ERROR");
+		$status['service']['name'] = "LOG TIMESTAMP ERROR";
+		return $status;
+	}
+
+	if (strpos($logStatusLine, 'Tobias Blomberg', 0) !== false) {
+		if (defined("DEBUG") && DEBUG) dlog("$ver: Сервис запущен", 4, "DEBUG");
+		$status['service']['is_active'] = true;
+		$searchPattern = "Tobias Blomberg";
+	} else {
+		$status['service']['is_active'] = false;
+		$searchPattern = "SIGTERM";
+	}
+
+	$log_count = is_null($count) ? 0 : $count;
+	$logLineCount = countLogLines($searchPattern, $log_count);
+	if ($logLineCount === false) {
+		$logLineCount = 0;
+		$status['service']['name'] = "LOG SIZE ERROR";
+	}
+
+	$status['service']['start'] = $line_timestamp;
+	$status['service']['duration'] = time() - $line_timestamp;
+	$status['service']['log_line_count'] = $logLineCount;
+
+	if (defined("DEBUG") && DEBUG) {
+		$result_count = $logLines === false ? "false" : count($logLines);
+		dlog("$ver: Получено строк: $result_count", 4, "DEBUG");
+	}
+
 
 	// Сервис отключен
 	if ($status['service']['is_active'] === false) {
@@ -409,9 +469,9 @@ function getActualStatus(bool $forceRebuild = false): array
 		// @bookmark Возврат данных о неактивном сервисе
 		return $status;
 	}
-	
-	// На этом этапер уже должен быть получен размер журнала
-	
+
+	// На этом этапе уже должен быть получен размер журнала
+
 	// Получаем количество строк журнала для текущей сессии сервиса
 	$logCount = $status['service']['log_line_count'];
 	if (defined("DEBUG") && DEBUG) dlog("$ver: Активных строк в журнале $logCount", 4, "DEBUG");
@@ -451,7 +511,7 @@ function getActualStatus(bool $forceRebuild = false): array
 		} else {
 			// Для Симплекса и Дуплекса (Event handler script successfully loaded) говорит о включении логики 
 			// а сообщения Activating/Deactivating говорит о включении/выключении модуля (игнорируем - логика не выключаемая 
-			
+
 			// Включенную логику отмечаем как на паузе
 			if (defined("DEBUG") && DEBUG) dlog("$ver: $logicName - обычная логика", 4, "DEBUG");
 			$or_conditions[] = "Event handler script successfully loaded";
@@ -640,7 +700,8 @@ function getActualStatus(bool $forceRebuild = false): array
 
 						if (
 							strpos($serviceCommand, $moduleName) !== false &&
-							strpos($serviceCommand, 'Activating') !== false) {
+							strpos($serviceCommand, 'Activating') !== false
+						) {
 
 							if (defined("DEBUG") && DEBUG) {
 								dlog("$ver: Для модуля $moduleName найдена команда АКТИВАЦИИ в $serviceCommand", 4, "DEBUG");
@@ -656,7 +717,7 @@ function getActualStatus(bool $forceRebuild = false): array
 
 							// Устанавливаем статус активности модуля
 							$isSomeModuleActive = true;
-							
+
 							if (defined("DEBUG") && DEBUG) {
 								dlog("$ver: Модуль $moduleName активирован, работает уже {$module['duration']} сек", 4, "DEBUG");
 							}
@@ -908,44 +969,43 @@ function getActualStatus(bool $forceRebuild = false): array
 							$module['is_active'] = false;
 							$module['start'] = 0;
 							$module['duration'] = 0;
-							if(isset($module['connected_nodes'])) $module['connected_nodes'] = [];
+							if (isset($module['connected_nodes'])) $module['connected_nodes'] = [];
 						}
 					}
 				}
 			}
 
 			// @bookmark Состояние передатчика и приемника
-			if(isset($logic['rx']) && !empty($logic['rx']['name'])){
+			if (isset($logic['rx']) && !empty($logic['rx']['name'])) {
 				$required_condition = $logic['rx']['name'];
-				
+
 				$or_conditions = ["The squelch is"];
 				$dev_last_action = getLogTailFiltered(1, $required_condition, $or_conditions, $logCount);
 
-				if($dev_last_action !== false) {
+				if ($dev_last_action !== false) {
 					// ищем расширенную строку на случай если кому-то взбредет назвать устройство OPEN...
-					if(strpos($dev_last_action[0], "s OPEN") !== false){
+					if (strpos($dev_last_action[0], "s OPEN") !== false) {
 						$logic['rx']['start'] = getLineTime($dev_last_action[0]);
 					} else {
 						$logic['rx']['start'] = 0;
 					}
 				}
 			}
-			if(isset($logic['tx']) && !empty($logic['tx']['name'])){
+			if (isset($logic['tx']) && !empty($logic['tx']['name'])) {
 				$required_condition = $logic['tx']['name'];
-				
+
 				$or_conditions = ["Turning the transmitter"];
 				$dev_last_action = getLogTailFiltered(1, $required_condition, $or_conditions, $logCount);
 
-				if($dev_last_action !== false) {
-					
-					if(strpos($dev_last_action[0], "r ON") !== false){
+				if ($dev_last_action !== false) {
+
+					if (strpos($dev_last_action[0], "r ON") !== false) {
 						$logic['tx']['start'] = getLineTime($dev_last_action[0]);
 					} else {
 						$logic['tx']['start'] = 0;
 					}
 				}
 			}
-
 		}
 
 		if (defined("DEBUG") && DEBUG) dlog("$ver: Логика $logicName активна? ({$logic['is_active']}) подключена? ({$logic['is_connected']})", 4, "DEBUG");
@@ -1037,7 +1097,7 @@ function getActualStatus(bool $forceRebuild = false): array
 			if ($logic['type'] === "Reflector") $logic['is_active'] = false;
 		}
 	}
-	
+
 	if (defined("DEBUG") && DEBUG) {
 		$funct_time = microtime(true) - $funct_start;
 		dlog("$ver: Закончил работу за $funct_time мсек", 3, "INFO");
