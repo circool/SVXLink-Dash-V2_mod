@@ -199,7 +199,7 @@ function getNetActivityActions(): array
 								$parsedLine = parseXmlTags($parent);
 
 								if (isset($parsedLine['ON'])) {
-									$source = '<b>Frn</b>: ' . $parsedLine['ON'] . ', ' . $parsedLine['CT'] . ' (' . $parsedLine['BC'] . ' / ' . $parsedLine['DS'] . ')';
+									$source = 'Frn: <b>' . $parsedLine['ON'] . '</b>,&nbsp' . $parsedLine['CT'] . ' (' . $parsedLine['BC'] . ' / ' . $parsedLine['DS'] . ')';
 								} else {
 									$source = 'Error parsing Frn Server';
 								}
@@ -207,12 +207,12 @@ function getNetActivityActions(): array
 
 								$regexp = '/^(.+?): (\S+): Talker start on TG #(\d*): (\S+)$/';
 								preg_match($regexp, $parent, $matches);
-								$source = '<b>' . $matches[2] . '</b>: ' . $matches[4] . ' in TG: ' . $matches[3];
+								$source = $matches[2] . ': <b>' . $matches[4] . ' in TG: ' . $matches[3] . '</b>';
 							} elseif ($source === 'EchoLinkConference') {
 
 								$regexp = '/^(.+?): --- EchoLink chat message received from (\S+) ---$/';
 								preg_match($regexp, $parent, $matches);
-								$source = '<b>EchoLink Conference</b> ' . $matches[2];
+								$source = 'EchoLink Conference <b>' . $matches[2] . '</b>';
 							} else {
 								$source = $_SESSION['status']['service']['name'];
 							}

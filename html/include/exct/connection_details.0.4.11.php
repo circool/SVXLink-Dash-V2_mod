@@ -373,6 +373,6 @@ function getConnectionDetailsTable(): string
 <?php
 if (defined("DEBUG") && DEBUG) {
 	$funct_time = microtime(true) - $funct_start;
-	dlog("$ver: Закончил работу за $funct_time мсек", 1, "INFO");
+	dlog("$ver: Закончил работу за $funct_time мсек", 3, "INFO");
 	unset($ver, $funct_start, $funct_time);
 }
