@@ -8,3 +8,6 @@
 
 [ ] Неверно устанавливается статус рефлектора в левой панели при первом запуске
 
+[ ] Очищать поле "позывной" и "назначение" при окончании передачи?
+
+[11:32:58] [WS Client v4.1] [ERROR] set_content_by_class missing targetClass parameter {"id":"callsign","action":"set_content_by_class","payload":""}

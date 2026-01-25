@@ -436,7 +436,7 @@ class CommandParser {
 							replaceEnd: ' )',
 							type: 'device'
 						});
-						// log(`Время строки - инициатора: ${debug_timestamp}`);
+						
 						return [
 							{ id: `device_${device}_tx_status`, action: 'set_content', payload: 'TRANSMIT ( 0 s )' },
 							{ id: `device_${device}_tx_status`, action: 'add_class', class: 'inactive-mode-cell' },
@@ -444,10 +444,14 @@ class CommandParser {
 
 					} else {
 						this.sm.stopTimer(`device_${device}`);
-						// log(`Время строки - инициатора: ${debug_timestamp}`);
+						
 						return [
 							{ id: `device_${device}_tx_status`, action: 'set_content', payload: 'STANDBY' },
 							{ id: `device_${device}_tx_status`, action: 'remove_class', class: 'inactive-mode-cell' },
+							// clear callsign
+							{ targetClass: 'callsign', action: 'set_content_by_class', payload: '' },
+							
+
 						];
 					}
 				}
@@ -525,7 +529,7 @@ class CommandParser {
 				handler: (match) => {
 					const timestamp = match[1];
 					const logic = match[2];
-					const nodesString = match[3];  // "RY6HAB-1, UB6LPY-1, R2ADU-1"
+					const nodesString = match[3];  
 
 					// Разбиваем строку узлов
 					const nodes = nodesString.split(',').map(node => node.trim());

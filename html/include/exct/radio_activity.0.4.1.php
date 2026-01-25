@@ -97,6 +97,8 @@ function renderRadioActivityTable()
 			$txDeviceState = $txDeviceStart > 0 ? 'TRANSMIT ( ' . $txDuration . ' )' : "STANDBY";
 
 			$callsign = $logic['callsign'] ?? '';
+			$callsign = '';
+			
 		} else {
 			$rowClass = 'hidden';
 			$rowStyle = ' style = "padding: 0px; margin: 0px" ';
