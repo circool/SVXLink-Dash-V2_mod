@@ -333,8 +333,9 @@ $netResultLimit = NET_ACTIVITY_LIMIT . ' ' . getTranslation('Actions');
 	<div id="net_activity_content">
 		<?php echo getNetActivityTable(); ?>
 	</div>
+<br>	
 </div>
-<br>
+
 
 <?php
 if (defined("DEBUG") && DEBUG) {

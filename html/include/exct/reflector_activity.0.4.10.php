@@ -474,8 +474,9 @@ function getReflectorActivityContent(): string
 	<div id="reflector_activity_content">
 		<?php echo getReflectorActivityContent(); ?>
 	</div>
+
 </div>
-<br>
+
 
 <?php
 if (defined("DEBUG") && DEBUG) {
