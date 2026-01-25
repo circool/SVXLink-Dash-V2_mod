@@ -449,7 +449,7 @@ class CommandParser {
 							{ id: `device_${device}_tx_status`, action: 'set_content', payload: 'STANDBY' },
 							{ id: `device_${device}_tx_status`, action: 'remove_class', class: 'inactive-mode-cell' },
 							// clear callsign
-							{ targetClass: 'callsign', action: 'set_content_by_class', payload: '' },
+							{ id: 'TransmitterOFF', targetClass: 'callsign', action: 'set_content_by_class', payload: '' },
 							
 
 						];
@@ -840,9 +840,90 @@ class CommandParser {
 						logic: logic,
 						module: module
 					});
+					const commands = [];
 
+					log(`Получаю связки для модуля ${module}`, 'INFO');
+					const allLogicsForModule = this.connections.getAllFrom(module);
+					
+					// Для каждой логики находим связанные линки
+					let hasActiveLinks = false;
+					for (const relatedLogic of allLogicsForModule) {
+						log(`Активирую логику ${relatedLogic}`, 'DEBUG');
+						commands.push(
+							{
+								id: `logic_${relatedLogic}`,
+								action: 'remove_class',
+								class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell,active-mode-cell'
+							},
+							{
+								id: `logic_${relatedLogic}`,
+								action: 'add_class',
+								class: 'active-mode-cell'
+							},
+						)
+						
+						log(`Проверяю связку ${relatedLogic}`, 'DEBUG');
+						
+						const linksForLogic = this.connections.getAllFrom(relatedLogic)
+						for (const link of linksForLogic) {
+							log(`Проверяю связку ${link}`, 'DEBUG');
+							if (this.sm.timers.has(`link_${link}`)) {
+								hasActiveLinks = true;
+								
+								log(`Линк ${link} активен, ищу рефлеторы`, 'DEBUG');
+								const allLogicsForLink = this.connections.getAllTo(link);
+								for (const reflector of allLogicsForLink) { 
+									
+									// Убедиться что этот рефлектор не логика и не связана с модулем
+									if (!allLogicsForModule.includes(reflector)) {
+										log(`Ставлю рефлектор ${reflector} на паузу.`, 'DEBUG');
+										commands.push(
+										{
+											id: `logic_${reflector}`,
+											action: 'remove_class',
+											class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell,active-mode-cell'
+										},
+										{
+											id: `logic_${reflector}`,
+											action: 'add_class',
+											class: 'paused-mode-cell'
+										},
+										)
+									}
+									
+								}
+								break;
+							}
+						}
+						if (hasActiveLinks) break;
+					}
 
-					return [
+										
+					if (hasActiveLinks) {
+
+						// log(`Ставлю логику ${logic} на паузу.`, 'DEBUG');
+						// commands.push(
+						// 	{
+						// 		id: `logic_${logic}`,
+						// 		action: 'remove_class',
+						// 		class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell,active-mode-cell'
+						// 	},
+						// 	{
+						// 		id: `logic_${logic}`,
+						// 		action: 'add_class',
+						// 		class: 'paused-mode-cell'
+						// 	}
+						// );
+					}
+					
+					let newclass;
+					if (module === 'EchoLink' || module === 'Frn') {
+						newclass = 'paused-mode-cell';
+					} else {
+						newclass = 'active-mode-cell';
+					}
+
+					commands.push(
 						{
 							// Логику включить
 							id: `logic_${logic}`,
@@ -855,6 +936,8 @@ class CommandParser {
 							action: 'add_class',
 							class: 'active-mode-cell'
 						},
+						// рефлектор на паузу
+
 
 						// Сам модуль
 						{
@@ -865,7 +948,7 @@ class CommandParser {
 						{
 							id: `logic_${logic}_module_${module}`,
 							action: 'add_class',
-							class: 'paused-mode-cell'
+							class: newclass
 						},
 						{
 							id: `logic_${logic}_module_${module}`,
@@ -879,7 +962,8 @@ class CommandParser {
 							action: 'set_content',
 							payload: module
 						},
-					];
+						);
+					return commands;
 				}
 			},
 
@@ -895,6 +979,8 @@ class CommandParser {
 
 					this.sm.stopTimer(`logic_${logic}_active_content`);
 
+					const commands = [];
+
 					log(`Получаю связки для модуля ${module}`, 'INFO');
 					const allLogicsForModule = this.connections.getAllFrom(module);
 					// Для каждой логики находим связанные линки
@@ -907,7 +993,26 @@ class CommandParser {
 							log(`Проверяю связку ${link}`, 'DEBUG');
 							if (this.sm.timers.has(`link_${link}`)) {
 								hasActiveLinks = true;
-								log(`Линк ${link} активен!`, 'DEBUG');
+								// log(`Линк ${link} активен!`, 'DEBUG');
+								log(`Линк ${link} активен, ищу рефлеторы`, 'DEBUG');
+								const allLogicsForLink = this.connections.getAllTo(link);
+								for (const reflector of allLogicsForLink) {
+									log(`Снимаю рефлектор ${reflector} с паузы.`, 'DEBUG');
+									commands.push(
+										{
+											id: `logic_${reflector}`,
+											action: 'remove_class',
+											class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell,active-mode-cell'
+										},
+										{
+											id: `logic_${reflector}`,
+											action: 'add_class',
+											class: 'active-mode-cell'
+										},
+									)
+								}
+								
+								
 								break;
 							}
 						}
@@ -915,7 +1020,7 @@ class CommandParser {
 					}
 
 					// НЕТ активных линков - меняем класс логики на disabled
-					const commands = [];
+					
 
 					if (!hasActiveLinks) {
 
@@ -932,6 +1037,18 @@ class CommandParser {
 								class: 'paused-mode-cell'
 							}
 						);
+					} else {
+						commands.push(
+							{
+								id: `logic_${logic}`,
+								action: 'remove_class',
+								class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell,active-mode-cell'
+							},
+							{
+								id: `logic_${logic}`,
+								action: 'add_class',
+								class: 'active-mode-cell'
+							},)
 					}
 
 					commands.push(

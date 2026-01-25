@@ -51,6 +51,8 @@ function buildLogicData(array $lp_status): array
 	$excl = ["Logic", "Reflector", "Link"];
 
 	// Функция для получения стиля ячейки
+	// active + connected + hasConnected = active-mode-cell
+	// !active + connected + hasConnected = paused-mode-cell
 	$getCellStyle = function ($active, $connected, $hasConnected = false) {
 		if ($hasConnected) {
 	
@@ -189,7 +191,7 @@ function buildLogicData(array $lp_status): array
 
 					if (!isset($relatedReflectors[$reflectorName])) {
 						$reflector = $allReflectors[$reflectorName];
-						$reflectorClass = $getCellStyle($reflector['is_active'], $reflector['is_connected'], true);
+						$reflectorClass = $getCellStyle($reflector['is_connected'], $reflector['is_active'], true);
 
 						// TalkGroups рефлектора
 						$talkGroups = [];
@@ -349,7 +351,6 @@ function buildLogicData(array $lp_status): array
 	// @bookmark 3. Несвязанные рефлекторы (без привязки к логикам)
 	foreach ($allReflectors as $reflectorName => $reflector) {
 		$hasLink = false;
-
 		// Проверяем, есть ли линки к этому рефлектору
 		if (isset($reflectorLinksMap[$reflectorName])) {
 			foreach ($reflectorLinksMap[$reflectorName] as $link) {
@@ -362,7 +363,7 @@ function buildLogicData(array $lp_status): array
 
 		if (!$hasLink) {
 			$reflectorClass = $getCellStyle($reflector['is_active'], $reflector['is_connected'] ?? false, true);
-
+			
 			// TalkGroups рефлектора
 			$talkGroups = [];
 			$hasTalkGroupsData = false;
