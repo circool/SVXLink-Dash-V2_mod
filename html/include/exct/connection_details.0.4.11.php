@@ -95,6 +95,8 @@ function getConnectionDetails(): array
 		return [];
 	}
 	$con_det_logics = $_SESSION['status']['logic'];
+	// $status = getActualStatus(false);
+	// $con_det_logics = $status['logic'];
 
 	foreach ($con_det_logics as $logicName => $logic) {
 		if ($logic['is_active'] == false || $logic['is_connected'] == false) {
@@ -103,6 +105,12 @@ function getConnectionDetails(): array
 
 		$lName = $logicName;
 		$lDuration = isset($logic['start']) ? time() - $logic['start'] : '';
+		
+		
+		if (defined("DEBUG") && DEBUG) {
+			$curTime = time();
+			dlog("Сейчас $curTime. Длительность: $lDuration, начало в логике {$logic['name']}: {$logic['start']}", 4, "DEBUG");
+		}
 		// $lDuration = $logic['duration'] ?? '';
 		$lDestination = '';
 		$lDetails = [];
@@ -117,8 +125,16 @@ function getConnectionDetails(): array
 			foreach ($logic['module'] as $moduleName => $module) {
 				if ($module['is_active']) {
 					$lDestination = $module['name'];
+					if (defined("DEBUG") && DEBUG) {
+						$curTime = time();
+						dlog("Сейчас $curTime. Вычисляется: $lDuration, начало в модуле {$module['name']}: {$module['start']}", 4, "DEBUG");
+					}
 					$lDuration = isset($module['start']) ? time() - $module['start'] : '';
 					// $lDuration = $module['duration'] ?? '';
+					if (defined("DEBUG") && DEBUG) {
+						$curTime = time();
+						dlog("Сейчас $curTime. Длительность: $lDuration, начало в модуле {$module['name']}: {$module['start']}", 4, "DEBUG");
+					}
 					if ($moduleName == 'Frn') {
 						$nodes = getFrnNodes();
 						if (isset($nodes)) {

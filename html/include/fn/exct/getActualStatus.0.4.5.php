@@ -533,7 +533,7 @@ function getActualStatus(bool $forceRebuild = false): array
 			if (defined("DEBUG") && DEBUG) dlog("$ver: Время не правильное", 1, "ERROR");
 			continue;
 		}
-
+		
 		// А царь-то ненастоящий!
 		if ($serviceCommandTimestamp < $logicTimestamp) {
 			if (defined("DEBUG") && DEBUG) dlog("$ver: Время метки $serviceCommandTimestamp меньше старта логики $logicTimestamp", 1, "ERROR");

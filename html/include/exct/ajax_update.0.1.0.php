@@ -38,11 +38,11 @@ if (session_status() === PHP_SESSION_NONE) {
 	session_name(SESSION_NAME);
 	session_start();
 }
+if (!isset($_SESSION['TIMEZONE'])) {
+	$_SESSION['TIMEZONE'] = "Europe/Moscow";
+}
+date_default_timezone_set($_SESSION['TIMEZONE']);
 
-// if (session_status() === PHP_SESSION_NONE) {
-// 	session_name(SESSION_NAME);
-// 	session_start();
-// }
 
 // 3. Обновляем статус
 require_once $docRoot . '/include/fn/getActualStatus.php';
@@ -57,6 +57,11 @@ if (!isset($_SESSION['status'])) {
 
 $_SESSION['status'] = $actualStatus;
 unset($actualStatus);
+
+if (!isset($_SESSION['TIMEZONE'])) {
+	$_SESSION['TIMEZONE'] = "Europe/Moscow";
+}
+date_default_timezone_set($_SESSION['TIMEZONE']);
 
 session_write_close();
 
