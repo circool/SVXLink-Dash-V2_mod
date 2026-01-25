@@ -50,7 +50,7 @@ On first launch, parameters from `settings.php` are analyzed and constants are i
 - **Session constants**:  
   `SESSION_NAME`, `SESSION_LIFETIME`, `SESSION_PATH`, `SESSION_ID`
 - **SvxLink configuration constants**:  
-  `SVXLOGPATH`, `SVXLOGPREFIX`, `SVXLINK_LOG_PATH`, `SVXCONFPATH`, `SVXCONFIG`, `TIMESTAMP_FORMAT`
+  `SVXLOGPATH`, `SVXLOGPREFIX`, `SVXLINK_LOG_PATH`, `SVXCONFPATH`, `SVXCONFIG`
 
 #### 3.1.2. Component Structure
 - **3.1.2.1** – The SvxLink configuration file is read to build the component structure (`init.php`).
@@ -117,7 +117,6 @@ Service state data is stored in the session (a single session with a fixed ID is
 - `is_active`: bool
 - `is_connected`: bool
 - `start`: int (timestamp)
-- `duration`: int (seconds)
 - `timeout`: int
 - `default_active`: bool
 - `source`: array
@@ -135,7 +134,6 @@ Service state data is stored in the session (a single session with a fixed ID is
 
 #### `logic[logicName]` Structure
 - `start`: int (timestamp)
-- `duration`: int (seconds)
 - `name`: string (logicName)
 - `is_active`: bool
 - `callsign`: string
@@ -153,7 +151,6 @@ Service state data is stored in the session (a single session with a fixed ID is
 - `is_connected`: bool
 - `module`: array[moduleName] (optional)
   - `start`: int
-  - `duration`: int
   - `name`: string
   - `callsign`: string
   - `is_active`: bool
@@ -175,7 +172,6 @@ Service state data is stored in the session (a single session with a fixed ID is
 
 #### `service` Structure
 - `start`: int
-- `duration`: int
 - `name`: string
 - `is_active`: bool
 - `timestamp_format`: string

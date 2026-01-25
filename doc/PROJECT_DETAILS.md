@@ -168,7 +168,6 @@
 #### Структура logic[logicName]
 
   - `start`: int (timestamp)
-  - `duration`: int (секунды)
   - `name`: string (logicName)
   - `is_active`: bool
   - `callsign`: string
@@ -186,7 +185,6 @@
   - `is_connected`: bool
   - `module`: array[moduleName] (опционально)
     - `start`: int
-    - `duration`: int
     - `name`: string
     - `callsign`: string
     - `is_active`: bool
@@ -210,7 +208,6 @@
 #### Структура service
 
   - `start`: int
-  - `duration`: int
   - `name`: string
   - `is_active`: bool
   - `timestamp_format`: string
