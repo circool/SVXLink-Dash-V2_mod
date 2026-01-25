@@ -196,7 +196,7 @@ try {
 				'is_active' => $isActive,
 				'is_connected' => $isConnected,
 				'start' => $linkStart,
-				'duration' => $link['duration'] ?? 0,
+				// 'duration' => $link['duration'] ?? 0,
 				'timeout' => $link['timeout'] ?? 0,
 				'default_active' => $link['default_active'] ?? false,
 				'source' => $link['source'] ?? [],

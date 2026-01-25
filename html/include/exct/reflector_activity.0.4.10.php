@@ -212,7 +212,8 @@ function getReflectorActivityContent(): string
 			$hosts = implode(', ', $hosts);
 		}
 
-		$duration = empty($refl_logic['duration']) ? '' : formatDuration($refl_logic['duration']);
+		$duration = empty($refl_logic['start']) ? '' : formatDuration(time() - $refl_logic['start']);
+		// $duration = empty($refl_logic['duration']) ? '' : formatDuration($refl_logic['duration']);
 		
 		// @bookmark Таблица линка/рефлектора 
 		$html .= '<table style="word-wrap: break-word; white-space:normal;">';

@@ -67,7 +67,8 @@ function buildLogicData(array $lp_status): array
 	};
 
 	// @bookmark 1. Сервис
-	$durationHtml = formatDuration($lp_service['duration'] > 0 ? $lp_service['duration'] : 0);
+	$durationHtml = formatDuration($lp_service['start'] > 0 ? time() - $lp_service['start'] : 0);
+	// $durationHtml = formatDuration($lp_service['duration'] > 0 ? $lp_service['duration'] : 0);
 	$data['service'] = [
 		'name' => $lp_service['name'],
 		'style' => $lp_service['is_active'] ? 'active-mode-cell' : 'inactive-mode-cell',
@@ -117,16 +118,19 @@ function buildLogicData(array $lp_status): array
 			foreach ($logic['module'] as $moduleName => $module) {
 				$moduleCanConnected = $module['name'] == "EchoLink" || $module['name'] == "Frn";
 				$moduleClass = $getCellStyle($module['is_active'], $module['is_connected'], $moduleCanConnected);
-				$durationHtml = formatDuration( $module['duration'] > 0 ? $module['duration'] : 0);
+				$durationHtml = formatDuration( $module['start'] > 0 ? time() - $module['start'] : 0);
+				// $durationHtml = formatDuration( $module['duration'] > 0 ? $module['duration'] : 0);
 				$moduleData = [
 					'name' => $module['name'],
 					'style' => $moduleClass,
 					// 'has_duration' => $module['duration'] > 0,
 					// 'duration' => $module['duration'],
 					// 'is_active' => $module['is_active'],
-					'tooltip_start' => $module['duration'] > 0 ?
+					'tooltip_start' => $module['start'] > 0 ?
+					// 'tooltip_start' => $module['duration'] > 0 ?
 						'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br></span>' : '',
-					'tooltip_end' => $module['duration'] > 0 ? '</a>' : ''
+					// 'tooltip_end' => $module['duration'] > 0 ? '</a>' : ''
+					'tooltip_end' => $module['start'] > 0 ? '</a>' : ''
 				];
 
 				$modules[$moduleName] = $moduleData;
@@ -267,7 +271,8 @@ function buildLogicData(array $lp_status): array
 						if ($shortname === '') {
 							$shortname = $reflector['name'];
 						}
-						$durationHtml = formatDuration($logic['duration'] > 0 ? $logic['duration'] : 0);
+						$durationHtml = formatDuration($logic['start'] > 0 ? time() - $logic['start'] : 0);
+						// $durationHtml = formatDuration($logic['duration'] > 0 ? $logic['duration'] : 0);
 						$relatedReflectors[$reflectorName] = [
 							'shortname' => $shortname,
 							'name' => $reflector['name'],
@@ -286,7 +291,8 @@ function buildLogicData(array $lp_status): array
 					$linkClass = $getCellStyle($link['is_connected'], $link['is_active'],  false);
 
 					// Формируем содержимое tooltip для линка
-					$durationHtml = formatDuration($link['duration'] > 0 ? $link['duration'] : 0);
+					$durationHtml = formatDuration($link['start'] > 0 ? time() - $link['start'] : 0);
+					// $durationHtml = formatDuration($link['duration'] > 0 ? $link['duration'] : 0);
 					$tooltipParts = [];
 					
 
@@ -320,7 +326,8 @@ function buildLogicData(array $lp_status): array
 		if ($shortname === '') {
 			$shortname = $logic['name'];
 		}
-		$durationHtml = formatDuration($logic['duration'] > 0 ? $logic['duration'] : 0);
+		$durationHtml = formatDuration($logic['start'] > 0 ? time() - $logic['start'] : 0);
+		// $durationHtml = formatDuration($logic['duration'] > 0 ? $logic['duration'] : 0);
 		$data['logics'][$logicName] = [
 			'shortname' => $shortname,
 			'name' => $logic['name'],
@@ -430,7 +437,8 @@ function buildLogicData(array $lp_status): array
 						$shortname = $linkName;
 					}
 
-					$durationHtml = formatDuration($link['duration'] > 0 ? $link['duration'] : '0');
+					$durationHtml = formatDuration($link['start'] > 0 ? time() - $link['start'] : '0');
+					// $durationHtml = formatDuration($link['duration'] > 0 ? $link['duration'] : '0');
 
 					$reflectorLinks[$linkName] = [
 						'shortname' => $shortname,
@@ -484,13 +492,15 @@ function buildLogicData(array $lp_status): array
 				if (!empty($link['source']['command']['activate_command'])) $tooltipParts[] = 'Activate: ' . $link['source']['command']['activate_command'];
 				if (!empty($link['source']['command']['deactivate_command'])) $tooltipParts[] = 'Deactivate: ' . $link['source']['command']['deactivate_command'];
 
-				$hasTooltip = !empty($tooltipParts) || $link['duration'] > 0;
+				$hasTooltip = !empty($tooltipParts) || $link['start'] > 0;
+				// $hasTooltip = !empty($tooltipParts) || $link['duration'] > 0;
 
 				$shortname = trim(str_replace($excl, '', $linkName));
 				if ($shortname === '') {
 					$shortname = $linkName;
 				}
-				$durationHtml = formatDuration( $link['duration'] > 0 ? $link['duration'] : 0);
+				$durationHtml = formatDuration( $link['start'] > 0 ? time() - $link['start'] : 0);
+				// $durationHtml = formatDuration( $link['duration'] > 0 ? $link['duration'] : 0);
 				$data['unconnected_links'][$linkName] = [
 					'shortname' => $shortname,
 					'name' => $linkName,

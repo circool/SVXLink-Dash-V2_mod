@@ -102,7 +102,8 @@ function getConnectionDetails(): array
 		}
 
 		$lName = $logicName;
-		$lDuration = $logic['duration'] ?? '';
+		$lDuration = isset($logic['start']) ? time() - $logic['start'] : '';
+		// $lDuration = $logic['duration'] ?? '';
 		$lDestination = '';
 		$lDetails = [];
 		$msg = [];
@@ -116,7 +117,8 @@ function getConnectionDetails(): array
 			foreach ($logic['module'] as $moduleName => $module) {
 				if ($module['is_active']) {
 					$lDestination = $module['name'];
-					$lDuration = $module['duration'] ?? '';
+					$lDuration = isset($module['start']) ? time() - $module['start'] : '';
+					// $lDuration = $module['duration'] ?? '';
 					if ($moduleName == 'Frn') {
 						$nodes = getFrnNodes();
 						if (isset($nodes)) {

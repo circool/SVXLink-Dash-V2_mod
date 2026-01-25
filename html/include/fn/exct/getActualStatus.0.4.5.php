@@ -76,7 +76,7 @@ function getActualStatus(bool $forceRebuild = false): array
 			],
 			'radio_status' => [
 				'status' => "LOG ERROR",
-				'duration' => 0,
+				// 'duration' => 0,
 				'start' => time(),
 			],
 			'callsign' => "LOG ERROR",
@@ -185,7 +185,7 @@ function getActualStatus(bool $forceRebuild = false): array
 				'is_active' => false,
 				'is_connected' => false,
 				'start' => 0,
-				'duration' => 0,
+				// 'duration' => 0,
 				'timeout' => $linkTimeout,
 				'default_active' => $linkDefaultActive,
 				'source' => [
@@ -291,7 +291,7 @@ function getActualStatus(bool $forceRebuild = false): array
 
 			$item = [
 				'start' => 0,
-				'duration' => 0,
+				// 'duration' => 0,
 				'name' => $_logic,
 				'is_active' => false,
 				'callsign' => $svxconfig[$_logic]['CALLSIGN'] ?? 'N0CALL',
@@ -321,7 +321,7 @@ function getActualStatus(bool $forceRebuild = false): array
 					if (!empty($moduleName)) {
 						$item['module'][$moduleName] = [
 							'start' => 0,
-							'duration' => 0,
+							// 'duration' => 0,
 							'name' => $moduleName,
 							'callsign' => '',
 							'is_active' => false,
@@ -362,7 +362,7 @@ function getActualStatus(bool $forceRebuild = false): array
 		// 
 		$service = [
 			'start' => 0,
-			'duration' => 0,
+			// 'duration' => 0,
 			'name' => SERVICE_TITLE,
 			'is_active' => false,
 			'timestamp_format' => $svxconfig['GLOBAL']['TIMESTAMP_FORMAT'],
@@ -454,7 +454,7 @@ function getActualStatus(bool $forceRebuild = false): array
 	}
 
 	$status['service']['start'] = $line_timestamp;
-	$status['service']['duration'] = time() - $line_timestamp;
+	// $status['service']['duration'] = time() - $line_timestamp;
 	$status['service']['log_line_count'] = $logLineCount;
 
 	if (defined("DEBUG") && DEBUG) {
@@ -544,7 +544,7 @@ function getActualStatus(bool $forceRebuild = false): array
 		// и оно говорит о отключении сервиса (для рефлектора) или модуля (для симплекса и дуплекса) сбрасываем все значения логики и ее модулей
 
 		$logic['start'] = $serviceCommandTimestamp > $logic['start'] ? $serviceCommandTimestamp : $logic['start'];
-		$logic['duration'] = time() - $logic['start'];
+		// $logic['duration'] = time() - $logic['start'];
 		$logic['is_active'] = true; // @since 0.4
 		// Рефлектор подключен если активен линк (еще не проверялся)
 		// Обычная логика активна когда подключается модуль (еще не проверялся)
@@ -713,13 +713,14 @@ function getActualStatus(bool $forceRebuild = false): array
 							// Включаем этот конкретный модуль
 							$module['is_active'] = true;
 							$module['start'] = $serviceCommandTimestamp;
-							$module['duration'] = time() - $serviceCommandTimestamp;
+							// $module['duration'] = time() - $serviceCommandTimestamp;
 
 							// Устанавливаем статус активности модуля
 							$isSomeModuleActive = true;
 
 							if (defined("DEBUG") && DEBUG) {
-								dlog("$ver: Модуль $moduleName активирован, работает уже {$module['duration']} сек", 4, "DEBUG");
+								$dur = time() - $module['start'];
+								dlog("$ver: Модуль $moduleName активирован, работает уже $dur сек", 4, "DEBUG");
 							}
 
 							// @bookmark Для модуля EchoLink
@@ -944,7 +945,7 @@ function getActualStatus(bool $forceRebuild = false): array
 										if ($frnServerConnectTime != false) {
 											$module['is_connected'] = true;
 											$module['start'] = $frnServerConnectTime;
-											$module['duration'] = time() - $frnServerConnectTime;
+											// $module['duration'] = time() - $frnServerConnectTime;
 
 											if (isset($frnServerIdArray) && isset($frnServerIdArray['BN'])) {
 												$module['connected_nodes'][$frnServerIdArray['BN']] = [
@@ -968,7 +969,7 @@ function getActualStatus(bool $forceRebuild = false): array
 							// Для этого модуля нет команды активации - выключаем его
 							$module['is_active'] = false;
 							$module['start'] = 0;
-							$module['duration'] = 0;
+							// $module['duration'] = 0;
 							if (isset($module['connected_nodes'])) $module['connected_nodes'] = [];
 						}
 					}
@@ -1031,7 +1032,7 @@ function getActualStatus(bool $forceRebuild = false): array
 
 			if (empty($logLink)) {
 				$link['is_active'] = false;
-				$link['duration'] = 0;
+				// $link['duration'] = 0;
 				$link['start'] = 0;
 				if (defined("DEBUG") && DEBUG) dlog("$ver: Link $linkName - пустая строка: $logLink , продолжаю", 4, "DEBUG");
 				continue;
@@ -1044,7 +1045,11 @@ function getActualStatus(bool $forceRebuild = false): array
 				continue;
 			}
 
-			if (defined("DEBUG") && DEBUG) dlog("$ver: Линк: Состояние: $linkName - Активен: $link[is_active], Начало: $link[start], Длительность: $link[duration] сек.", 4, "DEBUG");
+			if (defined("DEBUG") && DEBUG) {
+				$dur = time() - $link['start'];
+				dlog("$ver: Линк: Состояние: $linkName - Активен: $link[is_active], Начало: $link[start], Длительность: $dur сек.", 4, "DEBUG");
+				unset($dur);
+			}
 			$link['is_active'] = true;
 			if (strpos($logLink, 'Activating') !== false) {
 				//@bookmark Линк активируется - начинаем отсчет и включаем рефлектор/логику
@@ -1060,7 +1065,7 @@ function getActualStatus(bool $forceRebuild = false): array
 				}
 
 				if (defined("DEBUG") && DEBUG) dlog("$ver: Обнаружена команда включения линка $linkName", 4, "DEBUG");
-				$link['duration'] = time() - $logLinkTimestamp;
+				// $link['duration'] = time() - $logLinkTimestamp;
 				$link['is_connected'] = true;
 				$link['start'] = $logLinkTimestamp;
 			} elseif (strpos($logLink, 'Deactivating') !== false || strpos($logLink, 'Removing') !== false) {
@@ -1073,12 +1078,12 @@ function getActualStatus(bool $forceRebuild = false): array
 					}
 				}
 				$link['is_connected'] = false;
-				$link['duration'] = 0;
+				// $link['duration'] = 0;
 				$link['start'] = 0;
 			}
 		} else {
 			if (defined("DEBUG") && DEBUG) dlog("$ver: В журнале нет данных о линке", 4, "ERROR");
-			$link['duration'] = 0;
+			// $link['duration'] = 0;
 			$link['start'] = 0;
 			$link['is_active'] = false;
 			$link['is_connected'] = false;
