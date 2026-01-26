@@ -1,16 +1,12 @@
 /**
- * @file block_updater.0.0.2.js
- * @version 0.0.2
- * @description Единый обновлятель блоков с использованием UPDATE_INTERVAL
- * @note Изменения в 0.0.2:
- * - Обновление контейнеров с суффиксом _content
- * - Единообразная структура для всех блоков
+ * @filesource block_updater.js
+ * @version 0.0.2.release
+ * @description Handle update blocks with UPDATE_INTERVAL
  */
 
 (function () {
 	'use strict';
 
-	// Конфигурация - контейнеры для обновляемых данных
 	const blocks = {
 		'rf_activity': 'rf_activity_content',
 		'net_activity': 'net_activity_content',
@@ -18,10 +14,8 @@
 		'reflector_activity': 'reflector_activity_content'
 	};
 
-	// Глобальный интервал из константы PHP
-	const UPDATE_INTERVAL = window.UPDATE_INTERVAL || 3000;
+	const UPDATE_INTERVAL = window.UPDATE_INTERVAL || 5000;
 
-	// Обновляем все блоки
 	function updateAllBlocks() {
 		Object.entries(blocks).forEach(([blockName, containerId]) => {
 			const container = document.getElementById(containerId);
@@ -46,15 +40,13 @@
 		});
 	}
 
-	// Запускаем обновление
-	setTimeout(updateAllBlocks, 1000); // Первое обновление
-	setInterval(updateAllBlocks, UPDATE_INTERVAL); // Периодическое
+	setTimeout(updateAllBlocks, UPDATE_INTERVAL); 
+	setInterval(updateAllBlocks, UPDATE_INTERVAL); 
 
-	// Останавливаем при скрытии вкладки
+
 	document.addEventListener('visibilitychange', function () {
 		if (!document.hidden) {
-			updateAllBlocks(); // Обновляем при возвращении
+			updateAllBlocks();
 		}
 	});
-
 })();

@@ -1,2 +1,0 @@
-#!/bin/bash
-sudo -u svxlink -s truncate -s 0 /tmp/svxlink-debug.log && tail -f /tmp/svxlink-debug.log
