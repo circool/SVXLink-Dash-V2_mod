@@ -1,5 +1,5 @@
 <?php
-return [];
+// return [];
 return [
 	'About' => 'О системе',
 	'Actions' => 'событий',
@@ -123,13 +123,16 @@ return [
 	'Temporary Monitored Talkgroups' => 'Временно прослушиваемые группы',
 	'Time' => 'Время',
 	'Transmission destination' => 'Назначение передачи',
+	'Unknown' => 'Неизвестно',
 	'Username' => 'Пользователь',
 	'Username & Password' => 'Имя и пароль',
 	'Value' => 'Значение',
 	'Who is source of transmission' => 'Кто является источником передачи',
 	'calls' => 'вызовов',
+	'crosslink' => 'ретранслятор',
 	'current' => 'текущий',
 	'last' => 'последние',
 	'next' => 'следующий',
+	'pc only' => 'терминал',
 	'previous' => 'предыдущий',
 ];
