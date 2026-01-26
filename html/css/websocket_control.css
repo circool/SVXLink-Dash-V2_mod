@@ -9,15 +9,20 @@
 	padding-right: 0.2em;
 }
 .menuwebsocket-connected:before {
-	color: #2c7f2c;
+	color: rgb(192, 240, 30);
 }
-.menuwebsocket-disconnected:before {
-	color: #8C0C26;
+a.menuwebsocket-disconnected,.menuwebsocket-disconnected:before {
+	/* color: #dc2045; */
 }
 .menuwebsocket-connecting:before {
-	color: #a65d14;
+	color: #f4ca22;
+	content: "\f127";
 }
 
+.menuwebsocket-disconnected:before{
+	content: "\f127";
+	color: #e85110;
+}
 
 .menuwebsocket
 { 
