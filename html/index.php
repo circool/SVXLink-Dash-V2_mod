@@ -6,7 +6,13 @@
  * @date 2026.01.26
  * @author vladimir@tsurkanenko.ru
  */
-
+// destroy session on first open
+require_once $_SERVER["DOCUMENT_ROOT"] . "/include/session_header.php";
+$_SESSION = [];
+if (isset($_COOKIE[session_name()])) {
+	setcookie(session_name(), '', time() - 3600, "/");
+}
+if (session_status() === PHP_SESSION_ACTIVE && session_id() == SESSION_ID) session_destroy();
 
 
 require_once $_SERVER["DOCUMENT_ROOT"] . "/include/init.php";

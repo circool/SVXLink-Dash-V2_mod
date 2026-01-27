@@ -235,6 +235,7 @@ class CommandParser {
 		this.packetStartTime = null;
 		this.packetMetadata = {};
 		this.patterns = [
+			// @bookmark Start service
 			// [timestamp]: [SvxLink] v1.8.0@24.02-3-gcde00792 Copyright (C) 2003-2023 Tobias Blomberg / SM0SVX
 			{
 				regex: /^(.+?): (\S+) (.+?) Copyright \(C\) .+ Tobias Blomberg \/ SM0SVX$/,
@@ -291,7 +292,7 @@ class CommandParser {
 				}
 			},
 
-			// [timestamp]: Starting logic: [SimplexLogic]
+			// [timestamp]: Starting logic: [...Logic]
 			{
 				regex: /^(.+?): Starting logic: (\S+)$/,
 				handler: (match) => {
@@ -345,7 +346,7 @@ class CommandParser {
 				}
 			},
 
-			// [timestamp]: SimplexLogic: Loading RX "Rx1"
+			// [timestamp]: ...Logic: Loading RX "..."
 			{
 				regex: /^(.+?): (\S+): Loading (RX|TX) "(\S+)"$/,
 				handler: (match) => {
@@ -429,15 +430,15 @@ class CommandParser {
 					}
 				}
 			},
-
+			// @bookmark Reflector
 			// [timestamp]: ReflectorLogic: Disconnected from 255.255.255.255:5300: Host not found
 			{
 				regex: /^(.+?): (\S+): Disconnected/,
 				handler: (match) => {
 					const logic = match[2];
 
-					// Reflector's has not have timers!?
-					//this.sm.stopTimer(`logic_${logic}`);
+					// Reflector's has timers!
+					this.sm.stopTimer(`logic_${logic}`);
 					const nodes = this.connections.getAllTo(logic);
 					for (let i = 0; i < nodes.length; i++) {
 						const node = nodes[i];
@@ -855,6 +856,7 @@ class CommandParser {
 								hasActiveLinks = true;
 								const allLogicsForLink = this.connections.getAllTo(link);
 								for (const reflector of allLogicsForLink) {
+									// Logic's reflector
 									commands.push(
 										{
 											id: `logic_${reflector}`,
@@ -878,7 +880,7 @@ class CommandParser {
 					if (!hasActiveLinks) { 
 						cellClass = 'paused-mode-cell';	
 					}
-
+					// Module parent logic
 					commands.push(
 						{
 							id: `logic_${logic}`,
@@ -892,9 +894,8 @@ class CommandParser {
 						}
 					);
 					
-
-					commands.push(
-						// Module
+					// Module
+					commands.push(	
 						{
 							id: `logic_${logic}_module_${module}`,
 							action: 'remove_class',
