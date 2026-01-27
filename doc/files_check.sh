@@ -25,7 +25,6 @@ echo "============================================="
 declare -A files_to_check=(
     # Корневые файлы
     ["index.php"]="Main page (prod)"
-    ["index_debug.php"]="Main page for beta-testing"
     ["backup.sh"]="Backup script"
     ["favicon.ico"]="Icon"
     ["ws_state.php"]="WebSocket state"
@@ -66,7 +65,6 @@ declare -A files_to_check=(
 		["include/top_menu.php"]="Top menu"
 		["include/websocket_client_config.php"]="WebSocket client configuration"
 		["include/websocket_server.php"]="WebSocket server handler"
-		["include/fn/dlog.php"]="Debug logger"
 		["include/fn/formatDuration.php"]="Time string formatting"
 		["include/fn/getActualStatus.php"]="Actualizer state"
 		["include/fn/getLineTime.php"]="Time parser"
