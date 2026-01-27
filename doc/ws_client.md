@@ -1,619 +1,618 @@
-# Документация WebSocket клиента v4.2
+# WebSocket Client Documentation v4.2
 
-## Обзор
+## Overview
 
-WebSocket клиент версии 4.2 обеспечивает двустороннюю коммуникацию между браузером и сервером SvxLink Dashboard в реальном времени. Клиент автоматически подключается к WebSocket серверу, обрабатывает команды обновления DOM и поддерживает визуальную индикацию состояния соединения.
+The WebSocket client version 4.2 provides real-time bidirectional communication between the browser and the SvxLink Dashboard server. The client automatically connects to the WebSocket server, handles DOM update commands, and supports visual connection status indication.
 
-## Архитектура
+## Architecture
 
-### Основные компоненты
+### Core Components
 
-- **DashboardWebSocketClientV4** - основной класс клиента
-- **Менеджер соединений** - управление подключением и переподключениями
-- **Обработчик DOM-команд** - выполнение команд обновления интерфейса
-- **Интерфейс статуса** - кнопка визуальной индикации в навигации
-- **Система логирования** - логирование в веб-консоль
+- **DashboardWebSocketClientV4** - Main client class
+- **Connection Manager** - Manages connection and reconnections
+- **DOM Command Handler** - Executes interface update commands
+- **Status Interface** - Visual indicator button in navigation
+- **Logging System** - Logs to web console
 
-### Состояния соединения
+### Connection States
 
-- **connected** - успешное подключение к серверу
-- **connecting** - процесс подключения
-- **reconnecting** - процесс переподключения после разрыва
-- **disconnected** - ручное отключение
-- **error** - ошибка соединения
-- **timeout** - таймаут подключения
+- **connected** - Successfully connected to server
+- **connecting** - Connection in progress
+- **reconnecting** - Reconnection after disconnection
+- **disconnected** - Manually disconnected
+- **error** - Connection error
+- **timeout** - Connection timeout
 
-## Конфигурация
+## Configuration
 
-### Параметры по умолчанию
+### Default Parameters
 
 ```javascript
 {
-  host: window.location.hostname,  // Хост сервера
-  port: 8080,                      // Порт WebSocket
-  autoConnect: true,               // Автоподключение при загрузке
-  reconnectDelay: 3000,            // Задержка переподключения (мс)
-  debugLevel: 2,                   // Уровень логирования: 1=ERROR, 2=WARNING, 3=INFO, 4=DEBUG
-  debugWebConsole: true,           // Логи в веб-консоль
-  debugConsole: false,             // Логи в console браузера
-  maxReconnectAttempts: 5,         // Макс. попыток переподключения
-  pingInterval: 30000              // Интервал ping (мс)
+  host: window.location.hostname,  // Server host
+  port: 8080,                      // WebSocket port
+  autoConnect: true,               // Auto-connect on load
+  reconnectDelay: 3000,            // Reconnection delay (ms)
+  debugLevel: 2,                   // Logging level: 1=ERROR, 2=WARNING, 3=INFO, 4=DEBUG
+  debugWebConsole: true,           // Logs to web console
+  debugConsole: false,             // Logs to browser console
+  maxReconnectAttempts: 5,         // Max reconnection attempts
+  pingInterval: 30000              // Ping interval (ms)
 }
 ```
 
-### Получение конфигурации
+### Obtaining Configuration
 
-Клиент ожидает конфигурацию в глобальной переменной:
+The client expects configuration in a global variable:
 ```javascript
 window.DASHBOARD_CONFIG = {
   websocket: {
     host: "192.168.1.100",
     port: 8080,
-    // ... другие параметры
+    // ... other parameters
   }
 };
 ```
 
-## Методы класса
+## Class Methods
 
-### Инициализация и управление соединением
+### Initialization and Connection Management
 
 `constructor(config = {})`
 
-**Назначение:** Создание экземпляра клиента WebSocket.
+**Purpose:** Creates a WebSocket client instance.
 
-**Параметры:**
-- `config` (Object) - конфигурация клиента
+**Parameters:**
+- `config` (Object) - Client configuration
 
-**Действия:**
-- Инициализация конфигурации с значениями по умолчанию
-- Создание статусной кнопки в навигации
-- Автоматическое подключение (если `autoConnect: true`)
+**Actions:**
+- Initializes configuration with default values
+- Creates status button in navigation
+- Auto-connects (if `autoConnect: true`)
 
 ---
 
 `init()`
 
-**Назначение:** Инициализация клиента.
+**Purpose:** Initializes the client.
 
-**Действия:**
-- Создание кнопки статуса WebSocket
-- Автоподключение с задержкой 1 секунда
-- Логирование информации об инициализации
+**Actions:**
+- Creates WebSocket status button
+- Auto-connects with 1 second delay
+- Logs initialization information
 
 ---
 
 `connect()`
 
-**Назначение:** Установка соединения с WebSocket сервером.
+**Purpose:** Establishes connection with WebSocket server.
 
-**Действия:**
-- Сброс флага ручного отключения
-- Закрытие существующего соединения (если есть)
-- Создание нового WebSocket соединения
-- Установка обработчиков событий
-- Настройка таймаута подключения (5 секунд)
-- Обновление статуса на "connecting"
+**Actions:**
+- Resets manual disconnect flag
+- Closes existing connection (if any)
+- Creates new WebSocket connection
+- Sets event handlers
+- Configures connection timeout (5 seconds)
+- Updates status to "connecting"
 
-**Возвращает:** `true` при успешной попытке подключения, `false` при ошибке
+**Returns:** `true` on successful connection attempt, `false` on error
 
 ---
 
 `disconnect()`
 
-**Назначение:** Ручное отключение от сервера.
+**Purpose:** Manually disconnects from server.
 
-**Действия:**
-- Установка флага ручного отключения
-- Закрытие WebSocket соединения с кодом 1000
-- Очистка таймеров
-- Обновление статуса на "disconnected"
-- Логирование действия
+**Actions:**
+- Sets manual disconnect flag
+- Closes WebSocket connection with code 1000
+- Clears timers
+- Updates status to "disconnected"
+- Logs action
 
 ---
 
 `reconnect()`
 
-**Назначение:** Автоматическое переподключение после разрыва соединения.
+**Purpose:** Automatically reconnects after connection loss.
 
-**Действия:**
-- Проверка на ручное отключение (прерывание)
-- Увеличение счетчика попыток
-- Расчет экспоненциальной задержки
-- Логирование информации о переподключении
-- Обновление статуса на "reconnecting"
-- Запуск таймера для нового подключения
+**Actions:**
+- Checks for manual disconnect (abort)
+- Increments attempt counter
+- Calculates exponential delay
+- Logs reconnection information
+- Updates status to "reconnecting"
+- Starts timer for new connection
 
 ---
 
 `scheduleReconnect()`
 
-**Назначение:** Планирование следующей попытки переподключения.
+**Purpose:** Schedules next reconnection attempt.
 
-**Действия:**
-- Проверка максимального количества попыток
-- Вызов `reconnect()` или установка статуса "error"
+**Actions:**
+- Checks maximum attempt limit
+- Calls `reconnect()` or sets "error" status
 
-### Обработчики событий WebSocket
+### WebSocket Event Handlers
 
 `handleOpen(event)`
 
-**Назначение:** Обработка успешного подключения.
+**Purpose:** Handles successful connection.
 
-**Действия:**
-- Логирование успешного подключения
-- Сброс счетчика попыток переподключения
-- Обновление статуса на "connected"
-- Запуск таймера для ping-запросов
+**Actions:**
+- Logs successful connection
+- Resets reconnection attempt counter
+- Updates status to "connected"
+- Starts ping timer
 
 ---
 
 `handleMessage(event)`
 
-**Назначение:** Обработка входящих сообщений от сервера.
+**Purpose:** Processes incoming messages from server.
 
-**Обрабатывает:**
-- **welcome** - приветственное сообщение с версией и ID клиента
-- **pong** - ответ на ping-запросы
-- **dom_commands** - команды обновления DOM
-- **log_message** - логи с сервера
-- **массив команд** - прямая передача команд (для совместимости)
+**Handles:**
+- **welcome** - Welcome message with version and client ID
+- **pong** - Response to ping requests
+- **dom_commands** - DOM update commands
+- **log_message** - Server logs
+- **command array** - Direct command passing (for compatibility)
 
-**Действия:**
-- Парсинг JSON данных
-- Маршрутизация сообщений по типам
-- Фильтрация логов по уровню отладки
-- Обработка команд DOM через `processCommands()`
+**Actions:**
+- Parses JSON data
+- Routes messages by type
+- Filters logs by debug level
+- Processes DOM commands via `processCommands()`
 
 ---
 
 `handleClose(event)`
 
-**Назначение:** Обработка закрытия соединения.
+**Purpose:** Handles connection closing.
 
-**Действия:**
-- Логирование кода и причины закрытия
-- Очистка таймеров
-- Проверка на ручное отключение
-- Запуск переподключения (если не ручное отключение)
+**Actions:**
+- Logs close code and reason
+- Clears timers
+- Checks for manual disconnect
+- Starts reconnection (if not manual)
 
 ---
 
 `handleError(error)`
 
-**Назначение:** Обработка ошибок соединения.
+**Purpose:** Handles connection errors.
 
-**Действия:**
-- Логирование ошибки
-- Обновление статуса на "error"
+**Actions:**
+- Logs error
+- Updates status to "error"
 
-### Обработка DOM команд
+### DOM Command Processing
 
 `processCommands(commands, chunkNum, totalChunks)`
 
-**Назначение:** Основной метод обработки пакетов команд.
+**Purpose:** Main method for processing command batches.
 
-**Параметры:**
-- `commands` (Array) - массив команд для выполнения
-- `chunkNum` (Number) - номер текущего чанка (опционально)
-- `totalChunks` (Number) - общее количество чанков (опционально)
+**Parameters:**
+- `commands` (Array) - Array of commands to execute
+- `chunkNum` (Number) - Current chunk number (optional)
+- `totalChunks` (Number) - Total number of chunks (optional)
 
-**Действия:**
-- Валидация входных данных
-- Логирование информации о чанках
-- Последовательное выполнение команд через `executeAction()`
-- Подсчет успешных и неудачных операций
-- Логирование результатов выполнения
+**Actions:**
+- Validates input data
+- Logs chunk information
+- Executes commands sequentially via `executeAction()`
+- Counts successful and failed operations
+- Logs execution results
 
 ---
 
 `executeAction(cmd)`
 
-**Назначение:** Выполнение одиночной команды.
+**Purpose:** Executes a single command.
 
-**Параметры:**
-- `cmd` (Object) - объект команды
+**Parameters:**
+- `cmd` (Object) - Command object
 
-**Действия:**
-- Валидация обязательных полей
-- Маршрутизация по типу действия
-- Вызов соответствующего метода обработки
-- Возврат результата выполнения
+**Actions:**
+- Validates required fields
+- Routes by action type
+- Calls corresponding handler method
+- Returns execution result
 
-**Возвращает:** `true` при успешном выполнении, `false` при ошибке
+**Returns:** `true` on successful execution, `false` on error
 
-### Основные операции DOM
+### Core DOM Operations
 
 `handleAddClass(cmd)`
 
-**Назначение:** Добавление класса(ов) к элементу.
+**Purpose:** Adds class(es) to an element.
 
-**Параметры команды:**
-- `id` (String) - ID целевого элемента
-- `class` (String) - класс или список классов через запятую
+**Command parameters:**
+- `id` (String) - Target element ID
+- `class` (String) - Class or comma-separated class list
 
-**Действия:**
-- Поиск элемента по ID
-- Добавление одного или нескольких классов
-- Логирование операции
+**Actions:**
+- Finds element by ID
+- Adds one or multiple classes
+- Logs operation
 
 ---
 
 `handleRemoveClass(cmd)`
 
-**Назначение:** Удаление класса(ов) из элемента.
+**Purpose:** Removes class(es) from an element.
 
-**Параметры команды:**
-- `id` (String) - ID целевого элемента
-- `class` (String) - класс или список классов через запятую
+**Command parameters:**
+- `id` (String) - Target element ID
+- `class` (String) - Class or comma-separated class list
 
-**Действия:**
-- Поиск элемента по ID
-- Удаление одного или нескольких классов
-- Логирование операции
+**Actions:**
+- Finds element by ID
+- Removes one or multiple classes
+- Logs operation
 
 ---
 
 `handleReplaceClass(cmd)`
 
-**Назначение:** Замена одного класса на другой.
+**Purpose:** Replaces one class with another.
 
-**Параметры команды:**
-- `id` (String) - ID целевого элемента
-- `old_class` (String) - старый класс для замены
-- `new_class` (String) - новый класс
+**Command parameters:**
+- `id` (String) - Target element ID
+- `old_class` (String) - Old class to replace
+- `new_class` (String) - New class
 
-**Действия:**
-- Поиск элемента по ID
-- Проверка наличия старого класса
-- Замена старого класса на новый
-- Логирование операции
+**Actions:**
+- Finds element by ID
+- Checks if old class exists
+- Replaces old class with new
+- Logs operation
 
 ---
 
 `handleSetContent(cmd)`
 
-**Назначение:** Полная замена содержимого элемента.
+**Purpose:** Completely replaces element content.
 
-**Параметры команды:**
-- `id` (String) - ID целевого элемента
-- `payload` (String) - новое HTML содержимое
+**Command parameters:**
+- `id` (String) - Target element ID
+- `payload` (String) - New HTML content
 
-**Действия:**
-- Поиск элемента по ID
-- Установка нового содержимого через `innerHTML`
-- Логирование операции (обрезание длинного контента)
+**Actions:**
+- Finds element by ID
+- Sets new content via `innerHTML`
+- Logs operation (truncates long content)
 
 ---
 
 `handleReplaceContent(cmd)`
 
-**Назначение:** Частичная замена содержимого элемента.
+**Purpose:** Partially replaces element content.
 
-**Параметры команды:**
-- `id` (String) - ID целевого элемента
-- `payload` (Array) - массив из трех элементов:
-  + `beginCond` - открывающая последовательность для поиска
-  + `endCond` - закрывающая последовательность для поиска
-  + `newContent` - новое содержимое для вставки
+**Command parameters:**
+- `id` (String) - Target element ID
+- `payload` (Array) - Three-element array:
+  + `beginCond` - Opening sequence for search
+  + `endCond` - Closing sequence for search
+  + `newContent` - New content to insert
 
-**Действия:**
-- Поиск элемента по ID
-- Поиск позиций открывающей и закрывающей последовательностей
-- Замена содержимого между последовательностями
-- Логирование операции
+**Actions:**
+- Finds element by ID
+- Finds positions of opening and closing sequences
+- Replaces content between sequences
+- Logs operation
 
 ---
 
 `handleSetContentByClass(cmd)`
 
-**Назначение:** Установка содержимого для элементов по классу.
+**Purpose:** Sets content for elements by class.
 
-**Параметры команды:**
-- `targetClass` (String) - класс для поиска элементов
-- `payload` (String) - новое HTML содержимое
-- `multipleElements` (Boolean) - обработка всех элементов или одного (по умолчанию false)
-- `elementIndex` (Number) - индекс элемента при `multipleElements: false`
+**Command parameters:**
+- `targetClass` (String) - Class for finding elements
+- `payload` (String) - New HTML content
+- `multipleElements` (Boolean) - Process all elements or one (default false)
+- `elementIndex` (Number) - Element index when `multipleElements: false`
 
-**Действия:**
-- Поиск всех элементов с указанным классом
-- Определение режима обработки (один/все элементы)
-- Установка содержимого для выбранных элементов
-- Логирование количества обработанных элементов
+**Actions:**
+- Finds all elements with specified class
+- Determines processing mode (one/all elements)
+- Sets content for selected elements
+- Logs number of processed elements
 
 ---
 
 `handleRemoveElement(cmd)`
 
-**Назначение:** Удаление элемента из DOM.
+**Purpose:** Removes element from DOM.
 
-**Параметры команды:**
-- `id` (String) - ID элемента для удаления
+**Command parameters:**
+- `id` (String) - ID of element to remove
 
-**Действия:**
-- Поиск элемента по ID
-- Вызов метода `remove()`
-- Логирование операции
+**Actions:**
+- Finds element by ID
+- Calls `remove()` method
+- Logs operation
 
-### Родительские операции
+### Parent Operations
 
 `handleParentClass(cmd, operation)`
 
-**Назначение:** Добавление или удаление класса у родительского элемента.
+**Purpose:** Adds or removes class from parent element.
 
-**Параметры команды:**
-- `id` (String) - ID дочернего элемента
-- `class` (String) - класс или список классов через запятую
-- `action` (String) - тип операции: `add_parent_class` или `remove_parent_class`
+**Command parameters:**
+- `id` (String) - Child element ID
+- `class` (String) - Class or comma-separated class list
+- `action` (String) - Operation type: `add_parent_class` or `remove_parent_class`
 
-**Действия:**
-- Поиск родительского элемента через кэш
-- Добавление или удаление классов
-- Логирование операции
+**Actions:**
+- Finds parent element via cache
+- Adds or removes classes
+- Logs operation
 
 ---
 
 `handleReplaceParentContent(cmd)`
-**Назначение:** Частичная замена содержимого родительского элемента.
+**Purpose:** Partially replaces parent element content.
 
-**Параметры команды:**
-- `id` (String) - ID дочернего элемента
-- `payload` (Array) - массив из трех элементов (аналогично `handleReplaceContent`)
+**Command parameters:**
+- `id` (String) - Child element ID
+- `payload` (Array) - Three-element array (similar to `handleReplaceContent`)
 
-**Действия:**
-- Поиск родительского элемента через кэш
-- Поиск и замена содержимого между последовательностями
-- Логирование операции
+**Actions:**
+- Finds parent element via cache
+- Finds and replaces content between sequences
+- Logs operation
 
-### Операции над дочерними элементами
+### Child Element Operations
 
 `addChild(cmd)`
 
-**Назначение:** Добавление дочернего элемента.
+**Purpose:** Adds a child element.
 
-**Параметры команды:**
-- `target` (String) - ID родительского элемента
-- `payload` (String) - HTML содержимое нового элемента
-- `type` (String) - тип элемента (по умолчанию 'div')
-- `id` (String) - ID нового элемента (опционально)
-- `class` (String) - класс нового элемента (опционально)
-- `style` (String) - inline стили (опционально)
-- `title` (String) - title атрибут (опционально)
+**Command parameters:**
+- `target` (String) - Parent element ID
+- `payload` (String) - HTML content of new element
+- `type` (String) - Element type (default 'div')
+- `id` (String) - ID of new element (optional)
+- `class` (String) - Class of new element (optional)
+- `style` (String) - Inline styles (optional)
+- `title` (String) - Title attribute (optional)
 
-**Действия:**
-- Поиск родительского элемента
-- Проверка существования элемента с таким ID
-- Создание нового элемента с указанными параметрами
-- Добавление элемента к родителю
-- Логирование операции
+**Actions:**
+- Finds parent element
+- Checks for existing element with same ID
+- Creates new element with specified parameters
+- Adds element to parent
+- Logs operation
 
 ---
 
 `removeChild(cmd)`
 
-**Назначение:** Удаление дочерних элементов с фильтрацией.
+**Purpose:** Removes child elements with filtering.
 
-**Параметры команды:**
-- `id` (String) - ID родительского элемента
-- `ignoreClass` (String) - классы, которые НЕ должны удаляться (через запятую)
+**Command parameters:**
+- `id` (String) - Parent element ID
+- `ignoreClass` (String) - Classes that should NOT be removed (comma-separated)
 
-**Действия:**
-- Поиск родительского элемента
-- Получение всех дочерних элементов
-- Удаление элементов, у которых нет указанных в `ignoreClass` классов
-- Логирование операции
+**Actions:**
+- Finds parent element
+- Gets all child elements
+- Removes elements that don't have classes specified in `ignoreClass`
+- Logs operation
 
 ---
 
 `replaceChildClasses(cmd)`
 
-**Назначение:** Замена классов у всех дочерних элементов первого уровня.
+**Purpose:** Replaces classes on all first-level child elements.
 
-**Параметры команды:**
-- `id` (String) - ID родительского элемента
-- `oldClass` (String) - старые классы для замены (через запятую)
-- `class` (String) - новые классы для установки (через запятую)
+**Command parameters:**
+- `id` (String) - Parent element ID
+- `oldClass` (String) - Old classes to replace (comma-separated)
+- `class` (String) - New classes to set (comma-separated)
 
-**Действия:**
-- Поиск родительского элемента
-- Получение всех дочерних элементов первого уровня
-- Проверка наличия ВСЕХ старых классов у каждого элемента
-- Замена старых классов на новые (для соответствующих элементов)
-- Логирование количества измененных элементов
+**Actions:**
+- Finds parent element
+- Gets all first-level child elements
+- Checks if EACH element has ALL old classes
+- Replaces old classes with new (for matching elements)
+- Logs number of modified elements
 
-### Специальные операции
+### Special Operations
 
 `handleSetCheckboxState(cmd)`
 
-**Назначение:** Синхронизация состояния чекбокса.
+**Purpose:** Synchronizes checkbox state.
 
-**Параметры команды:**
-- `id` (String) - ID элемента чекбокса
-- `state` (String) - состояние: 'on' или 'off'
+**Command parameters:**
+- `id` (String) - Checkbox element ID
+- `state` (String) - State: 'on' or 'off'
 
-**Действия:**
-- Поиск элемента чекбокса
-- Преобразование строкового состояния в boolean
-- Установка свойства `checked`
-- Логирование операции (в режиме отладки)
+**Actions:**
+- Finds checkbox element
+- Converts string state to boolean
+- Sets `checked` property
+- Logs operation (in debug mode)
 
-### Вспомогательные методы
+### Helper Methods
 
-#### Управление элементами DOM
+#### DOM Element Management
 
 `getElement(id)`
 
+**Purpose:** Finds element by ID.
 
-**Назначение:** Поиск элемента по ID.
+**Parameters:**
+- `id` (String) - Element ID
 
-**Параметры:**
-- `id` (String) - ID элемента
+**Returns:** DOM element or `null`
 
-**Возвращает:** DOM элемент или `null`
-
-**Действия:**
-- Поиск через `document.getElementById()`
-- Логирование предупреждения при отсутствии элемента (уровень 2+)
+**Actions:**
+- Searches via `document.getElementById()`
+- Logs warning when element not found (level 2+)
 
 `getParentElement(childId)`
 
-**Назначение:** Поиск родительского элемента с кэшированием.
+**Purpose:** Finds parent element with caching.
 
-**Параметры:**
-- `childId` (String) - ID дочернего элемента
+**Parameters:**
+- `childId` (String) - Child element ID
 
-**Возвращает:** Родительский DOM элемент или `null`
+**Returns:** Parent DOM element or `null`
 
-**Действия:**
-- Проверка кэша родительских элементов
-- Поиск дочернего элемента
-- Получение родительского элемента через `parentElement`
-- Сохранение в кэш для последующего использования
+**Actions:**
+- Checks parent element cache
+- Finds child element
+- Gets parent element via `parentElement`
+- Saves to cache for future use
 
 `clearParentCache(childId)`
 
-**Назначение:** Очистка кэша родительских элементов.
+**Purpose:** Clears parent element cache.
 
-**Параметры:**
-- `childId` (String) - ID для очистки конкретной записи (опционально)
+**Parameters:**
+- `childId` (String) - ID to clear specific entry (optional)
 
-**Действия:**
-- Удаление записи из кэша или полная очистка
+**Actions:**
+- Removes entry from cache or clears entirely
 
-#### Управление таймерами
+#### Timer Management
 
 `startPingTimer()`
 
-**Назначение:** Запуск таймера для ping-запросов.
+**Purpose:** Starts timer for ping requests.
 
-**Действия:**
-- Очистка существующего таймера
-- Установка интервального таймера
-- Отправка ping-сообщений на сервер
-- Логирование в режиме отладки
+**Actions:**
+- Clears existing timer
+- Sets interval timer
+- Sends ping messages to server
+- Logs in debug mode
 
 `clearTimers()`
 
-**Назначение:** Очистка всех активных таймеров.
+**Purpose:** Clears all active timers.
 
-**Действия:**
-- Остановка ping-таймера
-- Остановка таймера переподключения
+**Actions:**
+- Stops ping timer
+- Stops reconnection timer
 
-#### Управление статусом
+#### Status Management
 
 `updateStatus(status, message)`
 
-**Назначение:** Обновление визуального состояния соединения.
+**Purpose:** Updates visual connection state.
 
-**Параметры:**
-- `status` (String) - новое состояние соединения
-- `message` (String) - сообщение для отображения
+**Parameters:**
+- `status` (String) - New connection state
+- `message` (String) - Message to display
 
-**Действия:**
-- Обновление внутреннего состояния
-- Логирование изменения статуса
-- Обновление текста и стилей статусной кнопки
-- Установка соответствующего tooltip
+**Actions:**
+- Updates internal state
+- Logs status change
+- Updates status button text and styles
+- Sets appropriate tooltip
 
 `createStatusButton()`
-**Назначение:** Создание кнопки статуса в навигации.
+**Purpose:** Creates status button in navigation.
 
-**Действия:**
-- Удаление старой кнопки (если есть)
-- Поиск навигационной панели
-- Создание новой кнопки с обработчиком клика
-- Добавление кнопки в DOM
-- Логирование создания
+**Actions:**
+- Removes old button (if exists)
+- Finds navigation panel
+- Creates new button with click handler
+- Adds button to DOM
+- Logs creation
 
 `handleStatusButton()`
-**Назначение:** Обработка клика по статусной кнопке.
+**Purpose:** Handles clicks on status button.
 
-**Действия в зависимости от состояния:**
-- **connected** - ручное отключение (`disconnect()`)
-- **disconnected/error/timeout** - перезагрузка страницы
-- **connecting/reconnecting** - игнорирование клика
+**Actions depending on state:**
+- **connected** - Manual disconnect (`disconnect()`)
+- **disconnected/error/timeout** - Page reload
+- **connecting/reconnecting** - Ignore click
 
 `startPageReload()`
-**Назначение:** Инициирование перезагрузки страницы.
+**Purpose:** Initiates page reload.
 
-**Действия:**
-- Логирование начала перезагрузки
-- Обновление текста статусной кнопки
-- Перезагрузка страницы через 300 мс
+**Actions:**
+- Logs start of reload
+- Updates status button text
+- Reloads page after 300 ms
 
-#### Логирование
+#### Logging
 
 `log(level, message, data)`
-**Назначение:** Многоуровневое логирование.
+**Purpose:** Multi-level logging.
 
-**Параметры:**
-- `level` (String|Number) - уровень логирования
-- `message` (String) - текстовое сообщение
-- `data` (Any) - дополнительные данные (опционально)
+**Parameters:**
+- `level` (String|Number) - Logging level
+- `message` (String) - Text message
+- `data` (Any) - Additional data (optional)
 
-**Уровни логирования:**
-1. **ERROR** - критические ошибки
-2. **WARNING** - предупреждения
-3. **INFO** - информационные сообщения (по умолчанию)
-4. **DEBUG** - детальная отладочная информация
+**Logging levels:**
+1. **ERROR** - Critical errors
+2. **WARNING** - Warnings
+3. **INFO** - Informational messages (default)
+4. **DEBUG** - Detailed debug information
 
-**Действия:**
-- Проверка уровня отладки конфигурации
-- Логирование в консоль браузера (если включено)
-- Логирование в веб-консоль (если включено)
+**Actions:**
+- Checks configuration debug level
+- Logs to browser console (if enabled)
+- Logs to web console (if enabled)
 
 `logToWebConsole(timestamp, level, message, data)`
-**Назначение:** Логирование в веб-консоль на странице.
+**Purpose:** Logs to web console on page.
 
-**Параметры:**
-- `timestamp` (String) - метка времени
-- `level` (String) - уровень логирования
-- `message` (String) - текстовое сообщение
-- `data` (Any) - дополнительные данные или источник сообщения
+**Parameters:**
+- `timestamp` (String) - Timestamp
+- `level` (String) - Logging level
+- `message` (String) - Text message
+- `data` (Any) - Additional data or message source
 
-**Действия:**
-- Поиск элемента веб-консоли
-- Формирование HTML структуры сообщения
-- Добавление сообщения в начало консоли
-- Ограничение количества сообщений (макс. 500)
-- Экранирование HTML символов
+**Actions:**
+- Finds web console element
+- Forms HTML message structure
+- Adds message to beginning of console
+- Limits message count (max 500)
+- Escapes HTML characters
 
 `escapeHtml(text)`
-**Назначение:** Экранирование HTML символов.
+**Purpose:** Escapes HTML characters.
 
-**Параметры:**
-- `text` (String) - текст для экранирования
+**Parameters:**
+- `text` (String) - Text to escape
 
-**Возвращает:** Экранированную строку
+**Returns:** Escaped string
 
-### Публичное API
+### Public API
 
 `getStatus()`
-**Назначение:** Получение текущего состояния клиента.
+**Purpose:** Gets current client state.
 
-**Возвращает:** Объект с информацией о состоянии:
+**Returns:** Object with state information:
 
 ```javascript
 {
-  status: 'connected',           // Текущее состояние
-  wsState: 1,                    // Состояние WebSocket (0-3)
-  clientId: 'client_123456789',  // ID клиента от сервера
-  reconnectAttempts: 0,          // Количество попыток переподключения
-  parentCacheSize: 5,            // Размер кэша родительских элементов
-  config: {...}                  // Текущая конфигурация
+  status: 'connected',           // Current state
+  wsState: 1,                    // WebSocket state (0-3)
+  clientId: 'client_123456789',  // Client ID from server
+  reconnectAttempts: 0,          // Reconnection attempts count
+  parentCacheSize: 5,            // Parent element cache size
+  config: {...}                  // Current configuration
 }
 ```
 
 `executeTestCommand(command)`
-**Назначение:** Ручное выполнение команды (для отладки).
+**Purpose:** Manual command execution (for debugging).
 
-**Параметры:**
-- `command` (Object) - объект команды
+**Parameters:**
+- `command` (Object) - Command object
 
-**Возвращает:** Результат выполнения (`true`/`false`)
+**Returns:** Execution result (`true`/`false`)
 
-**Использование:**
+**Usage:**
 ```javascript
 window.dashboardWSClient.executeTestCommand({
   id: 'testElement',
@@ -622,67 +621,67 @@ window.dashboardWSClient.executeTestCommand({
 });
 ```
 
-## Глобальные функции (отладка)
+## Global Functions (Debugging)
 
-После инициализации клиента создаются глобальные функции для отладки:
+After client initialization, global debug functions are created:
 
 `window.connectWebSocket()`
-Ручное подключение к серверу.
+Manual connection to server.
 
 `window.disconnectWebSocket()`
-Ручное отключение от сервера.
+Manual disconnection from server.
 
 `window.getWebSocketStatus()`
-Получение текущего статуса клиента.
+Gets current client status.
 
 `window.sendTestCommand(command)`
-Выполнение тестовой команды.
+Executes test command.
 
 `window.testCommands`
-Набор готовых тестовых команд:
-- `addClass(id, className)` - добавление класса
-- `removeClass(id, className)` - удаление класса
-- `setContent(id, content)` - установка содержимого
-- `addParentClass(id, className)` - добавление класса родителю
-- `removeParentClass(id, className)` - удаление класса у родителя
+Set of ready test commands:
+- `addClass(id, className)` - Add class
+- `removeClass(id, className)` - Remove class
+- `setContent(id, content)` - Set content
+- `addParentClass(id, className)` - Add class to parent
+- `removeParentClass(id, className)` - Remove class from parent
 
-## Инициализация
+## Initialization
 
-Клиент автоматически инициализируется при событии `DOMContentLoaded`:
+The client automatically initializes on `DOMContentLoaded` event:
 
 ```javascript
 document.addEventListener('DOMContentLoaded', () => {
-  // Получение конфигурации из PHP
+  // Get configuration from PHP
   const wsConfig = window.DASHBOARD_CONFIG?.websocket;
   
-  // Создание клиента
+  // Create client
   window.dashboardWSClient = new DashboardWebSocketClientV4(wsConfig);
   
-  // Создание глобальных функций для отладки
+  // Create global debug functions
   // ...
 });
 ```
 
-## Особенности реализации v4.2
+## Implementation Features v4.2
 
-### Кэширование родительских элементов
-- Автоматическое кэширование при первом обращении
-- Увеличение производительности при частых операциях с родителями
-- Ручная очистка через `clearParentCache()`
+### Parent Element Caching
+- Automatic caching on first access
+- Performance improvement for frequent parent operations
+- Manual clearing via `clearParentCache()`
 
-### Улучшенная обработка ошибок
-- Валидация всех входных параметров
-- Защита от некорректных команд
-- Подробное логирование ошибок
+### Enhanced Error Handling
+- Validation of all input parameters
+- Protection against incorrect commands
+- Detailed error logging
 
-### Гибкая система логирования
-- 4 уровня детализации
-- Поддержка веб-консоли и console браузера
-- Автоматическая ротация сообщений
-- Фильтрация по уровню отладки
+### Flexible Logging System
+- 4 detail levels
+- Support for web console and browser console
+- Automatic message rotation
+- Filtering by debug level
 
-### Надежность соединения
-- Экспоненциальная задержка переподключений
-- Ограничение максимального количества попыток
-- Graceful shutdown при ручном отключении
-- Ping-pong для поддержания соединения
+### Connection Reliability
+- Exponential reconnection delay
+- Maximum attempt limit
+- Graceful shutdown on manual disconnect
+- Ping-pong for connection maintenance

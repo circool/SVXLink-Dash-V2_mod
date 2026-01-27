@@ -1,131 +1,131 @@
-# Документация WebSocket сервера v4.17
+# WebSocket Server Documentation v4.17
 
-## Обзор
+## Overview
 
-Stateful WebSocket сервер версии 4.17 обеспечивает обработку событий SvxLink в реальном времени, мониторинг лог-файлов, управление состоянием и рассылку DOM-команд всем подключенным клиентам. Сервер загружает начальное состояние из PHP endpoint, восстанавливает таймеры и связи, а также обеспечивает автоматическое управление подключениями.
+Stateful WebSocket Server version 4.17 provides real-time SvxLink event handling, log file monitoring, state management, and DOM command broadcasting to all connected clients. The server loads initial state from a PHP endpoint, restores timers and connections, and ensures automatic connection management.
 
-## Архитектура
+## Architecture
 
-### Основные компоненты
+### Core Components
 
-- **StatefulWebSocketServerV4** - основной класс сервера
-- **StateManager** - менеджер таймеров и временных состояний
-- **CommandParser** - парсер логов SvxLink с генерацией DOM-команд
-- **ConnectionHandler** - обработчик связей между компонентами
-- **Log Monitor** - мониторинг лог-файла SvxLink через `tail -F`
+- **StatefulWebSocketServerV4** - Main server class
+- **StateManager** - Manager for timers and temporal states
+- **CommandParser** - SvxLink log parser with DOM command generation
+- **ConnectionHandler** - Handler for connections between components
+- **Log Monitor** - SvxLink log file monitoring via `tail -F`
 
-### Состояния сервера
+### Server States
 
-- **running** - сервер запущен и готов к подключениям
-- **monitoring** - активен мониторинг лог-файла
-- **idle** - нет подключенных клиентов, ожидание отключения
-- **shutting_down** - процесс корректного завершения
-- **error** - критическая ошибка сервера
+- **running** - Server is running and ready for connections
+- **monitoring** - Log file monitoring is active
+- **idle** - No connected clients, awaiting shutdown
+- **shutting_down** - Graceful shutdown in progress
+- **error** - Critical server error
 
-## Конфигурация
+## Configuration
 
-### Константы и настройки
+### Constants and Settings
 
 ```javascript
 const CONFIG = {
     version: '0.4.17',
     ws: {
-        host: '0.0.0.0',           // Хост для прослушивания
-        port: 8080,                // Порт WebSocket
-        clientTimeout: 15000       // Таймаут отключения при отсутствии клиентов (мс)
+        host: '0.0.0.0',           // Host to listen on
+        port: 8080,                // WebSocket port
+        clientTimeout: 15000       // Disconnect timeout when no clients (ms)
     },
     log: {
-        path: '/var/log/svxlink',  // Путь к лог-файлу SvxLink
-        bufferTimeout: 3,          // Таймаут буферизации логов (сек)
-        maxBufferSize: 50          // Максимальный размер буфера строк
+        path: '/var/log/svxlink',  // Path to SvxLink log file
+        bufferTimeout: 3,          // Log buffering timeout (sec)
+        maxBufferSize: 50          // Maximum buffer size for lines
     },
     duration: {
-        updateInterval: 1000       // Интервал обновления таймеров (мс)
+        updateInterval: 1000       // Timer update interval (ms)
     },
     php: {
-        stateEndpoint: 'http://localhost/ws_state.php', // PHP endpoint для начального состояния
-        timeout: 3000              // Таймаут запроса к PHP (мс)
+        stateEndpoint: 'http://localhost/ws_state.php', // PHP endpoint for initial state
+        timeout: 3000              // PHP request timeout (ms)
     }
 };
 ```
 
-### Уровни логирования
+### Logging Levels
 
-Сервер поддерживает 4 уровня логирования (настраивается через переменную окружения `DEBUG_LEVEL`):
+The server supports 4 logging levels (configurable via `DEBUG_LEVEL` environment variable):
 
-1. **ERROR** - критичиеские ошибки (уровень 1)
-2. **WARNING** - предупреждения (уровень 2)
-3. **INFO** - информационные сообщения (уровень 3)
-4. **DEBUG** - детальная отладочная информация (уровень 4)
+1. **ERROR** - Critical errors (Level 1)
+2. **WARNING** - Warnings (Level 2)
+3. **INFO** - Informational messages (Level 3)
+4. **DEBUG** - Detailed debug information (Level 4)
 
-## Классы сервера
+## Server Classes
 
 ### StateManager
 
-Менеджер временных состояний и таймеров.
+Manager for temporal states and timers.
 
-#### Методы
+#### Methods
 
 `formatDuration(milliseconds)`
 
-**Назначение:** Форматирование длительности в читаемый вид.
+**Purpose:** Format duration into human-readable form.
 
-**Возвращает:** Форматированную строку:
-- `< 60 сек`: "N s"
-- `< 1 часа`: "MM:SS"
-- `≥ 1 часа`: "HH:MM:SS"
+**Returns:** Formatted string:
+- `< 60 sec`: "N s"
+- `< 1 hour`: "MM:SS"
+- `≥ 1 hour`: "HH:MM:SS"
 
 ---
 
 `startTimer(key, metadata = {})`
 
-**Назначение:** Запуск нового таймера.
+**Purpose:** Start a new timer.
 
-**Параметры:**
-- `key` (String) - уникальный ключ таймера
-- `metadata` (Object) - метаданные таймера:
-  - `elementId` - ID DOM элемента для обновления
-  - `replaceStart` - начальный маркер для замены
-  - `replaceEnd` - конечный маркер для замены
-  - Дополнительные пользовательские поля
+**Parameters:**
+- `key` (String) - Unique timer key
+- `metadata` (Object) - Timer metadata:
+  - `elementId` - DOM element ID for updates
+  - `replaceStart` - Start marker for replacement
+  - `replaceEnd` - End marker for replacement
+  - Additional custom fields
 
-**Действия:**
-- Проверка существующих таймеров с тем же `elementId`
-- Удаление конфликтующих таймеров
-- Регистрация нового таймера в коллекции
+**Actions:**
+- Check for existing timers with same `elementId`
+- Remove conflicting timers
+- Register new timer in collection
 
-**Возвращает:** Время старта таймера (timestamp)
+**Returns:** Timer start time (timestamp)
 
 ---
 
 `stopTimer(key)`
 
-**Назначение:** Остановка и удаление таймера. Также удаляет все таймеры начинающиеся с `key`
+**Purpose:** Stop and remove a timer (and app child timers too).
 
-**Параметры:**
-- `key` (String) - ключ таймера для остановки
+**Parameters:**
+- `key` (String) - Timer key to stop
 
-**Возвращает:** `true` если таймер существовал, `false` если нет
+**Returns:** `true` if timer existed, `false` otherwise
 
 ---
 
 `setTimerStart(key, startTimestamp)`
 
-**Назначение:** Установка времени начала существующего таймера.
+**Purpose:** Set start time for an existing timer.
 
-**Параметры:**
-- `key` (String) - ключ таймера
-- `startTimestamp` (Number) - время старта (timestamp)
+**Parameters:**
+- `key` (String) - Timer key
+- `startTimestamp` (Number) - Start time (timestamp)
 
-**Возвращает:** `true` при успехе, `false` если таймер не найден
+**Returns:** `true` on success, `false` if timer not found
 
 ---
 
 `getTimerUpdates()`
 
-**Назначение:** Получение обновлений для активных таймеров.
+**Purpose:** Get updates for active timers.
 
-**Возвращает:** Массив объектов обновлений:
+**Returns:** Array of update objects:
 ```javascript
 [
     {
@@ -140,9 +140,9 @@ const CONFIG = {
 
 `getStats()`
 
-**Назначение:** Получение статистики менеджера.
+**Purpose:** Get manager statistics.
 
-**Возвращает:** Объект статистики:
+**Returns:** Statistics object:
 ```javascript
 {
     activeTimers: 5
@@ -151,251 +151,251 @@ const CONFIG = {
 
 ### ConnectionHandler
 
-Обработчик связей между компонентами системы (логики, модули, линки, узлы).
+Handler for connections between system components (logics, modules, links, nodes).
 
-#### Методы
+#### Methods
 
 `add(source, target)`
 
-**Назначение:** Добавление связи между компонентами.
+**Purpose:** Add a connection between components.
 
-**Параметры:**
-- `source` (String) - источник связи
-- `target` (String) - цель связи
+**Parameters:**
+- `source` (String) - Connection source
+- `target` (String) - Connection target
 
-**Действия:**
-- Создание коллекции для источника (если отсутствует)
-- Добавление цели в коллекцию источника
+**Actions:**
+- Create collection for source (if missing)
+- Add target to source collection
 
 ---
 
 `remove(source, target)`
 
-**Назначение:** Удаление связи между компонентами.
+**Purpose:** Remove a connection between components.
 
-**Параметры:**
-- `source` (String) - источник связи
-- `target` (String) - цель связи
+**Parameters:**
+- `source` (String) - Connection source
+- `target` (String) - Connection target
 
-**Действия:**
-- Удаление цели из коллекции источника
-- Удаление пустой коллекции источника
+**Actions:**
+- Remove target from source collection
+- Remove empty source collection
 
 ---
 
 `getAllFrom(source)`
 
-**Назначение:** Получение всех целей для источника.
+**Purpose:** Get all targets for a source.
 
-**Параметры:**
-- `source` (String) - источник связи
+**Parameters:**
+- `source` (String) - Connection source
 
-**Возвращает:** Массив целей или пустой массив
+**Returns:** Array of targets or empty array
 
 ---
 
 `getAllTo(target)`
 
-**Назначение:** Получение всех источников для цели.
+**Purpose:** Get all sources for a target.
 
-**Параметры:**
-- `target` (String) - цель связи
+**Parameters:**
+- `target` (String) - Connection target
 
-**Возвращает:** Массив источников
+**Returns:** Array of sources
 
 ---
 
 `initFromData(data, sourceKey, targetKey)`
-**Назначение:** Инициализация связей из данных PHP.
+**Purpose:** Initialize connections from PHP data.
 
-**Параметры:**
-- `data` (Object) - данные связей в формате `{source: [targets]}`
-- `sourceKey` (String) - описание типа источника (для логирования)
-- `targetKey` (String) - описание типа цели (для логирования)
+**Parameters:**
+- `data` (Object) - Connection data in format `{source: [targets]}`
+- `sourceKey` (String) - Source type description (for logging)
+- `targetKey` (String) - Target type description (for logging)
 
 ### CommandParser
 
-Парсер строк лога SvxLink с генерацией DOM-команд. Поддерживает два режима работы: обычный и пакетный (для EchoLink/Frn сообщений).
+SvxLink log line parser with DOM command generation. Supports two modes: normal and batch (for EchoLink/Frn messages).
 
-#### Параметры конструктора
+#### Constructor Parameters
 
-- `stateManager` (StateManager) - экземпляр менеджера состояний
+- `stateManager` (StateManager) - StateManager instance
 
-#### Поддерживаемые паттерны
+#### Supported Patterns
 
-Сервер распознает 40+ паттернов логов SvxLink, включая:
+The server recognizes 40+ SvxLink log patterns, including:
 
-**Сервис:**
-- Запуск сервиса SvxLink
-- Остановка сервиса (SIGTERM)
+**Service:**
+- SvxLink service start
+- Service stop (SIGTERM)
 
-**Логики:**
-- Старт логики
-- Загрузка модулей
-- Загрузка устройств RX/TX
+**Logics:**
+- Logic start
+- Module loading
+- RX/TX device loading
 
-**Устройства:**
-- Включение/выключение передатчика (Transmitter ON/OFF)
-- Открытие/закрытие шумоподавителя (Squelch OPEN/CLOSED)
+**Devices:**
+- Transmitter ON/OFF
+- Squelch OPEN/CLOSED
 
-**Рефлекторы:**
-- Подключение/отключение от рефлектора
-- Подключенные узлы
-- Вход/выход узлов
-- Выбор разговорных групп
+**Reflectors:**
+- Connect/disconnect from reflector
+- Connected nodes
+- Node entry/exit
+- Talk group selection
 
-**Модули:**
-- Активация/деактивация модулей
-- Состояния EchoLink/Frn
-- Сообщения конференций
+**Modules:**
+- Module activation/deactivation
+- EchoLink/Frn states
+- Conference messages
 
-**Линки:**
-- Активация/деактивация связей
+**Links:**
+- Link activation/deactivation
 
-#### Методы
+#### Methods
 
 `parse(line)`
 
-**Назначение:** Основной метод парсинга строки лога.
+**Purpose:** Main method for parsing log lines.
 
-**Параметры:**
-- `line` (String) - строка лога для парсинга
+**Parameters:**
+- `line` (String) - Log line to parse
 
-**Возвращает:** Объект результата или `null`:
+**Returns:** Result object or `null`:
 ```javascript
 {
-    commands: [],          // Массив DOM-команд
-    raw: "original_line",  // Оригинальная строка
-    timestamp: "timestamp" // Временная метка
+    commands: [],          // Array of DOM commands
+    raw: "original_line",  // Original line
+    timestamp: "timestamp" // Timestamp
 }
 ```
 
-**Особенности:**
-- Поддерживает пакетный режим для EchoLink сообщений
-- Автоматически переключается между режимами
+**Features:**
+- Supports batch mode for EchoLink messages
+- Automatic mode switching
 
 ---
 
 `timerUpdatesToCommands(timerUpdates)`
 
-**Назначение:** Преобразование обновлений таймеров в DOM-команды.
+**Purpose:** Convert timer updates to DOM commands.
 
-**Параметры:**
-- `timerUpdates` (Array) - массив обновлений от StateManager
+**Parameters:**
+- `timerUpdates` (Array) - Array of updates from StateManager
 
-**Возвращает:** Массив DOM-команд для обновления времени
+**Returns:** Array of DOM commands for time updates
 
 ---
 
 `initFromWsData(wsData)`
 
-**Назначение:** Инициализация парсера из данных PHP.
+**Purpose:** Initialize parser from PHP data.
 
-**Параметры:**
-- `wsData` (Object) - данные состояния из PHP:
-  - `module_logic` - связи модуль-логика
-  - `link_logic` - связи линк-логика
+**Parameters:**
+- `wsData` (Object) - State data from PHP:
+  - `module_logic` - Module-logic connections
+  - `link_logic` - Link-logic connections
 
-#### Пакетный режим (EchoLink)
+#### Batch Mode (EchoLink)
 
-Команды:
-- `EchoLink: --- EchoLink chat message received from ... ---` - начало пакета
-- `Trailing chat data:` - конец пакета
-- Строки вида `->R2ADU-L Moscow 145.4625 #88.5` или `R2ADU>test` - данные пакета
+Commands:
+- `EchoLink: --- EchoLink chat message received from ... ---` - Batch start
+- `Trailing chat data:` - Batch end
+- Lines like `->R2ADU-L Moscow 145.4625 #88.5` or `R2ADU>test` - Batch data
 
-Обработка:
-1. Включение режима ожидания позывного
-2. Обработка строк с `->` или `>`
-3. Форматирование HTML с тегами `<b>`
-4. Отправка через команду `set_content_by_class`
+Processing:
+1. Enable callsign waiting mode
+2. Process lines with `->` or `>`
+3. Format HTML with `<b>` tags
+4. Send via `set_content_by_class` command
 
 ### StatefulWebSocketServerV4
 
-Основной класс WebSocket сервера.
+Main WebSocket server class.
 
-#### Методы
+#### Methods
 
-##### Инициализация и управление
+##### Initialization and Management
 
 `constructor(config = {})`
 
-**Назначение:** Создание экземпляра сервера.
+**Purpose:** Create server instance.
 
-**Параметры:**
-- `config` (Object) - конфигурация сервера (объединяется с CONFIG)
+**Parameters:**
+- `config` (Object) - Server configuration (merged with CONFIG)
 
-**Инициализирует:**
+**Initializes:**
 - StateManager, CommandParser, ConnectionHandler
-- Коллекции клиентов и состояния
-- Статистику сервера
+- Client collections and state
+- Server statistics
 
 ---
 
 `async start()`
 
-**Назначение:** Запуск WebSocket сервера.
+**Purpose:** Start WebSocket server.
 
-**Действия:**
-- Проверка существования лог-файла
-- Запуск WebSocket сервера
-- Настройка таймеров
-- Обработка сигналов ОС
+**Actions:**
+- Verify log file existence
+- Start WebSocket server
+- Setup timers
+- Handle OS signals
 
-##### Управление состоянием
+##### State Management
 
 `async loadWsState()`
-**Назначение:** Загрузка начального состояния из PHP endpoint.
+**Purpose:** Load initial state from PHP endpoint.
 
-**Процесс:**
-1. HTTP запрос к `CONFIG.php.stateEndpoint`
-2. Парсинг JSON ответа
-3. Распределение данных по компонентам:
-   - `devices` - устройства (RX/TX)
-   - `modules` - модули
-   - `links` - линки
-   - `nodes` - узлы
-   - `module_logic` - связи модуль-логика
-   - `link_logic` - связи линк-логика
-   - `logics` - логики
-   - `service` - сервис SvxLink
+**Process:**
+1. HTTP request to `CONFIG.php.stateEndpoint`
+2. Parse JSON response
+3. Distribute data to components:
+   - `devices` - Devices (RX/TX)
+   - `modules` - Modules
+   - `links` - Links
+   - `nodes` - Nodes
+   - `module_logic` - Module-logic connections
+   - `link_logic` - Link-logic connections
+   - `logics` - Logics
+   - `service` - SvxLink service
 
-**Обработка ошибок:**
-- Таймаут 3 секунды
-- Обработка пустых ответов
-- Восстановление пустого состояния при ошибках
+**Error Handling:**
+- 3-second timeout
+- Handle empty responses
+- Restore empty state on errors
 
 ---
 
 `restoreFromWsState()`
 
-**Назначение:** Восстановление состояния из загруженных данных.
+**Purpose:** Restore state from loaded data.
 
-**Восстанавливает:**
-1. Связи через CommandParser
-2. Таймеры логик
-3. Таймеры устройств (RX/TX)
-4. Таймеры модулей
-5. Таймеры линков
-6. Таймеры узлов
-7. Таймер сервиса
+**Restores:**
+1. Connections via CommandParser
+2. Logic timers
+3. Device (RX/TX) timers
+4. Module timers
+5. Link timers
+6. Node timers
+7. Service timer
 
-**Логирование:** Подсчет восстановленных элементов
+**Logging:** Counts restored elements
 
-##### Управление клиентами
+##### Client Management
 
 `async handleClientConnection(ws, req)`
 
-**Назначение:** Обработка нового подключения клиента.
+**Purpose:** Handle new client connection.
 
-**Процесс:**
-1. Генерация уникального clientId
-2. Регистрация клиента в коллекции
-3. Отправка приветственного сообщения
-4. Загрузка состояния (если первый клиент)
-5. Отправка начальных команд
-6. Запуск мониторинга (если первый клиент)
+**Process:**
+1. Generate unique clientId
+2. Register client in collection
+3. Send welcome message
+4. Load state (if first client)
+5. Send initial commands
+6. Start monitoring (if first client)
 
-**Формат приветствия:**
+**Welcome Format:**
 ```javascript
 {
     type: 'welcome',
@@ -412,38 +412,38 @@ const CONFIG = {
 
 `sendInitialCommands(ws)`
 
-**Назначение:** Отправка начального состояния новому клиенту.
+**Purpose:** Send initial state to new client.
 
-**Отправляет:**
-- Состояния устройств (RX/TX) с длительностями
-- Состояние сервиса SvxLink
-- Активные таймеры
+**Sends:**
+- Device (RX/TX) states with durations
+- SvxLink service state
+- Active timers
 
 ---
 
 `handleClientDisconnect(clientId)`
 
-**Назначение:** Обработка отключения клиента.
+**Purpose:** Handle client disconnection.
 
-**Действия:**
-- Удаление клиента из коллекции
-- Остановка мониторинга при отсутствии клиентов
-- Запуск таймера отключения
+**Actions:**
+- Remove client from collection
+- Stop monitoring when no clients
+- Start shutdown timer
 
 ---
 
 `broadcast(message)`
 
-**Назначение:** Рассылка сообщения всем подключенным клиентам.
+**Purpose:** Broadcast message to all connected clients.
 
-**Параметры:**
-- `message` (Object) - сообщение для рассылки
+**Parameters:**
+- `message` (Object) - Message to broadcast
 
-**Возвращает:** Количество успешно отправленных сообщений
+**Returns:** Number of successfully sent messages
 
-**Форматы сообщений:**
+**Message Formats:**
 ```javascript
-// DOM команды
+// DOM commands
 {
     type: 'dom_commands',
     commands: [...],
@@ -453,142 +453,142 @@ const CONFIG = {
     chunks: 2
 }
 
-// Логи
+// Logs
 {
     type: 'log_message',
     level: 'INFO',
-    message: 'Текст сообщения',
+    message: 'Message text',
     timestamp: '2026-01-16T10:30:00.000Z',
     source: 'WS Server v4'
 }
 ```
 
-##### Мониторинг логов
+##### Log Monitoring
 
 `startLogMonitoring()`
 
-**Назначение:** Запуск мониторинга лог-файла SvxLink.
+**Purpose:** Start SvxLink log file monitoring.
 
-**Использует:** `tail -F -n 0 /var/log/svxlink`
+**Uses:** `tail -F -n 0 /var/log/svxlink`
 
-**Особенности:**
-- Буферизация строк (50 строк, 3 сек)
-- Автоматический перезапуск при сбое
-- Остановка при отсутствии клиентов
+**Features:**
+- Line buffering (50 lines, 3 sec)
+- Automatic restart on failure
+- Stop when no clients
 
 ---
 
 `stopLogMonitoring()`
 
-**Назначение:** Остановка мониторинга лог-файла.
+**Purpose:** Stop log file monitoring.
 
-**Действия:** Завершение процесса tail с SIGTERM
+**Actions:** Terminate tail process with SIGTERM
 
 ---
 
 `processLogBuffer(buffer)`
 
-**Назначение:** Обработка буферизированных строк лога.
+**Purpose:** Process buffered log lines.
 
-**Процесс:**
-1. Парсинг каждой строки через CommandParser
-2. Сбор всех DOM-команд
-3. Разделение на чанки по 10 команд
-4. Рассылка всем клиентам
+**Process:**
+1. Parse each line via CommandParser
+2. Collect all DOM commands
+3. Split into chunks of 10 commands
+4. Broadcast to all clients
 
-**Оптимизация:**
-- Лимит обработки: `maxBufferSize` строк
-- Чанкинг для больших пакетов
-- Подсчет статистики
+**Optimization:**
+- Processing limit: `maxBufferSize` lines
+- Chunking for large packets
+- Statistics counting
 
-##### Управление временем
+##### Time Management
 
 `startDurationTimer()`
 
-**Назначение:** Запуск периодического обновления таймеров.
+**Purpose:** Start periodic timer updates.
 
-**Интервал:** `CONFIG.duration.updateInterval` (1000 мс)
+**Interval:** `CONFIG.duration.updateInterval` (1000 ms)
 
-**Процесс:**
-1. Получение обновлений от StateManager
-2. Преобразование в DOM-команды
-3. Рассылка клиентам
+**Process:**
+1. Get updates from StateManager
+2. Convert to DOM commands
+3. Broadcast to clients
 
 ---
 
 `stopDurationTimer()`
 
-**Назначение:** Остановка таймера обновлений.
+**Purpose:** Stop update timer.
 
-##### Управление завершением
+##### Shutdown Management
 
 `startShutdownTimer()`
 
-**Назначение:** Запуск таймера автоотключения при отсутствии клиентов.
+**Purpose:** Start auto-shutdown timer when no clients.
 
-**Таймаут:** `CONFIG.ws.clientTimeout` (15000 мс)
+**Timeout:** `CONFIG.ws.clientTimeout` (15000 ms)
 
 ---
 
 `clearShutdownTimer()`
 
-**Назначение:** Сброс таймера автоотключения.
+**Purpose:** Reset auto-shutdown timer.
 
 ---
 
 `gracefulShutdown()`
 
-**Назначение:** Корректное завершение работы сервера.
+**Purpose:** Graceful server shutdown.
 
-**Процесс:**
-1. Остановка всех таймеров
-2. Остановка мониторинга логов
-3. Закрытие соединений с клиентами (код 1000)
-4. Закрытие WebSocket сервера
-5. Вывод статистики
-6. Выход из процесса
+**Process:**
+1. Stop all timers
+2. Stop log monitoring
+3. Close client connections (code 1000)
+4. Close WebSocket server
+5. Print statistics
+6. Exit process
 
-##### Статистика
+##### Statistics
 
 `getStats()`
 
-**Назначение:** Получение статистики сервера.
+**Purpose:** Get server statistics.
 
-**Возвращает:**
+**Returns:**
 ```javascript
 {
     version: '0.4.17',
-    uptime: 3600,                     // Время работы (сек)
-    clients: 3,                       // Подключенных клиентов
-    monitoring: true,                 // Активен мониторинг
-    durationTimerActive: true,        // Активен таймер времени
+    uptime: 3600,                     // Uptime (sec)
+    clients: 3,                       // Connected clients
+    monitoring: true,                 // Monitoring active
+    durationTimerActive: true,        // Duration timer active
     wsState: {
-        devices: 5,                   // Устройств в состоянии
-        modules: 3,                   // Модулей в состоянии
-        links: 2,                     // Линков в состоянии
-        nodes: 10,                    // Узлов в состоянии
-        connections: 15               // Связей в ConnectionHandler
+        devices: 5,                   // Devices in state
+        modules: 3,                   // Modules in state
+        links: 2,                     // Links in state
+        nodes: 10,                    // Nodes in state
+        connections: 15               // Connections in ConnectionHandler
     },
     serverStats: {
-        startedAt: 1673789200000,     // Время старта
-        clientsConnected: 10,         // Всего подключений
-        clientsDisconnected: 7,       // Всего отключений
-        messagesSent: 1500,           // Отправленных сообщений
-        errors: 2,                    // Ошибок
-        eventsProcessed: 300,         // Обработанных событий
-        commandsGenerated: 1200,      // Сгенерированных команд
-        stateLoads: 5,                // Загрузок состояния
-        stateLoadErrors: 1            // Ошибок загрузки состояния
+        startedAt: 1673789200000,     // Start time
+        clientsConnected: 10,         // Total connections
+        clientsDisconnected: 7,       // Total disconnections
+        messagesSent: 1500,           // Messages sent
+        errors: 2,                    // Errors
+        eventsProcessed: 300,         // Processed events
+        commandsGenerated: 1200,      // Generated commands
+        stateLoads: 5,                // State loads
+        stateLoadErrors: 1            // State load errors
     },
     stateStats: {
-        activeTimers: 8               // Активных таймеров
+        activeTimers: 8               // Active timers
     }
 }
 ```
 
-## Форматы сообщений
+## Message Formats
 
-### Входящие сообщения (от клиента)
+### Incoming Messages (from client)
 
 `ping`
 ```javascript
@@ -597,7 +597,7 @@ const CONFIG = {
 }
 ```
 
-### Исходящие сообщения (к клиенту)
+### Outgoing Messages (to client)
 
 `welcome`
 ```javascript
@@ -632,10 +632,10 @@ const CONFIG = {
         }
     ],
     timestamp: 1673789200000,
-    total: 15,        // Общее количество команд (опционально)
-    chunk: 1,         // Номер текущего чанка (опционально)
-    chunks: 2,        // Всего чанков (опционально)
-    subtype: 'initial_state' // Тип пакета (опционально)
+    total: 15,        // Total command count (optional)
+    chunk: 1,         // Current chunk number (optional)
+    chunks: 2,        // Total chunks (optional)
+    subtype: 'initial_state' // Packet type (optional)
 }
 ```
 
@@ -644,54 +644,54 @@ const CONFIG = {
 {
     type: 'log_message',
     level: 'INFO',
-    message: 'Текст сообщения',
+    message: 'Message text',
     timestamp: '2026-01-16T10:30:00.000Z',
     source: 'WS Server v4'
 }
 ```
 
-## Системные требования
+## System Requirements
 
 - Node.js 14+
-- Доступ к файлу лога SvxLink (`/var/log/svxlink`)
-- PHP endpoint для начального состояния
-- Права на запуск процесса `tail -F`
+- Access to SvxLink log file (`/var/log/svxlink`)
+- PHP endpoint for initial state
+- Permissions to run `tail -F` process
 
-## Переменные окружения
+## Environment Variables
 
-`DEBUG_LEVEL` - уровень логирования (1-4)
+`DEBUG_LEVEL` - Logging level (1-4)
 ```bash
 DEBUG_LEVEL=4 node dashboard_ws_server.0.4.17.js
 ```
 
-## Сигналы ОС
+## OS Signals
 
-- **SIGINT** (Ctrl+C) - корректное завершение
-- **SIGTERM** - корректное завершение
+- **SIGINT** (Ctrl+C) - Graceful shutdown
+- **SIGTERM** - Graceful shutdown
 
-## Обработка ошибок
+## Error Handling
 
-1. **Отсутствие лог-файла** - предупреждение, продолжение работы
-2. **Ошибка PHP endpoint** - использование пустого состояния
-3. **Ошибка WebSocket** - логирование, продолжение работы
-4. **Ошибка tail процесса** - перезапуск через 2 секунды
+1. **Missing log file** - Warning, continue operation
+2. **PHP endpoint error** - Use empty state
+3. **WebSocket error** - Logging, continue operation
+4. **Tail process error** - Restart after 2 seconds
 
-## Производительность
+## Performance
 
-- Буферизация логов: до 50 строк, таймаут 3 сек
-- Чанкинг команд: по 10 команд в пакете
-- Автоотключение: 15 секунд без клиентов
-- Пинг-понг: поддержка клиентских ping
+- Log buffering: Up to 50 lines, 3 sec timeout
+- Command chunking: 10 commands per packet
+- Auto-shutdown: 15 seconds without clients
+- Ping-pong: Client ping support
 
-## Совместимость
+## Compatibility
 
-- WebSocket клиент v4.2+
+- WebSocket client v4.2+
 - SvxLink 1.8.0+
-- Любой современный браузер с поддержкой WebSocket
+- Any modern browser with WebSocket support
 
-## Мониторинг
+## Monitoring
 
-Сервер предоставляет статистику через:
-- Консольные логи (с уровнями)
-- Сообщения `log_message` клиентам
-- Метод `getStats()` для внешнего мониторинга
+The server provides statistics via:
+- Console logs (with levels)
+- `log_message` messages to clients
+- `getStats()` method for external monitoring
