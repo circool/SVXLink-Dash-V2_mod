@@ -3,6 +3,7 @@
 ## Bugs.
 
 [ ] Sending DTMF from the keypad or macro panel works after 2 unsuccessful attempts (Links control works correctly).
+
 [ ] `block_updater.js` does not have access to the updatable elements on the first run.
 
 ## Unimplemented features.
@@ -10,7 +11,7 @@
 
 ### Error control and their display. 
 
-[ ] Show errors in audio devices (incl. multiple devuces)
+[ ] Show errors in audio devices (incl. multiple devices)
 
 [ ] Show PEAK METER events
 

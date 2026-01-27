@@ -1,31 +1,21 @@
 <?php
 
 /**
- * WebSocket State Provider - ПРЕДВ. ВЕРСИЯ
- * Поставщик начального состояния для WebSocket-системы v4.0, 
- * обеспечивающий синхронизацию между PHP-сессией и Node.js WebSocket сервером
+ * WebSocket State Provider
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
+ * @version 1.0.0.release
+ * @filesource /ws_state.php
+ * @note Preliminary version.
  */
-// 3. Начинаем сессию
-// require_once $_SERVER["DOCUMENT_ROOT"] . '/include/session_header.php';
-// ТОЛЬКО СЕССИИ НЕДОСТАТОЧНО!
+
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/init.php';
 
-// 1. Заголовки
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 header('Pragma: no-cache');
 header('Expires: 0');
 
-// 2. Разрешаем только localhost
-// $allowed_ips = ['127.0.0.1', '::1', 'localhost'];
-// if (!in_array($_SERVER['REMOTE_ADDR'], $allowed_ips)) {
-// 	http_response_code(403);
-// 	echo json_encode(['error' => 'Access denied. Only localhost allowed.']);
-// 	exit;
-// }
 
-
-// 4. Основная логика
 try {
 	$status = $_SESSION['status'] ?? [];
 
@@ -36,13 +26,12 @@ try {
 			'modules' => [],
 			'links' => [],
 			'nodes' => [],
-			'module_logic' => [], // Связи логика - модуль
+			'module_logic' => [], 
 			'service' => [],
 			'logics' => [],
 		]
 	];
 
-	// 5. Обработка сервиса
 	if (isset($status['service']) && is_array($status['service'])) {
 		$serviceName = $status['service']['name'] ?? 'Unnamed';
 		$isActive = $status['service']['is_active'] ?? false;
@@ -55,14 +44,11 @@ try {
 		];
 	}
 
-	// 6. Обработка логик и устройств
 	if (isset($status['logic']) && is_array($status['logic'])) {
 		foreach ($status['logic'] as $logicName => $logic) {
 			if (!is_array($logic)) continue;
 
 			$logicStart = isset($logic['start']) ? (int)$logic['start'] : 0;
-
-			// 6.1 Добавляем логику в logics
 			$logicKey = 'logic_' . $logicName;
 			$response['data']['logics'][$logicKey] = [
 				'start' => $logicStart,
@@ -71,7 +57,6 @@ try {
 				'type' => $logic['type'] ?? 'Unknown'
 			];
 
-			// 6.2 Устройства RX/TX
 			if (!empty($logic['rx'])) {
 				$response['data']['devices'][$logic['rx']['name']] = [
 					'start' => $logic['rx']['start'],
@@ -88,7 +73,7 @@ try {
 				];
 			}
 
-			// 6.3 Модули
+
 			if (isset($logic['module']) && is_array($logic['module'])) {
 				foreach ($logic['module'] as $moduleName => $module) {
 					if (!is_array($module)) continue;
@@ -102,7 +87,6 @@ try {
 						'module' => $moduleName
 					];
 
-					// Связи модуль-логика
 					if (!isset($response['data']['module_logic'][$moduleName])) {
 						$response['data']['module_logic'][$moduleName] = [];
 					}
@@ -110,12 +94,10 @@ try {
 						$response['data']['module_logic'][$moduleName][] = $logicName;
 					}
 
-					// Узлы модуля
 					if (isset($module['connected_nodes']) && is_array($module['connected_nodes'])) {
 						foreach ($module['connected_nodes'] as $nodeName => $nodeData) {
 							$nodeKey = 'logic_' . $logicName . '_node_' . $nodeName;
 
-							// Формат: массив с ключами callsign и start
 							if (is_array($nodeData) && isset($nodeData['start'])) {
 								$response['data']['nodes'][$nodeKey] = [
 									'start' => (int)$nodeData['start'],
@@ -131,13 +113,11 @@ try {
 				}
 			}
 
-			// 6.4 Узлы рефлектора
+
 			if (($logic['type'] ?? '') === 'Reflector') {
 				if (isset($logic['connected_nodes']) && is_array($logic['connected_nodes'])) {
 					foreach ($logic['connected_nodes'] as $nodeName => $nodeData) {
 						$nodeKey = 'logic_' . $logicName . '_node_' . $nodeName;
-
-						// Формат: массив с callsign и start
 						if (is_array($nodeData) && isset($nodeData['start'])) {
 							$response['data']['nodes'][$nodeKey] = [
 								'start' => (int)$nodeData['start'],
@@ -153,7 +133,6 @@ try {
 		}
 	}
 
-	// 7. Обработка линков
 	if (isset($status['link']) && is_array($status['link'])) {
 		foreach ($status['link'] as $linkName => $link) {
 			if (!is_array($link)) continue;
@@ -162,15 +141,11 @@ try {
 			$isConnected = $link['is_connected'] ?? false;
 			$link_destination = $link['destination']['logic'];
 			$link_source = $link['source']['logic'];
-
-			// Определяем время старта
 			$linkStart = 0;
 			if (($isActive || $isConnected) && isset($link['start']) && $link['start'] > 0) {
 				$linkStart = (int)$link['start'];
 			}
 
-			// Связи линка с логиками (source и destination)
-			// Источник (source)
 			if (isset($link['source']['logic']) && !empty($link['source']['logic'])) {
 				$sourceLogic = $link['source']['logic'];
 				if (!isset($response['data']['link_logic'][$sourceLogic])) {
@@ -181,7 +156,6 @@ try {
 				}
 			}
 
-			// Назначение (destination)
 			if (isset($link['destination']['logic']) && !empty($link['destination']['logic'])) {
 				$destLogic = $link['destination']['logic'];
 				if (!isset($response['data']['link_logic'][$destLogic])) {
@@ -196,7 +170,6 @@ try {
 				'is_active' => $isActive,
 				'is_connected' => $isConnected,
 				'start' => $linkStart,
-				// 'duration' => $link['duration'] ?? 0,
 				'timeout' => $link['timeout'] ?? 0,
 				'default_active' => $link['default_active'] ?? false,
 				'source' => $link['source'] ?? [],
@@ -205,7 +178,7 @@ try {
 		}
 	}
 
-	// 8. Статистика
+
 	$response['meta'] = [
 		'counts' => [
 			'devices' => count($response['data']['devices']),
@@ -217,7 +190,7 @@ try {
 		'session_id' => session_id()
 	];
 
-	// 9. Отправляем ответ
+
 	echo json_encode($response, JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {
 	http_response_code(500);
