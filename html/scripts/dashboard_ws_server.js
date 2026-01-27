@@ -436,8 +436,8 @@ class CommandParser {
 				handler: (match) => {
 					const logic = match[2];
 
-					// Reflector's has not have timers!?
-					//this.sm.stopTimer(`logic_${logic}`);
+					// Reflector's has timers!
+					this.sm.stopTimer(`logic_${logic}`);
 					const nodes = this.connections.getAllTo(logic);
 					for (let i = 0; i < nodes.length; i++) {
 						const node = nodes[i];
