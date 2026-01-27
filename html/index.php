@@ -73,24 +73,10 @@ if (!file_exists($auth_file)) {
 				<div class="divTable">
 					<div class="divTableBody">
 						<div class="divTableRow center">
-							<!-- <div class="divTableHeadCell noMob" style="width:250px;">Radio Status</div>
-							<div class="divTableHeadCell noMob">TX Freq.</div>
-							<div class="divTableHeadCell noMob">RX Freq.</div>
-							<div class="divTableHeadCell noMob">Radio Mode</div>
-							<div class="divTableHeadCell noMob">Modem Port</div>
-							<div class="divTableHeadCell noMob">Modem Speed</div>
-							<div class="divTableHeadCell noMob">TCXO Freq.</div>
-							<div class="divTableHeadCell noMob">Modem Type</div> -->
+							
 						</div>
 						<div class="divTableRow center">
-							<!-- <div class="divTableCell middle cell_content" style="font-weight:bold;padding:2px;">IDLE</div>
-							<div class="divTableCell cell_content middle noMob" style="background: #949494;">145.575 MHz</div>
-							<div class="divTableCell cell_content middle noMob" style="background: #949494;">144.975 MHz</div>
-							<div class="divTableCell cell_content middle noMob" style="background: #949494;">Duplex</div>
-							<div class="divTableCell cell_content middle noMob" style="background: #949494;">/dev/ttyAMA0</div>
-							<div class="divTableCell cell_content middle noMob" style="background: #949494;">115,200 bps</div>
-							<div class="divTableCell cell_content middle noMob" style="background: #949494;">14.7456 MHz</div>
-							<div class="divTableCell cell_content middle noMob" style="background: #949494;">MMDVM_HS_Dual_Hat-v.1.6.1</div> -->
+							
 						</div>
 					</div>
 				</div>

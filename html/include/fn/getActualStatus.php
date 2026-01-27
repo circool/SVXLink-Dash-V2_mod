@@ -419,24 +419,20 @@ function getActualStatus(bool $forceRebuild = false): array
 		$logic['is_active'] = true; 
 
 		if ($logicType === 'Reflector') {
-			if (defined("DEBUG") && DEBUG) dlog("$ver: ********** Рефлектор $logicName ...", 4, "DEBUG");
-			if (defined("DEBUG") && DEBUG) dlog("$ver: Включаем рефлектор $logicName", 4, "DEBUG");
+			
 			$logic['is_connected'] = true;
 
 			// Ищем 1 последнюю строку Connected nodes и обновляем массив connected_nodes
 			$or_conditions[] = "Connected nodes:";
 			$logConnectedNode = getLogTailFiltered(1, $required_condition, $or_conditions, $logCount)[0];
 			unset($or_conditions);
-
-			// $logConnectedNode = trim(`tail -100000 "$logPath" | grep "$logicName: Connected nodes:" | tail -1`);
-			if (defined("DEBUG") && DEBUG) dlog("$ver: Нашлась строка с данными о подключении узлов?: " . ($logConnectedNode ? "YES" : "NO"), 4, "DEBUG");
-			$nodesConnectingTime = getLineTime($logConnectedNode);
-
+			if(isset($logConnectedNode)){
+				$nodesConnectingTime = getLineTime($logConnectedNode);
+			}
 			$nodesTimestamp = !empty($logConnectedNode) ? $nodesConnectingTime : 0; // @todo А зачем мне проверять время на 0?
 
 			//Убедимся что время распарсилось
 			if ($nodesTimestamp === false) {
-				if (defined("DEBUG") && DEBUG) dlog("$ver: Время не правильное, пропускаю данные о подключении узлов", 2, "WARNING");
 				continue;
 			}
 
@@ -457,13 +453,10 @@ function getActualStatus(bool $forceRebuild = false): array
 								'start' => $nodesTimestamp, // Сохраняем время получения данных
 								'type' => 'Node'
 							];
-							if (defined("DEBUG") && DEBUG) dlog("$ver: Добавлен $baseCallsign ($fullCallsign) к узлам $logicName ", 4, "DEBUG");
 						}
 					}
 				}
 			}
-			if (defined("DEBUG") && DEBUG) dlog("$ver: Обновлен список подключенных узлов у $logicName: " . count($logic['connected_nodes']) . " узла/узлов", 4, "DEBUG");
-
 
 			// @todo Разговорные группы Временный монитор			
 			$or_conditions[] = "emporary monitor";
@@ -472,34 +465,22 @@ function getActualStatus(bool $forceRebuild = false): array
 
 			if (!empty($logLineTM) !== false) {
 
-				if (defined("DEBUG") && DEBUG) dlog("$ver: для $logicName найдено " . count($logLineTM) . " строк временно мониторингуемых групп", 4, "DEBUG");
 
 				foreach ($logLineTM as $index => $line) {
 					if (empty($line)) {
-						if (defined("DEBUG") && DEBUG) dlog("$ver: пропускаю запись  $index как пустую", 4, "DEBUG");
 						continue;
 					}
-					if (defined("DEBUG") && DEBUG) dlog("$ver: работаю с  $index : $line", 4, "DEBUG");
-
 
 					if (preg_match('/#(\d+)$/', $line, $matches)) {
 						$tgNumber = $matches[1];
 						if (strpos($line, 'timeout') !== false) {
 							$groupStates[$tgNumber] = false;
-							if (defined("DEBUG") && DEBUG) dlog("$ver: Временный мониторинг № $index$index: TG#$tgNumber отмечен INACTIVE", 4, "DEBUG");
 						} else if (strpos($line, 'Add') !== false || strpos($line, 'Refresh') !== false) {
 							$groupStates[$tgNumber] = true;
-							if (defined("DEBUG") && DEBUG) dlog("$ver: Временный мониторинг № $index$index: TG#$tgNumber отмечен ACTIVE", 4, "DEBUG");
-						} else {
-							if (defined("DEBUG") && DEBUG) dlog("$ver: Временный мониторинг № $index$index: Неизвестное действие TG#$tgNumber: " . substr($line, 0, 100), 2, "WARNING");
 						}
-					} else {
-						if (defined("DEBUG") && DEBUG) dlog("$ver: Временный мониторинг №: $index: Не смог разобрать строку: " . substr($line, 0, 100), 2, "WARNING");
 					}
 				}
-				if (defined("DEBUG") && DEBUG) dlog("$ver: Обработал " . count($logLineTM) . " записей о временном мониторинге ", 4, "DEBUG");
-			} else {
-				if (defined("DEBUG") && DEBUG) dlog("$ver: Не нашлось записей о временном мониторинге для $logicName", 4, "DEBUG");
+				
 			}
 
 			// @bookmark Заполняю группы Временный монитор
@@ -507,16 +488,11 @@ function getActualStatus(bool $forceRebuild = false): array
 			if (isset($groupStates)) {
 				foreach ($groupStates as $tgNumber => $isActive) {
 					if ($isActive) {
-						if (defined("DEBUG") && DEBUG) dlog("$ver: добавляю группу $tgNumber ", 4, "DEBUG");
+						
 						$activeTMGroups[] = $tgNumber;
-					} else {
-						if (defined("DEBUG") && DEBUG) dlog("$ver: пропускаю группу $tgNumber как неактивную", 4, "DEBUG");
 					}
 				}
 			}
-
-
-			if (defined("DEBUG") && DEBUG) dlog("$ver: Получаю выбранную разговорную группу", 4, "DEBUG");
 
 			// @bookmark Получаем текущие значения для выбранной группы
 			$selectedTG = $logic['talkgroups']['selected'];
@@ -525,20 +501,18 @@ function getActualStatus(bool $forceRebuild = false): array
 			unset($or_conditions);
 			if ($logLinesSG !== false) {
 				$logLineSG = $logLinesSG[0];
-				if (defined("DEBUG") && DEBUG) dlog("$ver: Разбираю строку $logLineSG", 4, "DEBUG");
+				
 				if (preg_match('/Selecting TG #(\d+)/', $logLineSG, $match)) {
-					if (defined("DEBUG") && DEBUG) dlog("$ver: Отобрал номер - " . $match[1], 4, "DEBUG");
+					
 					$selectedTG = ($match[1] == '0')
 						? $logic['talkgroups']['default']
 						: (int)$match[1];
 
-					if (defined("DEBUG") && DEBUG) dlog("$ver: Выбрана разговорная группа $selectedTG", 4, "DEBUG");
+					
 					// УДАЛЯЕМ выбранную группу из временного мониторинга
 					$key = array_search($selectedTG, $activeTMGroups);
 					if ($key !== false) {
-						if (defined("DEBUG") && DEBUG) {
-							dlog("$ver: Удаляю активную группу $selectedTG из временного мониторинга", 4, "DEBUG");
-						}
+						
 						unset($activeTMGroups[$key]);
 					}
 				}
