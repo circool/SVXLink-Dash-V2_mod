@@ -1,146 +1,109 @@
-![Project status](https://img.shields.io/badge/Status-Testing-red?style=flat)
+![Project Status](https://img.shields.io/badge/Status-Testing-red?style=flat)
 ![Version](https://img.shields.io/badge/Version-0.4.x-red?style=flat)
-![Licensy](https://img.shields.io/badge/Licensy-GNU_FDL_v1.3-green?style=flat)
+![License](https://img.shields.io/badge/License-GNU_FDL_v1.3-green?style=flat)
 
-❌  Please do not download this fork until it is announced to be ready!
-    
-    To satisfy interest, an intermediate version (is beta-testing ready) is available in this branch
 
 # Svxlink Dashboard
 
-A completely rewritten SVXLink dashboard implementation with modern microservices architecture, preserving the audio monitoring system from the original project.
+A functional beta version.
+
 
 ## Inspiration
 
 This project was inspired by the functionality of:
+
 - [SVXLink-Dashboard-V2 by F5VMR](https://github.com/f5vmr/SVXLink-Dash-V2)
 
-and design from:
+and the design of
+
 - [WPSD Project](https://w0chp.radio/wpsd/)
 
-## License and Attribution
+## License
 
-### Design Components
-This project incorporates design elements derived from the **WPSD Project**, 
-distributed under the **GNU Free Documentation License v1.3**.
+The project incorporates design elements derived from the WPSD Project (styles and element layout),
+distributed under the GNU FDL v1.3 license.
 
-**Original Copyright:** © 2023 WPSD Project Development Team, et al.  
-**License:** GNU FDL v1.3  
-**Special Terms:** No Invariant Sections, No Front-Cover Texts, No Back-Cover Texts
+Original copyright: Copyright © 2023 WPSD Project Development Team, et al.
 
-### Audio System Components
-The real-time audio monitoring system (WebSocket server and client) is preserved from the original SVXLink-Dashboard-V2 project.
+## Description
 
-### Code Components
-- Audio monitoring system: Preserved from original SVXLink-Dashboard-V2
-- Backend architecture: Completely rewritten
-- UI/UX: Redesigned from scratch
+A fully rewritten implementation of an SVXLink control panel with a modern architecture.
 
-### Compliance with GFDL v1.3
-- All original copyright notices preserved
-- This derivative work licensed under same terms
-- Full license text included in LICENSE file
-- Original English license version prevails for interpretation
+Detailed technical information is available in **PROJECT_DETAILS.md**
 
 ## Features
 
-### Modern Architecture
-- New server-side architecture, completely rewritten
-- Microservices approach
-- Improved performance and scalability
+This is a tested and functional version, though it is still under active development (minor issues are being fixed, approaches and algorithms optimized, and features added). Please be patient.
 
-### Redesigned Interface
-- WSPD-style user interface
-- Responsive design
-- Modern UI/UX principles
+I have made every effort to ensure you don't encounter difficulties; however, there's always a chance that the instructions may contain inaccuracies or outdated information.
 
-### Enhanced Monitoring
+### New Approach
+
+The panel is designed for SVXLink owners/administrators, reflecting the server's real-time[^note1] status and allowing control over its state[^note2].
+
+### Modern Interface
+
+- Customizable multi-language interface in the WPSD style
+![Menu](./readme_images/top_menu_en.jpg)
+![Menu](./readme_images/top_menu_rus.jpg)
+
+### Extended Monitoring
+
 - Informative status panel with connection information
-- Reflectors, Talkgroups, Links management
-- Composite device error analysis
 
-![Device](./readme_images/device_condition.jpg)
-
-![Echolink details](./readme_images/echolink_details.jpg)
-
-![Frn mode](./readme_images/frn_screen.jpg)
+- Available and active modules, connected nodes/conferences/servers, etc. (for EchoLink/Frn modules)
 
 ![Modules](./readme_images/modules.jpg)
 
-![Echolink](./readme_images/el_panel.jpg)
+![EchoLink](./readme_images/el_panel.jpg)
+![Frn](./readme_images/frn_panel.jpg)
 
-![Echolink](./readme_images/frn_panel.jpg)
+- Reflectors, talk groups, links, connected nodes
 
-![Reflector's talkgroups](./readme_images/links.jpg)
+![Reflector Talk Groups](./readme_images/reflectors_panel_rus.jpg)
+![Talk Groups](./readme_images/tg_panel.jpg)
+![Link Control](./readme_images/link.jpg)
 
-![Composide device with error](./readme_images/multi_devices.jpg)
+- Convenient DTMF keypad controllable by mouse or direct keyboard input for managing the server state, similar to sending control signals over the air
 
-### Preserved Audio Monitoring System
-- **WebSocket audio system** from original project
-- **Live RX audio monitoring** directly in browser
-- **Auto-reconnection** on connection loss
-- **Web Audio API support**
-- **Proven solution** from original implementation
+![DTMF Keypad](./readme_images/dtmf_keypad.jpg)
 
-## Audio System Implementation (Preserved from Original)
+- Audio monitoring of the transmitted signal
 
-### System Components (Inherited)
+- Extended information from the active module
+![EchoLink Conference Info](./readme_images/el_conf_details.jpg)
+![Frn Nodes](./readme_images/frn_details.jpg)
 
-The audio monitoring system was preserved from the original SVXLink-Dashboard-V2:
+- Historical data (last n on-air events, incoming calls from the network)
 
 
 ## Technical Notes
 
-This is a clean-room implementation inspired by the original SVXLink-Dashboard-V2 but written independently. **The audio monitoring system was preserved from the original project** as a proven and working solution.
+This is an independent implementation, primarily related to the original project by similar principles.
 
-## Project Relationship Notice
 
-### This is NOT a Replacement
-**This project is an independent fork with significant architectural differences** that make it incompatible with the original SVXLink-Dashboard-V2.
+## Important Compatibility Note
 
-### Key Differences:
-- ✅ **Complete backend rewrite** - Different technology stack
-- ✅ **Redesigned UI** - WSPD-style interface
-- ✅ **Independent development path** - Not intended to merge back with original
-- ❌ **Not compatible** with original configurations or data
-- ❌ **Not a drop-in replacement** for the original dashboard
-- ❌ **Separate issue tracking** - Issues should be reported here, not in original repo
+**This project is NOT a replacement or update for the original SVXLink-Dashboard-V2**
 
-### Audio System (Preserved from Original)
 
-| Component | Status | Source |
-|-----------|--------|--------|
-| WebSocket Server (`server.js`) | ✅ Preserved | Original project |
-| Audio Client (`pcm-player.min.js`) | ✅ Preserved | Original project |
-| ALSA Configuration | ✅ Preserved | Original project |
-| Systemd Service | ✅ Preserved | Original project |
+### What was preserved from the original:
 
-### What Was Preserved from Original:
-1. **Complete audio system** - WebSocket server and client
-2. **ALSA Loopback configuration** - Audio capture method
-3. **Systemd service** - Startup management
-4. **Binary PCM protocol** - Audio transmission format
+**The audio monitoring system** was preserved from the [source - f5vmr/SVXLink-Dash-V2](https://github.com/f5vmr/SVXLink-Dash-V2) as a proven and functional solution.
 
-### What Was Rewritten/Changed:
-1. **Entire backend architecture** - Complete overhaul
-2. **User interface** - New design
-3. **Management system** - New approaches
-4. **Component integration** - Different implementation
+
+## For Users of the Original Project
+
+If you are looking for:
+- **Updates for the original SVXLink-Dashboard-V2** → please refer to the [original repository](https://github.com/f5vmr/SVXLink-Dash-V2)
+- **Compatible enhancements** → this project is not for you
+- **A fully reworked alternative** → please continue reading
 
 ## Installation
 
-See `doc/INSTALL.md`
+Deployment instructions are available in `doc/INSTALL.md`
 
-## For Original Version Users
 
-If you need updates or features for the original SVXLink-Dashboard-V2, please refer to the [original repository](https://github.com/f5vmr/SVXLink-Dash-V2/tree/main).
 
-If you're looking for: 
-
-__Updates for original SVXLink-Dashboard-V2__ → Go to original repository
-
-__Compatible improvements__ → This project is not for you
-
-__Completely rewritten alternative__ → Continue reading
-
-__Note:__ This fork represents a completely different architectural approach while preserving the proven audio monitoring system from the original project.
+[^note1]: Radio status, active module, reflector, connected nodes.
+[^note2]: The `DTMF_CTRL_PTY` parameter must be configured for control.

@@ -2,7 +2,7 @@
  * @filesource /scripts/dashboard_ws_server.js
  * @version 0.4.21_release
  * @date 2026.01.22
- * @description Stateful WebSocket сервер для SvxLink Dashboard
+ * @description Stateful WebSocket server
  */
 
 const WebSocket = require('ws');
@@ -113,7 +113,7 @@ class StateManager {
 			lastUpdate: now,
 			metadata: metadata
 		});
-
+		
 		return now;
 	}
 
@@ -121,7 +121,6 @@ class StateManager {
 
 		if (this.timers.has(key)) {
 			this.timers.delete(key);
-
 			const stoppedTimers = [];
 
 			for (const [timerKey, timer] of this.timers.entries()) {
@@ -131,14 +130,10 @@ class StateManager {
 				}
 			}
 
-			if (stoppedTimers.length > 0) {
-				return true;
-			}
-
 			return true;
 		}
 
-		log(`Not found: ${key}`, 'WARNING');
+		log(`Timer not found: ${key}`, 'WARNING');
 		return false;
 	}
 
@@ -225,7 +220,6 @@ class ConnectionHandler {
 				this.add(source, target);
 			}
 		}
-
 	}
 }
 
@@ -463,7 +457,7 @@ class CommandParser {
 				}
 			},
 
-			// "...: ReflectorLogicKAVKAZ: Connected nodes: ..."
+			// "...: ReflectorLogic...: Connected nodes: ..."
 			{
 				regex: /^(.+?): (\S+): Connected nodes: (.+)$/,
 				handler: (match) => {
@@ -473,10 +467,29 @@ class CommandParser {
 					const commands = [];
 
 					commands.push(
-						{ id: `logic_${logic}`, action: 'remove_class', class: 'inactive-mode-cell,disabled-mode-cell,active-mode-cell' },
-						{ id: `logic_${logic}`, action: 'add_class', class: 'paused-mode-cell' },
-						{ id: `logic_${logic}_nodes`, action: 'set_content', payload: '' },
-						{ id: `logic_${logic}_nodes_header`, action: 'set_content', payload: `Nodes [${nodes.length}]` }
+						{
+							id: `logic_${logic}`,
+							action: 'remove_class',
+							class: 'inactive-mode-cell,disabled-mode-cell,active-mode-cell'
+						},
+						{
+							id: `logic_${logic}`,
+							action: 'add_class',
+							class: 'paused-mode-cell'
+						}
+					);
+
+					commands.push(
+						{
+							id: `logic_${logic}_nodes`,
+							action: 'set_content',
+							payload: ''
+						},
+						{
+							id: `logic_${logic}_nodes_header`,
+							action: 'set_content',
+							payload: `Nodes [${nodes.length}]`
+						}
 					);
 
 					for (let i = 0; i < nodes.length; i++) {
@@ -595,9 +608,24 @@ class CommandParser {
 				handler: (match) => {
 					const logic = match[2];
 					return [
-						{ id: `logic_${logic}_groups`, action: 'remove_child', ignoreClass: 'default,monitored' },
-						{ id: `logic_${logic}_groups`, class: 'disabled-mode-cell', action: 'replace_child_classes', oldClass: 'active-mode-cell' },
-						{ id: `logic_${logic}_groups`, class: 'default,active-mode-cell', action: 'replace_child_classes', oldClass: 'default,disabled-mode-cell'},
+						{
+							id: `logic_${logic}_groups`,
+							action: 'remove_child',
+							ignoreClass: 'default,monitored'
+						},
+						{
+							id: `logic_${logic}_groups`,
+							class: 'disabled-mode-cell',
+							action: 'replace_child_classes',
+							oldClass: 'active-mode-cell'
+						},
+
+						{
+							id: `logic_${logic}_groups`,
+							class: 'default,active-mode-cell',
+							action: 'replace_child_classes',
+							oldClass: 'default,disabled-mode-cell'
+						},
 					];
 				}
 			},
@@ -614,8 +642,17 @@ class CommandParser {
 					}
 
 					return [
-						{ id: `logic_${logic}_groups`, action: 'remove_child', ignoreClass: 'default,monitored', },
-						{ id: `logic_${logic}_groups`, action: 'replace_child_classes', oldClass: 'active-mode-cell', class: 'disabled-mode-cell', },
+						{
+							id: `logic_${logic}_groups`,
+							action: 'remove_child',
+							ignoreClass: 'default,monitored',
+						},
+						{
+							id: `logic_${logic}_groups`,
+							action: 'replace_child_classes',
+							oldClass: 'active-mode-cell',
+							class: 'disabled-mode-cell',
+						},
 						{
 							action: "add_child",
 							target: `logic_${logic}_groups`,
@@ -625,8 +662,11 @@ class CommandParser {
 							title: group,
 							payload: group,
 						},
-
-						{ id: `logic_${logic}_group_${group}`, action: "add_class", class: 'active-mode-cell', }
+						{
+							id: `logic_${logic}_group_${group}`,
+							action: "add_class",
+							class: 'active-mode-cell',
+						}
 					];
 				}
 			},
@@ -712,10 +752,15 @@ class CommandParser {
 					for (const relatedLogic of allLogicsForModule) {
 						commands.push(
 							{
-								id: `logic_${relatedLogic}`, action: 'remove_class',
+								id: `logic_${relatedLogic}`,
+								action: 'remove_class',
 								class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell,active-mode-cell'
 							},
-							{ id: `logic_${relatedLogic}`, action: 'add_class', class: 'active-mode-cell' },
+							{
+								id: `logic_${relatedLogic}`,
+								action: 'add_class',
+								class: 'active-mode-cell'
+							},
 						)
 
 						const linksForLogic = this.connections.getAllFrom(relatedLogic)
@@ -727,10 +772,16 @@ class CommandParser {
 								for (const reflector of allLogicsForLink) {
 									if (!allLogicsForModule.includes(reflector)) {
 										commands.push(
-											{ id: `logic_${reflector}`, action: 'remove_class',
-												class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell,active-mode-cell'
-											},
-											{ id: `logic_${reflector}`, action: 'add_class', class: 'paused-mode-cell' },
+										{
+											id: `logic_${reflector}`,
+											action: 'remove_class',
+											class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell,active-mode-cell'
+										},
+										{
+											id: `logic_${reflector}`,
+											action: 'add_class',
+											class: 'paused-mode-cell'
+										},
 										)
 									}
 								}
@@ -748,18 +799,39 @@ class CommandParser {
 					}
 
 					commands.push(
-						{ id: `logic_${logic}`, action: 'remove_class',
+						{
+							// Логику включить
+							id: `logic_${logic}`,
+							action: 'remove_class',
 							class: 'disabled-mode-cell,inactive-mode-cell,active-mode-cell'
 						},
-						{ id: `logic_${logic}`, action: 'add_class', class: 'active-mode-cell' },
 
-						{ id: `logic_${logic}_module_${module}`, action: 'remove_class',
+						{
+							id: `logic_${logic}`,
+							action: 'add_class',
+							class: 'active-mode-cell'
+						},
+						{
+							id: `logic_${logic}_module_${module}`,
+							action: 'remove_class',
 							class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell,disabled-mode-cell'
 						},
-						{ id: `logic_${logic}_module_${module}`, action: 'add_class', class: newclass },
-						{ id: `logic_${logic}_module_${module}`, action: 'set_content', payload: getTimerTooltip(module, this.sm.formatDuration(0)) },
-						{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: module },
-					);
+						{
+							id: `logic_${logic}_module_${module}`,
+							action: 'add_class',
+							class: newclass
+						},
+						{
+							id: `logic_${logic}_module_${module}`,
+							action: 'set_content',
+							payload: getTimerTooltip(module, this.sm.formatDuration(0))
+						},
+						{
+							id: `radio_logic_${logic}_destination`,
+							action: 'set_content',
+							payload: module
+						},
+						);
 					return commands;
 				}
 			},
@@ -784,10 +856,16 @@ class CommandParser {
 								const allLogicsForLink = this.connections.getAllTo(link);
 								for (const reflector of allLogicsForLink) {
 									commands.push(
-										{ id: `logic_${reflector}`, action: 'remove_class',
+										{
+											id: `logic_${reflector}`,
+											action: 'remove_class',
 											class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell,active-mode-cell'
 										},
-										{ id: `logic_${reflector}`, action: 'add_class', class: 'active-mode-cell' },
+										{
+											id: `logic_${reflector}`,
+											action: 'add_class',
+											class: 'active-mode-cell'
+										},
 									)
 								}
 								break;
@@ -796,30 +874,68 @@ class CommandParser {
 						if (hasActiveLinks) break;
 					}
 
-					commands.push(
-						{
-							id: `logic_${logic}`, action: 'remove_class',
-							class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell,active-mode-cell'
-						});
-					
-					if (!hasActiveLinks) {
-						commands.push(
-							{ id: `logic_${logic}`, action: 'add_class', class: 'paused-mode-cell' }
-						);
-					} else {
-						commands.push(
-							{ id: `logic_${logic}`, action: 'add_class', class: 'active-mode-cell' }
-						);
+					let cellClass = 'active-mode-cell';
+					if (!hasActiveLinks) { 
+						cellClass = 'paused-mode-cell';	
 					}
 
 					commands.push(
-						{ id: `logic_${logic}_module_${module}`, action: 'remove_class', class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell' },
-						{ id: `logic_${logic}_module_${module}`, action: 'add_class', class: 'disabled-mode-cell' },
-						{ id: `logic_${logic}_module_${module}`, action: 'set_content', payload: module },
-						{ id: `logic_${logic}_active`, action: 'add_class', class: 'hidden' },
-						{ id: `logic_${logic}_active_header`, action: 'set_content', payload: '' },
-						{ id: `logic_${logic}_active_content`, action: 'set_content', payload: '' },
-						{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: '' },
+						{
+							id: `logic_${logic}`,
+							action: 'remove_class',
+							class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell,active-mode-cell'
+						},
+						{
+							id: `logic_${logic}`,
+							action: 'add_class',
+							class: cellClass
+						}
+					);
+					
+
+					commands.push(
+						// Module
+						{
+							id: `logic_${logic}_module_${module}`,
+							action: 'remove_class',
+							class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell'
+						},
+
+						{
+							id: `logic_${logic}_module_${module}`,
+							action: 'add_class',
+							class: 'disabled-mode-cell'
+						},
+
+						{
+							id: `logic_${logic}_module_${module}`,
+							action: 'set_content',
+							payload: module
+						},
+
+						// Amodule nodes
+						{
+							id: `logic_${logic}_active`,
+							action: 'add_class',
+							class: 'hidden'
+						},
+
+						{
+							id: `logic_${logic}_active_header`,
+							action: 'set_content',
+							payload: ''
+						},
+						{
+							id: `logic_${logic}_active_content`,
+							action: 'set_content',
+							payload: ''
+						},
+
+						{
+							id: `radio_logic_${logic}_destination`,
+							action: 'set_content',
+							payload: ''
+						},
 					);
 					return commands;
 				}
@@ -973,7 +1089,6 @@ class CommandParser {
 								style: 'border: .5px solid #3c3f47;',
 								payload: `<a class="tooltip" href="#"><span><b>Uptime:</b><br>Server ${node}</span>${node}</a>`
 							},
-							// { id: `logic_${logic}_active_content`, action: 'set_content', payload: `<a class="tooltip" href="#"><span><b>Uptime:</b><br>Server ${node}</span>${node}</a>` },
 							{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: `Frn: ${node}` },
 						);
 					}
@@ -1090,13 +1205,11 @@ class CommandParser {
 							);
 						}
 					}
-
 					return commands;
 				}
 			},
 		];
 	}
-
 
 	parse(line) {
 		const trimmed = line.trim();
@@ -1161,12 +1274,12 @@ class CommandParser {
 						};
 					}
 				}
-
 				return null;
+			} else if (this.packetType == "Frn") {
+				// @todo Какая информация интересна от Frn?
 			};
 
 		}
-
 
 		for (const pattern of this.patterns) {
 			const match = trimmed.match(pattern.regex);
@@ -1179,10 +1292,8 @@ class CommandParser {
 				};
 			}
 		}
-
 		return null;
 	}
-
 
 	extractTimestamp(line) {
 		const match = line.match(/^(.+?):/);
@@ -1207,7 +1318,6 @@ class CommandParser {
 
 		return commands;
 	}
-
 
 	initFromWsData(wsData) {
 		if (wsData.module_logic) {
@@ -1272,8 +1382,6 @@ class StatefulWebSocketServerV4 {
 			}
 
 			const responseText = await response.text();
-
-			// Проверяем, что ответ не пустой
 			if (!responseText || responseText.trim() === '') {
 				throw new Error('Empty response from PHP endpoint');
 			}
@@ -1315,7 +1423,6 @@ class StatefulWebSocketServerV4 {
 			this.stats.stateLoadErrors++;
 			log(`Failed to load WS state: ${error.message}`, 'WARNING');
 
-			// Инициализируем пустое состояние
 			this.wsState = {
 				devices: {},
 				modules: {},
@@ -1331,7 +1438,6 @@ class StatefulWebSocketServerV4 {
 		}
 	}
 
-	// Восстановление состояния из полученных данных
 	restoreFromWsState() {
 		const devices = this.wsState.devices || {};
 		const modules = this.wsState.modules || {};
@@ -1602,6 +1708,10 @@ class StatefulWebSocketServerV4 {
 		});
 
 		this.stats.clientsConnected++;
+
+		log(`Сервер v${this.config.version}: Клиент ${clientId} подключен с ${clientIp} (всего: ${this.clients.size})`, 'DEBUG');
+
+		// 1. Отправка приветственного сообщения
 		this.sendWelcome(ws, clientId);
 		if (this.clients.size === 1 && Object.keys(this.wsState.devices).length === 0) {
 			await this.loadWsState();
@@ -1642,6 +1752,9 @@ class StatefulWebSocketServerV4 {
 			this.clients.delete(disconnectedClient);
 			this.stats.clientsDisconnected++;
 
+			log(`Клиент ${clientId} отключен (осталось ${this.clients.size} клиентов)`, 'DEBUG');
+
+			// Останавливаем мониторинг если клиентов не осталось
 			if (this.clients.size === 0) {
 				this.stopLogMonitoring();
 				this.stopDurationTimer();
@@ -1731,7 +1844,6 @@ class StatefulWebSocketServerV4 {
 				this.lineBuffer = '';
 			}
 
-
 			if (this.clients.size > 0) {
 				setTimeout(() => this.startLogMonitoring(), 2000);
 			}
@@ -1762,6 +1874,7 @@ class StatefulWebSocketServerV4 {
 			this.tailProcess.kill('SIGTERM');
 			this.tailProcess = null;
 			this.isMonitoring = false;
+			log('Log monitoring stopped.', 'INFO');
 		}
 	}
 
@@ -1806,6 +1919,9 @@ class StatefulWebSocketServerV4 {
 					chunk: Math.floor(i / chunkSize) + 1,
 					chunks: Math.ceil(allCommands.length / chunkSize)
 				};
+
+				this.broadcast(message);
+
 			}
 		}
 	}
@@ -1829,6 +1945,12 @@ class StatefulWebSocketServerV4 {
 							timestamp: Date.now(),
 							subtype: 'time_updates'
 						};
+
+						const sentCount = this.broadcast(message);
+
+						if (sentCount > 0) {
+							// log(`Отправил ${timeCommands.length} команд обновления времени`,"DEBUG");
+						}
 					}
 				}
 			}

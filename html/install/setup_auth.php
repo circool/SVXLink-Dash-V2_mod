@@ -157,11 +157,11 @@ function createAuthFile()
 				echo "<p class='warning'>⚠️ Please change the password after first login!</p>";
 				echo "</div>";
 
-				// Проверяем доступность файла для index_debug.php
+				// Проверяем доступность файла для index.php
 				echo "<h3>🔍 File Access Test:</h3>";
 				if (file_exists($auth_file) && is_readable($auth_file)) {
 					echo "<p class='success'>✓ File exists and is readable by web server</p>";
-					echo '<p><a href="/index_debug.php"><button>🚀 Go to Dashboard</button></a></p>';
+					echo '<p><a href="/index.php"><button>🚀 Go to Dashboard</button></a></p>';
 				} else {
 					echo "<p class='error'>✗ File created but not accessible by web server</p>";
 					echo "<p>Try setting permissions manually:</p>";

@@ -77,6 +77,7 @@ declare -A files_to_check=(
 	
     
     # Основные файлы в scripts/
+    ["scripts/block_updater.js"]="AJAX blocks update"
     ["scripts/dashboard_ws_client.js"]="WebSocket client"
     ["scripts/dashboard_ws_server.js"]="WebSocket server"
     ["scripts/featherlight.js"]="Library"
