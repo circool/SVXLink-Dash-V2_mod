@@ -12,6 +12,8 @@
 
 ## Unimplemented features.
 
+[ ] Add EchoLink conference server & proxy state to left panel
+
 
 ### Error control and their display. 
 
@@ -24,3 +26,6 @@
 [ ] Implement log message display somewhere in a separate window.
 
 [ ] Any valuable features that fellow amateur radio colleagues might suggest to me.
+
+[ ] Need process alse Talker audio timeout on TG #... messages too - drop Transmitter timer or change transmitt cell color to something specific color
+
