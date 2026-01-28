@@ -27,7 +27,7 @@ function buildLogicData(array $lp_status): array
 
 	$getCellStyle = function ($active, $connected, $hasConnected = false) {
 		if ($hasConnected) {
-	
+
 			if ($active) {
 				return $connected ? "active-mode-cell" : "paused-mode-cell";
 			} else {
@@ -49,7 +49,8 @@ function buildLogicData(array $lp_status): array
 		'tooltip_end' => '</a>'
 	];
 
-	
+	$data['aprs_server'] = $lp_service['aprs_server'];
+
 	$allReflectors = [];
 	$reflectorLinksMap = [];
 
@@ -86,8 +87,8 @@ function buildLogicData(array $lp_status): array
 			foreach ($logic['module'] as $moduleName => $module) {
 				$moduleCanConnected = $module['name'] == "EchoLink" || $module['name'] == "Frn";
 				$moduleClass = $getCellStyle($module['is_active'], $module['is_connected'], $moduleCanConnected);
-				$durationHtml = formatDuration( $module['start'] > 0 ? time() - $module['start'] : 0);
-					$moduleData = [
+				$durationHtml = formatDuration($module['start'] > 0 ? time() - $module['start'] : 0);
+				$moduleData = [
 					'name' => $module['name'],
 					'style' => $moduleClass,
 					'tooltip_start' => $module['start'] > 0 ?
@@ -110,7 +111,7 @@ function buildLogicData(array $lp_status): array
 		$activeModuleNodes = [];
 		if ($activeModule && !empty($activeModule['connected_nodes'])) {
 			foreach ($activeModule['connected_nodes'] as $nodeName => $nodeData) {
-				$durationHtml =formatDuration(!empty($nodeData['start']) ? time() - $nodeData['start'] : 0);
+				$durationHtml = formatDuration(!empty($nodeData['start']) ? time() - $nodeData['start'] : 0);
 
 				$nodeInfo = [
 					'parent' => $activeModule['name'],
@@ -173,15 +174,14 @@ function buildLogicData(array $lp_status): array
 
 								if (isset($tg['selected']) && $group == $tg['selected']) {
 									$groupStyle = 'active-mode-cell';
-								}
-								elseif (!empty($tg['temp_monitoring']) && in_array($group, $tg['temp_monitoring'])) {
+								} elseif (!empty($tg['temp_monitoring']) && in_array($group, $tg['temp_monitoring'])) {
 									$groupStyle = 'paused-mode-cell';
 								}
 
 								if (isset($tg['monitoring']) && in_array($group, $tg['monitoring'])) {
 									$groupStyle .= ' monitored';
 								}
-								
+
 								if (isset($tg['default']) && $group == $tg['default']) {
 									$groupStyle .= ' default'; // или оставить disabled-mode-cell
 								}
@@ -374,7 +374,7 @@ function buildLogicData(array $lp_status): array
 
 			$shortname = trim(str_replace($excl, "", $reflector['name']));
 			if ($shortname === '') {
-				$shortname = $reflector['name']; 
+				$shortname = $reflector['name'];
 			}
 
 			$data['unconnected_reflectors'][$reflectorName] = [
@@ -412,7 +412,7 @@ function buildLogicData(array $lp_status): array
 				if ($shortname === '') {
 					$shortname = $linkName;
 				}
-				$durationHtml = formatDuration( $link['start'] > 0 ? time() - $link['start'] : 0);
+				$durationHtml = formatDuration($link['start'] > 0 ? time() - $link['start'] : 0);
 				$data['unconnected_links'][$linkName] = [
 					'shortname' => $shortname,
 					'name' => $linkName,
@@ -535,14 +535,14 @@ if (!empty($displayData['logics'])) {
 			<?php // @bookmark Reflectors
 			if ($logic['has_reflectors']) {
 				foreach ($logic['reflectors'] as $reflector) : ?>
-					<?php 
+					<?php
 					?>
 					<div class="divTable">
 						<div class="divTableHead" style="background: none; border: none"></div>
 						<div class="divTableBody">
 							<div class="divTableRow center">
 								<div class="divTableHeadCell"><?= getTranslation("Reflector") ?></div>
-									<div id="logic_<?= $reflector['name'] ?>" class="divTableCell cell_content middle <?= $reflector['style'] ?>" <?= $cellStyleStr ?>><?php echo $reflector['tooltip_start'] . $reflector['shortname'] . $reflector['tooltip_end'] ?></div>
+								<div id="logic_<?= $reflector['name'] ?>" class="divTableCell cell_content middle <?= $reflector['style'] ?>" <?= $cellStyleStr ?>><?php echo $reflector['tooltip_start'] . $reflector['shortname'] . $reflector['tooltip_end'] ?></div>
 							</div>
 
 							<?php // @bookmark Link
@@ -597,9 +597,28 @@ if (!empty($displayData['logics'])) {
 			?>
 		</div>
 		<br>
-<?php
-	};
-};
+	<?php
+	}
+}
+
+// @bookmark APRS
+if (isset($displayData['aprs_server'])) : ?>
+	<div class="divTable">
+		<div class="divTableHead"><?= getTranslation('APRS') ?></div>
+	</div>
+	<div class="divTable">
+		<div class="divTableBody">
+			<div class="divTableRow center">
+				<div class="divTableHeadCell"><?= getTranslation('Server') ?></div>
+				<div class="divTableCell cell_content center <?php echo $displayData['aprs_server']['start'] > 0 ? ' active-mode-cell' : ' inactive-mode-cell' ?>">
+					<?= $displayData['aprs_server']['name'] ?>
+				</div>
+			</div>
+		</div>
+	</div>
+	<br>
+
+<?php endif; 
 
 unset(
 	$displayData,
@@ -616,3 +635,4 @@ unset(
 	$moduleCount,
 	$module
 );
+?>

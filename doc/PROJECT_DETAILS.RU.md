@@ -211,6 +211,8 @@
   - `name`: string
   - `is_active`: bool
   - `timestamp_format`: string
+	- `aprs_sever` : array ['start','name']
+	
 
 #### Структура multiple_device[deviceName]
 
