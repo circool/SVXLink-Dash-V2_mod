@@ -14,7 +14,7 @@
 
 [ ] Add EchoLink conference server & proxy state to left panel
 
-[ ] Add APRS server state to left panel
+[+] Add APRS server state to left panel
 
 
 ### Error control and their display. 

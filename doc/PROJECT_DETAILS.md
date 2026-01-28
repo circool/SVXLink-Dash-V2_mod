@@ -175,6 +175,7 @@ Service state data is stored in the session (a single session with a fixed ID is
 - `name`: string
 - `is_active`: bool
 - `timestamp_format`: string
+- `aprs_sever` : array ['start','name']
 
 #### `multiple_device[deviceName]` Structure
 - `device_name`: string (list of transmitters, comma-separated)
