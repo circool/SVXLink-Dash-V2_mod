@@ -1048,6 +1048,7 @@ class CommandParser {
 				}
 			},
 
+			// @bookmark Frn
 			// Frn : login stage 2 completed
 			{
 				regex: /^(.+?): login stage 2 completed: (.+)$/,
@@ -1138,6 +1139,7 @@ class CommandParser {
 				}
 			},
 
+			// @bookmark Links
 			// Activating link
 			{
 				regex: /^(.+?): Activating link (\S+)$/,
@@ -1209,6 +1211,30 @@ class CommandParser {
 					return commands;
 				}
 			},
+
+			// @bookmark APRS
+			// APRS connected
+			{
+				regex: /^(.+?): Connected to APRS server (\S+) on port (\d+)$/,
+				handler: (match) => {
+					const aprs = match[2];
+					const port = match[3];
+					return [
+						{ id: 'aprs_status', action: 'replace_class', new_class: 'active-mode-cell', old_class: 'inactive-mode-cell' }
+					];
+				},
+			},
+			// APRS Disconnected
+			{
+				regex: /^(.+?): \*\*\* WARNING: Disconnected from APRS server$/,
+				handler: (match) => {				
+					return [
+						{ id: 'aprs_status', action: 'replace_class', new_class: 'inactive-mode-cell', old_class: 'active-mode-cell' }
+					];
+				},
+			},
+
+
 		];
 	}
 

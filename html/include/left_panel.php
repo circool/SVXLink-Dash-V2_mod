@@ -610,7 +610,7 @@ if (isset($displayData['aprs_server'])) : ?>
 		<div class="divTableBody">
 			<div class="divTableRow center">
 				<div class="divTableHeadCell"><?= getTranslation('Server') ?></div>
-				<div class="divTableCell cell_content center <?php echo $displayData['aprs_server']['start'] > 0 ? ' active-mode-cell' : ' inactive-mode-cell' ?>">
+				<div id="aprs_status" class="divTableCell cell_content center <?php echo $displayData['aprs_server']['start'] > 0 ? ' active-mode-cell' : ' inactive-mode-cell' ?>">
 					<?= $displayData['aprs_server']['name'] ?>
 				</div>
 			</div>
