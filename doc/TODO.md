@@ -8,14 +8,19 @@
 
 [ ] When reflector connected ("...: ReflectorLogic...: Connected nodes: ..."), reflector's cell set to orange color(paused) instead green (connected)
 
-[ ] When reflector disconnected, need also clear tooltip timer instead stopping timer only
+[+] When reflector disconnected, need also clear tooltip timer instead stopping timer only
+
+[ ] Squelch messages must to stop collecting packet El chat message parsing
 
 ## Unimplemented features.
 
 [+] Add EchoLink conference server & proxy state to left panel
 
 [+] Add APRS server state to left panel
+[+] Macro commands must use logic-specific `DTMF_CTRL_PTY` instead `$_SESSION_['DTMF_CTRL_PTY']`
 
+[+] DTMF Keypad need handling target logic selector
+[+] Reflector link need handling target logic selector too
 
 ### Error control and their display. 
 

@@ -1,8 +1,8 @@
 <?php
 
 /**
- * @version 0.4.2.release
- * @date 2026.01.26
+ * @version 0.4.3.release
+ * @date 2026.01.30
  * @author vladimir@tsurkanenko.ru
  * @filesource /include/reflector_activity.php 
  */
@@ -44,17 +44,12 @@ require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getLineTime.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getReflectorHistory.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_link'])) {
-	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/dtmf_handler.php';
-	exit;
-}
-
 function getReflectorActivityContent(): string
 {
 	if (isset($_SESSION['TIMEZONE'])) {
 		date_default_timezone_set($_SESSION['TIMEZONE']);
 	}
-	
+
 	$status = $_SESSION['status'];
 	$refl_logics = $status['logic'] ?? [];
 	$refl_links = $status['link'] ?? [];
@@ -71,11 +66,10 @@ function getReflectorActivityContent(): string
 		$linkData = null;
 		$activateCmd = '';
 		$deactivateCmd = '';
-		$dtmfPath = '';
+		$sourceLogicName = '';
 		$isLinkConnected = false;
 		$isToggleEnabled = false;
 		$foundLinkName = '';
-		$sourceLogicName = '';
 
 		foreach ($refl_links as $linkName => $link) {
 			if (
@@ -96,14 +90,16 @@ function getReflectorActivityContent(): string
 				}
 
 				if (isset($link['source']['command'])) {
-					$activateCmd = $link['source']['command']['activate_command'] ?? '' . '#';
-					$deactivateCmd = $link['source']['command']['deactivate_command'] ?? '' . '#';
+					$activateCmd = $link['source']['command']['activate_command'] ?? '';
+					$deactivateCmd = $link['source']['command']['deactivate_command'] ?? '';
 				}
 
 				$sourceLogicName = $link['source']['logic'] ?? '';
+
+				// Проверяем, есть ли dtmf_cmd у source логики
 				if ($sourceLogicName && isset($refl_logics[$sourceLogicName])) {
-					$dtmfPath = $refl_logics[$sourceLogicName]['dtmf_cmd'] ?? '';
-					$isToggleEnabled = !empty($dtmfPath);
+					$dtmfCmd = $refl_logics[$sourceLogicName]['dtmf_cmd'] ?? '';
+					$isToggleEnabled = !empty($dtmfCmd);
 				}
 				break;
 			}
@@ -126,10 +122,10 @@ function getReflectorActivityContent(): string
 		$html .= '<div style="padding-top:6px; position: relative;">';
 		$html .= '<input id="' . $toggleId . '" class="toggle toggle-round-flat link-toggle" type="checkbox"';
 		$html .= ' name="display-lastcaller" value="ON" aria-label="' . htmlspecialchars($titleText) . '"';
-		$html .= ' data-logic-name="' . htmlspecialchars($refl_name) . '"';
+		$html .= ' data-reflector-name="' . htmlspecialchars($refl_name) . '"';
+		$html .= ' data-source-logic="' . htmlspecialchars($sourceLogicName) . '"';
 		$html .= ' data-activate-cmd="' . htmlspecialchars($activateCmd) . '"';
 		$html .= ' data-deactivate-cmd="' . htmlspecialchars($deactivateCmd) . '"';
-		$html .= ' data-dtmf-path="' . htmlspecialchars($dtmfPath) . '"';
 		$html .= ' ' . $checkedAttr . ' ' . $disabledAttr;
 		$html .= ' onchange="setLinkState(this)">';
 		$html .= '<label for="' . $toggleId . '"></label>';
@@ -195,8 +191,6 @@ function getReflectorActivityContent(): string
 		$html .= '</tbody>';
 		$html .= '</table>';
 
-		
-
 		$history = getReflectorHistory($refl_name);
 
 		$html .= '<div class="larger" style="vertical-align: bottom; font-weight:bold;text-align:left;margin-top:12px;">';
@@ -238,14 +232,14 @@ function getReflectorActivityContent(): string
     function setLinkState(toggleElement) {
         if (toggleElement.disabled) return;
         
-        const logicName = toggleElement.getAttribute("data-logic-name");
+        const reflectorName = toggleElement.getAttribute("data-reflector-name");
+        const sourceLogicName = toggleElement.getAttribute("data-source-logic");
         let activateCmd = toggleElement.getAttribute("data-activate-cmd");
         let deactivateCmd = toggleElement.getAttribute("data-deactivate-cmd");
-        const dtmfPath = toggleElement.getAttribute("data-dtmf-path");
         const isChecked = toggleElement.checked;
         
-        if (!dtmfPath || dtmfPath.trim() === "") {
-            showLinkToast("DTMF path not configured for this link", "error");
+        if (!sourceLogicName || sourceLogicName.trim() === "") {
+            console.error("Source logic not configured for:", reflectorName);
             toggleElement.checked = !isChecked;
             return;
         }
@@ -253,91 +247,63 @@ function getReflectorActivityContent(): string
         let dtmfCommand = isChecked ? activateCmd : deactivateCmd;
         if (!dtmfCommand || dtmfCommand.trim() === "") {
             const action = isChecked ? "activate" : "deactivate";
-            showLinkToast(`${action} command not configured for this link`, "error");
+            console.error(action + " command not configured for:", reflectorName);
             toggleElement.checked = !isChecked;
             return;
         }
         
+        // Добавляем # в конец команды если его нет
+        if (!dtmfCommand.endsWith("#")) {
+            dtmfCommand += "#";
+        }
+        
+        // Блокируем toggle на время отправки
         toggleElement.disabled = true;
         const originalOpacity = toggleElement.style.opacity;
         toggleElement.style.opacity = "0.7";
         
-        dtmfCommand += "#";
-        
-        fetch(window.location.href, {
+        // Отправляем запрос к dtmf_handler.php
+        fetch("/include/dtmf_handler.php", {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
             },
             body: new URLSearchParams({
                 command: dtmfCommand,
-                source: "reflector_link",
+                source: sourceLogicName,
                 ajax_link: "true"
             })
-        }).finally(() => {
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("HTTP error: " + response.status);
+            }
+            return response.text();
+        })
+        .then(jsCode => {
+            // Выполняем JavaScript код от dtmf_handler.php
+            try {
+                eval(jsCode);
+            } catch (e) {
+                console.error("Error executing toast JS:", e);
+            }
+        })
+        .catch(error => {
+            console.error("Network error:", error);
+            // Откатываем состояние тоггла при ошибке сети
+            toggleElement.checked = !isChecked;
+        })
+        .finally(() => {
+            // Всегда разблокируем toggle
             toggleElement.disabled = false;
             toggleElement.style.opacity = originalOpacity || "";
-            const action = isChecked ? "activated" : "deactivated";
-            showLinkToast(`Link ${logicName} ${action}`, "success");
         });
     }
     
-    function showLinkToast(message, type) {
-        let toastContainer = document.getElementById("linkToastContainer");
-        if (!toastContainer) {
-            toastContainer = document.createElement("div");
-            toastContainer.id = "linkToastContainer";
-            toastContainer.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 10001;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            `;
-            document.body.appendChild(toastContainer);
-        }
-        
-        const toast = document.createElement("div");
-        toast.className = "link-toast " + type;
-        toast.style.cssText = `
-            padding: 12px 20px;
-            border-radius: 6px;
-            font-weight: bold;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-            color: white;
-            background: ${type === "success" ? "#2c7f2c" : "#8C0C26"};
-            opacity: 0;
-            transform: translateX(100%);
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            min-width: 250px;
-            max-width: 350px;
-            word-wrap: break-word;
-        `;
-        toast.innerHTML = message;
-        toastContainer.appendChild(toast);
-        
-        setTimeout(() => {
-            toast.style.opacity = "1";
-            toast.style.transform = "translateX(0)";
-        }, 10);
-        
-        setTimeout(() => {
-            toast.style.opacity = "0";
-            toast.style.transform = "translateX(100%)";
-            setTimeout(() => {
-                if (toast.parentNode === toastContainer) {
-                    toastContainer.removeChild(toast);
-                }
-            }, 300);
-        }, 3000);
-    }
-    
+    // Инициализация если нужно
     if (typeof window.linkStateHandlerInitialized === "undefined") {
         window.linkStateHandlerInitialized = true;
         window.setLinkState = setLinkState;
-        window.showLinkToast = showLinkToast;
     }
     </script>';
 
@@ -349,5 +315,3 @@ function getReflectorActivityContent(): string
 		<?php echo getReflectorActivityContent(); ?>
 	</div>
 </div>
-
-

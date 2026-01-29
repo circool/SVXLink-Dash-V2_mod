@@ -170,11 +170,11 @@ function getActualStatus(bool $forceRebuild = false): array
 		$multipleDevice = [];
 		$_logics = [];
 		foreach ($logics as $_logic) {
-			$_dtmf_cmd = '';
-			if (isset($svxconfig[$_logic]['DTMF_CTRL_PTY'])) {
-				$_dtmf_cmd = $svxconfig[$_logic]['DTMF_CTRL_PTY'];
-				$_SESSION['DTMF_CTRL_PTY'] = $_dtmf_cmd;
-			}
+			// $_dtmf_cmd = '';
+			// if (isset($svxconfig[$_logic]['DTMF_CTRL_PTY'])) {
+			// 	$_dtmf_cmd = $svxconfig[$_logic]['DTMF_CTRL_PTY'];
+			// 	$_SESSION['DTMF_CTRL_PTY'] = $_dtmf_cmd;
+			// }
 
 			$rxDeviceName = $svxconfig[$_logic]['RX'] ?? '';
 			$txDeviceName = $svxconfig[$_logic]['TX'] ?? '';
