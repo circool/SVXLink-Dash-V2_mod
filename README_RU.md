@@ -64,11 +64,20 @@ Original copyright: Copyright © 2023 WPSD Project Development Team, et al.
 ![Разговорные группы рефлектора](./readme_images/tg_panel.jpg)
 ![Управление линком](./readme_images/link.jpg)
 
+- Отображение статусов APRS и сервера директорий
+
+![APRS](./readme_images/aprs_directory.jpg)
+
 - Удобная DTMF клавиатура  управляемая мышью или прямым вводом с клавиатуры для управления состоянием сервера аналогично передаче управляющих сигналов из эфира
 
 ![Клавиатура DTMF](./readme_images/dtmf_keypad.jpg)
 
 - Аудио мониторинг передаваемого в эфир сигнала 
+
+- Индикация перегрузки аудио-тракта
+
+![Peak Meter](./readme_images/peak_warning.jpg)
+
 
 - Расширенная информация от активного модуля
 ![EchiLink conference info](./readme_images/el_conf_details.jpg)

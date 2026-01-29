@@ -64,11 +64,20 @@ The panel is designed for SVXLink owners/administrators, reflecting the server's
 ![Talk Groups](./readme_images/tg_panel.jpg)
 ![Link Control](./readme_images/link.jpg)
 
+- Display of APRS and directory server statuses.
+
+![APRS](./readme_images/aprs_directory.jpg)
+
 - Convenient DTMF keypad controllable by mouse or direct keyboard input for managing the server state, similar to sending control signals over the air
 
 ![DTMF Keypad](./readme_images/dtmf_keypad.jpg)
 
 - Audio monitoring of the transmitted signal
+
+- Overload indication for the PEAK METER
+
+![Peak Meter](./readme_images/peak_warning.jpg)
+
 
 - Extended information from the active module
 ![EchoLink Conference Info](./readme_images/el_conf_details.jpg)
