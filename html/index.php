@@ -124,18 +124,7 @@ if (!file_exists($auth_file)) {
 			}
 			?>
 
-			<?php
-			if (defined("DEBUG") && constant("DEBUG") === true) {
-				echo '<div id="debug_section">';
-				echo '<div style="margin-top: 20px; padding: 10px; border: 1px solid #ddd;">';
-				echo '<h4>Debug Console Websocket</h4>';
-				echo '<div id="debugLog" style="height: 300px; overflow-y: auto;"></div>';
-				echo '</div>';
-				echo '<div class="debug" id="session_debug">';
-				include $_SERVER["DOCUMENT_ROOT"] . "/include/debug_page.php";
-				echo '</div>';
-			}
-			?>
+			
 
 		</div>
 	</div>
