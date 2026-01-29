@@ -26,7 +26,7 @@
 
 [ ] Show errors in audio devices (incl. multiple devices)
 
-[ ] Show PEAK METER events
+[+] Show PEAK METER events
 
 [ ] Implement verbal indication of reflector's talk groups.
 

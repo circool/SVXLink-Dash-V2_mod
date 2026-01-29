@@ -370,7 +370,7 @@ class CommandParser {
 					return [];
 				}
 			},
-
+			// @bookmark Transmitter
 			// Transmitter [ON/OFF]
 			{
 				regex: /^(.+?): (\w+): Turning the transmitter (ON|OFF)$/,
@@ -403,7 +403,7 @@ class CommandParser {
 					}
 				}
 			},
-
+			// @bookmark Receiver
 			// Squelch OPEN/CLOSED
 			{
 				regex: /^(.+?): (\w+): The squelch is (OPEN|CLOSED).*/,
@@ -426,10 +426,25 @@ class CommandParser {
 						return [
 							{ id: `device_${device}_rx_status`, action: 'set_content', payload: 'STANDBY' },
 							{ id: `device_${device}_rx_status`, action: 'remove_class', class: 'active-mode-cell' },
+							// peak meter off
+							{ id: `device_${device}_rx`, action: 'remove_class', class: 'inactive-mode-cell' },
+							{ id: `device_${device}_rx`, action: 'set_content', payload: device },
 						];
 					}
 				}
 			},
+			// PEAK METER
+			{
+				regex: /^(.+?): (\w+): Distortion detected/,
+				handler: (match) => {
+					const device = match[2];					
+						return [
+							{ id: `device_${device}_rx`, action: 'add_class', class: 'inactive-mode-cell' },
+							{ id: `device_${device}_rx`, action: 'set_content', payload: '*** Distortion! ***' },
+						];					
+				}
+			},
+
 			// @bookmark Reflector
 			// [timestamp]: ReflectorLogic: Disconnected from 255.255.255.255:5300: Host not found
 			{
