@@ -1233,6 +1233,64 @@ class CommandParser {
 					];
 				},
 			},
+			// @bookmark EchoLink directory server
+			{
+				regex: /^(.+?): EchoLink directory status changed to ON$/,
+				handler: (match) => {
+					return [
+						{ id: 'directory_server_status', action: 'replace_class', new_class: 'active-mode-cell', old_class: 'inactive-mode-cell' },
+						// { id: 'directory_server_status', action: 'set_content', payload: 'Connected' }
+					];
+				},
+			},
+			// @bookmark EchoLink proxy server
+			// Connected
+			// @note ipv6 ready
+			{
+				regex: /^(.+?): Connected to EchoLink proxy (.+?):(\d+)$/,
+				handler: (match) => {
+					const host = match[2];
+					return [
+						{ id: 'proxy_server_status', action: 'replace_class', new_class: 'active-mode-cell', old_class: 'inactive-mode-cell' },
+						{ id: 'proxy_server_status', action: 'set_content', payload: host }
+					];
+				},
+			},
+			// Disconnected
+			{
+				regex: /^(.+?): Disconnected from EchoLink proxy (.+?):(\d+)$/,
+				handler: (match) => {
+					const host = match[2];
+					return [
+						{ id: 'proxy_server_status', action: 'replace_class', new_class: 'inactive-mode-cell', old_class: 'active-mode-cell' },
+						{ id: 'proxy_server_status', action: 'set_content', payload: host }
+					];
+				},
+			},
+
+			// WARNINGS
+
+			// WARNING[getaddrinfo]: Could not look up host "aprs.echolink.org": Temporary failure in name resolution
+			{
+				regex: /^(.+?): \*\*\* WARNING\[getaddrinfo\]: Could not look up host "([^"]+)": Temporary failure in name resolution$/,
+				handler: (match) => {
+					const host = match[2];
+					return [
+						{ id: host, action: 'replace_class', new_class: 'paused-mode-cell', old_class: 'disabled-mode-cell' },
+						{ id: host, action: 'set_content',  payload: 'DNS failure' },
+					];
+				},
+			},
+			// *** ERROR: EchoLink directory server DNS lookup failed
+			{
+				regex: /^(.+?): \*\*\* ERROR: EchoLink directory server DNS lookup failed$/,
+				handler: (match) => {
+					return [
+						{ id: 'directory_server_status', action: 'replace_class', new_class: 'inactive-mode-cell', old_class: 'active-mode-cell' },
+						{ id: 'directory_server_status', action: 'set_content', payload: 'DNS failed' }
+					];
+				},
+			},
 
 
 		];
