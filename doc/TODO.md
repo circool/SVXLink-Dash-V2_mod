@@ -6,7 +6,7 @@
 
 [ ] `block_updater.js` does not have access to the updatable elements on the first run.
 
-[ ] When reflector connected ("...: ReflectorLogic...: Connected nodes: ..."), reflector's cell set to orange color(paused) instead green (connected)
+[+] When reflector connected ("...: ReflectorLogic...: Connected nodes: ..."), reflector's cell set to orange color(paused) instead green (connected)
 
 [+] When reflector disconnected, need also clear tooltip timer instead stopping timer only
 
