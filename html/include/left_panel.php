@@ -49,7 +49,10 @@ function buildLogicData(array $lp_status): array
 		'tooltip_end' => '</a>'
 	];
 
-	$data['aprs_server'] = $lp_service['aprs_server'];
+	if (isset($lp_service['aprs_server'])) $data['aprs_server'] = $lp_service['aprs_server'];
+	if (isset($lp_service['status_server'])) $data['status_server'] = $lp_service['status_server'];
+	if (isset($lp_service['directory_server'])) $data['directory_server'] = $lp_service['directory_server'];
+	if (isset($lp_service['proxy_server'])) $data['proxy_server'] = $lp_service['proxy_server'];
 
 	$allReflectors = [];
 	$reflectorLinksMap = [];
@@ -609,16 +612,51 @@ if (isset($displayData['aprs_server'])) : ?>
 	<div class="divTable">
 		<div class="divTableBody">
 			<div class="divTableRow center">
-				<div class="divTableHeadCell"><?= getTranslation('Server') ?></div>
+				<div class="divTableHeadCell"><?= getTranslation('Main') ?></div>
 				<div id="aprs_status" class="divTableCell cell_content center <?php echo $displayData['aprs_server']['start'] > 0 ? ' active-mode-cell' : ' inactive-mode-cell' ?>">
 					<?= $displayData['aprs_server']['name'] ?>
 				</div>
 			</div>
+			<?php if (isset($displayData['status_server'])) : ?>
+			<div class="divTableRow center">
+				<div class="divTableHeadCell"><?= getTranslation('EchoLink') ?></div>
+				<div id="<?= $displayData['status_server']['name'] ?>" class="divTableCell cell_content center <?php echo $displayData['status_server']['has_error'] ? ' inactive-mode-cell' : ' disabled-mode-cell' ?>">
+					<?= $displayData['status_server']['name'] ?>
+				</div>
+			</div>
+			<?php endif; ?>
 		</div>
 	</div>
 	<br>
 
-<?php endif; 
+<?php endif;
+
+// @bookmark EL Directory Server
+if (isset($displayData['directory_server'])) : ?>
+	<div class="divTable">
+		<div class="divTableHead"><?= getTranslation('Directory Server') ?></div>
+	</div>
+	<div class="divTable">
+		<div class="divTableBody">
+			<div class="divTableRow center">
+				<div class="divTableHeadCell"><?= getTranslation('Server') ?></div>
+				<div id="directory_server_status" class="divTableCell cell_content center <?php echo $displayData['directory_server']['start'] > 0 ? ' active-mode-cell' : ' inactive-mode-cell' ?>">
+					<?= getTranslation($displayData['directory_server']['name']) ?>
+				</div>
+			</div>
+			<?php if (isset($displayData['proxy_server'])) : ?>
+				<div class="divTableRow center">
+					<div class="divTableHeadCell"><?= getTranslation('Proxy') ?></div>
+					<div id="proxy_server_status" class="divTableCell cell_content center <?php echo $displayData['proxy_server']['start'] > 0 ? ' active-mode-cell' : ' inactive-mode-cell' ?>">
+						<?= $displayData['proxy_server']['name'] ?>
+					</div>
+				</div>
+			<?php endif ?>
+		</div>
+	</div>
+	<br>
+
+<?php endif;
 
 unset(
 	$displayData,

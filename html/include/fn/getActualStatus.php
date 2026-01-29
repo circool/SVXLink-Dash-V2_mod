@@ -282,14 +282,32 @@ function getActualStatus(bool $forceRebuild = false): array
 		];
 		
 		$locationInfoSection = $svxconfig['GLOBAL']['LOCATION_INFO'] ?? '';
+		
 		if (!empty($locationInfoSection) && isset($svxconfig[$locationInfoSection])) {
+			// APRS
 			$aprsServerList = $svxconfig[$locationInfoSection]['APRS_SERVER_LIST'] ?? '';
 			if (!empty($aprsServerList)) {
+				$serverName = strstr($aprsServerList, ':', true) ?: $aprsServerList;
 				$aprsServer = [
-					'name' => '',
+					'name' => $serverName,
 					'start' => 0
 				];
 				$service['aprs_server'] = $aprsServer;
+			}
+			// STATUS SERVER
+			$statusServerList = $svxconfig[$locationInfoSection]['STATUS_SERVER_LIST'] ?? '';
+			if (!empty($statusServerList)) {
+				$serverName = strstr($statusServerList, ':', true) ?: $statusServerList;
+				$statusServer = [
+					'name' => $serverName,
+					'has_error' => false,
+				];
+				$service['status_server'] = $statusServer;
+				
+				$service['directory_server'] = [
+					'name' => '',
+					'start' => 0,
+				];
 			}
 		}
 
@@ -754,7 +772,6 @@ function getActualStatus(bool $forceRebuild = false): array
 			if (str_contains($aprsLogState[0], "Connected") !== false) {
 				$pattern = '/Connected to APRS server (\S+) on port (\d+)/';
 				if (preg_match($pattern, $aprsLogState[0], $matches)){
-					$status['service']['aprs_server']['name'] = $matches[1];
 					$status['service']['aprs_server']['start'] = getLineTime($aprsLogState[0]);
 				}
 			} elseif (str_contains($aprsLogState[0], "Disconnected") !== false) {
@@ -762,9 +779,52 @@ function getActualStatus(bool $forceRebuild = false): array
 			}
 		}
 	}
-	
-	
-	// @todo El Conference Server/Proxy
+
+
+	// @bookmark EchoLink directory server
+	if (isset($service['directory_server'])) {
+		$required_condition = "EchoLink directory status";
+		$directoryLogState = getLogTailFiltered(1, $required_condition, [], $status['service']['log_line_count']);
+		if ($directoryLogState !== false) {
+			
+			if (str_contains($directoryLogState[0], "changed to ON") !== false) {
+				$status['service']['directory_server']['name'] = "Connected";
+				$status['service']['directory_server']['start'] = getLineTime($directoryLogState[0]);
+			} elseif (str_contains($directoryLogState[0], "ERROR") !== false) {
+				$status['service']['directory_server']['name'] = "Disconnected";
+				$status['service']['directory_server']['start'] = 0;
+			}
+
+			// 28 Jan 2026 19:54:47.899: Connected to EchoLink proxy 44.137.75.93:8100
+			// 28 Jan 2026 19:54:47.938: Disconnected from EchoLink proxy 44.137.75.93:8100
+			$required_condition = "EchoLink proxy";
+			$proxyLogState = getLogTailFiltered(1, $required_condition, [], $status['service']['log_line_count']);
+			if ($proxyLogState !== false) {
+				
+				if (str_contains($proxyLogState[0], "Connected") !== false) {
+					$pattern = '/Connected to EchoLink proxy (\S+)/';
+					if (preg_match($pattern, $proxyLogState[0], $matches)) {
+						$proxyAddress = $matches[1];
+						$proxyName = strstr($proxyAddress, ':', true);
+						if ($proxyName === false) {
+							$proxyName = $proxyAddress;
+							
+						}
+						$proxyStartTime = getLineTime($proxyLogState[0]);
+						$proxyServer = [
+							'name' => $proxyName,
+							'start' => $proxyStartTime,
+						];
+						$status['service']['proxy_server'] = $proxyServer;						
+					}
+				} elseif (str_contains($proxyLogState[0], "Disconnected") !== false && isset($status['service']['proxy_server'])) {
+					$status['service']['proxy_server']['start'] = 0;
+				}
+			}
+		
+		}
+
+	}
 
 	return $status;
 }
