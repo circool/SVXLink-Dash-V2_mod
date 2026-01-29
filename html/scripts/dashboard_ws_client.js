@@ -575,7 +575,7 @@ class DashboardWebSocketClientV4 {
 			element.classList.remove(oldClass);
 			element.classList.add(newClass);
 			if (this.config.debugLevel >= 3) {
-				this.log('INFO', `В  ${cmd.id} класс "${oldClass}" изменен на "${newClass}"`);
+				this.log('INFO', `In  ${cmd.id} class "${oldClass}" changed to "${newClass}"`);
 			}
 
 			return true;

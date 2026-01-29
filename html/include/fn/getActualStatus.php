@@ -96,7 +96,6 @@ function getActualStatus(bool $forceRebuild = false): array
 			return $stub;
 		}
 
-		// Получаем имена линков
 		$linkNames = isset($svxconfig['GLOBAL']['LINKS']) ?
 			array_filter(array_map('trim', explode(",", $svxconfig['GLOBAL']['LINKS'])), 'strlen') : [];
 		$_links = [];
@@ -170,11 +169,6 @@ function getActualStatus(bool $forceRebuild = false): array
 		$multipleDevice = [];
 		$_logics = [];
 		foreach ($logics as $_logic) {
-			// $_dtmf_cmd = '';
-			// if (isset($svxconfig[$_logic]['DTMF_CTRL_PTY'])) {
-			// 	$_dtmf_cmd = $svxconfig[$_logic]['DTMF_CTRL_PTY'];
-			// 	$_SESSION['DTMF_CTRL_PTY'] = $_dtmf_cmd;
-			// }
 
 			$rxDeviceName = $svxconfig[$_logic]['RX'] ?? '';
 			$txDeviceName = $svxconfig[$_logic]['TX'] ?? '';
@@ -193,7 +187,6 @@ function getActualStatus(bool $forceRebuild = false): array
 			}
 
 			$txProcessed = $txDeviceName;
-
 			if (
 				!empty($txDeviceName) &&
 				isset($svxconfig[$txDeviceName]) &&
@@ -204,7 +197,6 @@ function getActualStatus(bool $forceRebuild = false): array
 				$multipleDevice[$txDeviceName] = trim($svxconfig[$txDeviceName]['TRANSMITTERS']);
 			}
 
-			// @since 0.4.1. Разбираем макрокоманды
 			$macroSection = $svxconfig[$_logic]['MACROS'] ?? '';
 			$macroses = [];
 			if (!empty($macroSection) && isset($svxconfig[$macroSection])) {
@@ -302,16 +294,13 @@ function getActualStatus(bool $forceRebuild = false): array
 					'name' => $serverName,
 					'has_error' => false,
 				];
-				$service['status_server'] = $statusServer;
-				
+				$service['status_server'] = $statusServer;				
 				$service['directory_server'] = [
 					'name' => '',
 					'start' => 0,
 				];
 			}
 		}
-
-		
 
 		$callsign = isset($svxconfig['GLOBAL']['LOCATION_INFO'])
 			? ($svxconfig[$svxconfig['GLOBAL']['LOCATION_INFO']]['CALLSIGN'] ?? 'NO CALLSIGN')
@@ -335,7 +324,6 @@ function getActualStatus(bool $forceRebuild = false): array
 	}
 
 	// @bookmark Заполнение конфигурации данными
-
 	if (isset($_SESSION['status']['service']['log_line_count'])) {
 		$count = $_SESSION['status']['service']['log_line_count'] + 100;
 	} else {
@@ -460,15 +448,13 @@ function getActualStatus(bool $forceRebuild = false): array
 			if (preg_match('/Connected nodes:\s*(.+)$/', $logConnectedNode, $matches)) {
 				$nodesStr = trim($matches[1]);
 				$callsigns = array_filter(array_map('trim', explode(',', $nodesStr)));
-				// Заполняем новыми значениями
 				foreach ($callsigns as $fullCallsign) {
 					if (!empty($fullCallsign)) {
-						// Извлекаем базовый позывной (без цифр и символов)
 						if (preg_match('/^([A-Za-z0-9]+)(?:[-\\/][A-Za-z0-9]+)?$/', $fullCallsign, $callMatch)) {
 							$baseCallsign = $callMatch[1];
 							$logic['connected_nodes'][$fullCallsign] = [
 								'callsign' => $baseCallsign,
-								'start' => $nodesTimestamp, // Сохраняем время получения данных
+								'start' => $nodesTimestamp, 
 								'type' => 'Node'
 							];
 						}
@@ -529,7 +515,6 @@ function getActualStatus(bool $forceRebuild = false): array
 				}
 			}
 
-			// Сохраняем обновленные данные
 			$logic['talkgroups']['selected'] = $selectedTG;
 			$logic['talkgroups']['temp_monitoring'] = $activeTMGroups;
 		} else {
@@ -617,9 +602,7 @@ function getActualStatus(bool $forceRebuild = false): array
 									}
 								}
 
-								// Помещаем подключенные узлы в connected_nodes
 								$module['connected_nodes'] = $foundNodes;
-
 								if (count($module['connected_nodes']) !== 0) {
 									$module['is_connected'] = true;
 									$logic['is_connected'] = true;
@@ -780,7 +763,6 @@ function getActualStatus(bool $forceRebuild = false): array
 		}
 	}
 
-
 	// @bookmark EchoLink directory server
 	if (isset($service['directory_server'])) {
 		$required_condition = "EchoLink directory status";
@@ -795,8 +777,8 @@ function getActualStatus(bool $forceRebuild = false): array
 				$status['service']['directory_server']['start'] = 0;
 			}
 
-			// 28 Jan 2026 19:54:47.899: Connected to EchoLink proxy 44.137.75.93:8100
-			// 28 Jan 2026 19:54:47.938: Disconnected from EchoLink proxy 44.137.75.93:8100
+			// ...: Connected to EchoLink proxy 44.137.75.93:8100
+			// ...: Disconnected from EchoLink proxy 44.137.75.93:8100
 			$required_condition = "EchoLink proxy";
 			$proxyLogState = getLogTailFiltered(1, $required_condition, [], $status['service']['log_line_count']);
 			if ($proxyLogState !== false) {
@@ -820,11 +802,8 @@ function getActualStatus(bool $forceRebuild = false): array
 				} elseif (str_contains($proxyLogState[0], "Disconnected") !== false && isset($status['service']['proxy_server'])) {
 					$status['service']['proxy_server']['start'] = 0;
 				}
-			}
-		
+			}		
 		}
-
 	}
-
 	return $status;
 }

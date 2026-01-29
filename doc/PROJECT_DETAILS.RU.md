@@ -133,7 +133,6 @@
 Данные о состоянии сервиса хранятся в сессии (сессия с жестко заданным ID всегда одна для всех элементов, в т.ч. обновляемых AJAX)
 
 
-### ['DTMF_CTRL_PTY'] : string @deprecated see `logic[logicName]['dtmf_cmd']`
 ### ['TIMEZONE'] : string
 
 ### ['status'] : array

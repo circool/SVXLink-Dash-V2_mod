@@ -2,7 +2,7 @@
 
 /**
  * @version 0.4.3.release
- * @date 2026.01.30
+ * @date 2026.01.29
  * @author vladimir@tsurkanenko.ru
  * @filesource /include/reflector_activity.php 
  */
@@ -95,8 +95,6 @@ function getReflectorActivityContent(): string
 				}
 
 				$sourceLogicName = $link['source']['logic'] ?? '';
-
-				// Проверяем, есть ли dtmf_cmd у source логики
 				if ($sourceLogicName && isset($refl_logics[$sourceLogicName])) {
 					$dtmfCmd = $refl_logics[$sourceLogicName]['dtmf_cmd'] ?? '';
 					$isToggleEnabled = !empty($dtmfCmd);
@@ -252,17 +250,14 @@ function getReflectorActivityContent(): string
             return;
         }
         
-        // Добавляем # в конец команды если его нет
         if (!dtmfCommand.endsWith("#")) {
             dtmfCommand += "#";
         }
         
-        // Блокируем toggle на время отправки
         toggleElement.disabled = true;
         const originalOpacity = toggleElement.style.opacity;
         toggleElement.style.opacity = "0.7";
         
-        // Отправляем запрос к dtmf_handler.php
         fetch("/include/dtmf_handler.php", {
             method: "POST",
             headers: {
@@ -281,7 +276,7 @@ function getReflectorActivityContent(): string
             return response.text();
         })
         .then(jsCode => {
-            // Выполняем JavaScript код от dtmf_handler.php
+
             try {
                 eval(jsCode);
             } catch (e) {
@@ -294,13 +289,11 @@ function getReflectorActivityContent(): string
             toggleElement.checked = !isChecked;
         })
         .finally(() => {
-            // Всегда разблокируем toggle
             toggleElement.disabled = false;
             toggleElement.style.opacity = originalOpacity || "";
         });
     }
     
-    // Инициализация если нужно
     if (typeof window.linkStateHandlerInitialized === "undefined") {
         window.linkStateHandlerInitialized = true;
         window.setLinkState = setLinkState;
