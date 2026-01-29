@@ -210,7 +210,10 @@
   - `name`: string
   - `is_active`: bool
   - `timestamp_format`: string
-	- `aprs_sever` : array ['start','name']
+	- `aprs_sever` : array ['start':int,'name':srtring]
+- `status_server` : array ['has_error':bool,'name':string]
+- `directory_server` : array ['start':int,'name':srtring]
+- `proxy_server` : array ['start':int,'name':srtring]
 	
 
 #### Структура multiple_device[deviceName]
