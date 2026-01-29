@@ -103,7 +103,6 @@ Historical summaries are calculated by respective functions for each block. Data
 
 Service state data is stored in the session (a single session with a fixed ID is used for all elements, including those updated via AJAX).
 
-### `['DTMF_CTRL_PTY']` : string
 ### `['TIMEZONE']` : string
 
 ### `['status']` : array

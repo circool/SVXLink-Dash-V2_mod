@@ -36,12 +36,24 @@ if (isset($_SESSION['auth']) && $_SESSION['auth'] === "AUTHORISED") {
 	echo '<a class="menuadmin" href="javascript:void(0)" onclick="openAuthForm()">' . (getTranslation('Login') ?? 'Login') . '</a>';
 }
 
-if (isset($_SESSION['DTMF_CTRL_PTY'])) {
-	include $_SERVER["DOCUMENT_ROOT"] . "/include/keypad.php";
-	echo '<a class="menukeypad" href="javascript:void(0)" onclick="openKeypad()">';
-	echo getTranslation('DTMF') ?? 'DTMF';
-	echo '</a>';
+$is_dtmf_available = false;
+if(isset($_SESSION['status'])){
+	foreach($_SESSION['status']['logic'] as $logics){
+		if($logics['type'] === "Reflector") continue;
+		if(isset($logics['dtmf_cmd'])){
+			$is_dtmf_available = true;
+			break;	
+		}
+	}
+	if ($is_dtmf_available) {
+		include $_SERVER["DOCUMENT_ROOT"] . "/include/keypad.php";
+		echo '<a class="menukeypad" href="javascript:void(0)" onclick="showKeypad()">';
+		echo getTranslation('DTMF') ?? 'DTMF';
+		echo '</a>';
+	}
 }
+
+
 
 if (defined("SHOW_AUDIO_MONITOR") && SHOW_AUDIO_MONITOR) {
 	include $_SERVER["DOCUMENT_ROOT"] . "/include/monitor.php";

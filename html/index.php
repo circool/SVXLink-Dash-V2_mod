@@ -42,7 +42,7 @@ if (!file_exists($auth_file)) {
 	<link rel="stylesheet" type="text/css" href="/css/font-awesome-4.7.0/css/font-awesome.min.css">
 	<link rel="stylesheet" href="/fonts/stylesheet.css">
 	<link rel="stylesheet" href="/css/css.php">
-	<link rel="stylesheet" href="/css/menu.php">
+	<link rel="stylesheet" href="/css/menu.css">
 	<?php if (!defined("WS_ENABLED") || constant("WS_ENABLED") === true): ?>
 		<?php include_once $_SERVER["DOCUMENT_ROOT"] . '/include/websocket_client_config.php'; ?>
 		<link rel="stylesheet" href="/css/websocket_control.css">
@@ -78,15 +78,10 @@ if (!file_exists($auth_file)) {
 			<div id="radioInfo">
 				<div class="divTable">
 					<div class="divTableBody">
-						<div class="divTableRow center">
-							
-						</div>
-						<div class="divTableRow center">
-							
-						</div>
+						<div class="divTableRow center"></div>
+						<div class="divTableRow center"></div>
 					</div>
 				</div>
-
 			</div>
 			<!-- <br class="noMob"> -->
 		</div>
@@ -129,31 +124,34 @@ if (!file_exists($auth_file)) {
 			}
 			?>
 
+			
+
 		</div>
+	</div>
 
-		<div id="footer" class="footer">
-			<?php include $_SERVER['DOCUMENT_ROOT'] . "/include/footer.php"; ?>
-		</div>
+	<div id="footer" class="footer">
+		<?php include $_SERVER['DOCUMENT_ROOT'] . "/include/footer.php"; ?>
+	</div>
 
-		<script>
-			function updateClock() {
-				const now = new Date();
-				document.getElementById('DateTime').textContent =
-					now.toLocaleDateString('ru-RU') + ' ' + now.toLocaleTimeString('ru-RU');
-			}
-			setInterval(updateClock, 1000);
-		</script>
+	<script>
+		function updateClock() {
+			const now = new Date();
+			document.getElementById('DateTime').textContent =
+				now.toLocaleDateString('ru-RU') + ' ' + now.toLocaleTimeString('ru-RU');
+		}
+		setInterval(updateClock, 1000);
+	</script>
 
-		<?php if (!defined("WS_ENABLED") || constant("WS_ENABLED") === true): ?>
-			<?php include_once $_SERVER["DOCUMENT_ROOT"] . '/include/websocket_server.php'; ?>
-			<script src="/scripts/dashboard_ws_client.js"></script>
-		<?php endif; ?>
+	<?php if (!defined("WS_ENABLED") || constant("WS_ENABLED") === true): ?>
+		<?php include_once $_SERVER["DOCUMENT_ROOT"] . '/include/websocket_server.php'; ?>
+		<script src="/scripts/dashboard_ws_client.js"></script>
+	<?php endif; ?>
 
-		<script>
-			window.UPDATE_INTERVAL = <?php echo defined('UPDATE_INTERVAL') ? UPDATE_INTERVAL : 3000; ?>;
-		</script>
-		<script src="/scripts/block_updater.js"></script>
-	
+	<script>
+		window.UPDATE_INTERVAL = <?php echo defined('UPDATE_INTERVAL') ? UPDATE_INTERVAL : 3000; ?>;
+	</script>
+	<script src="/scripts/block_updater.js"></script>
+
 	</div>
 </body>
 
