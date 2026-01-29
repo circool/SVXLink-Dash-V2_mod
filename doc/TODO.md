@@ -10,7 +10,7 @@
 
 [+] When reflector disconnected, need also clear tooltip timer instead stopping timer only
 
-[ ] Squelch messages must to stop collecting packet El chat message parsing
+[+] Squelch messages must to stop collecting packet El chat message parsing
 
 ## Unimplemented features.
 

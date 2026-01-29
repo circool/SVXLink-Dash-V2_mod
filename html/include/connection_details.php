@@ -189,6 +189,9 @@ function getEchoLinkMsg($nodeName): array
 					if (strpos($line, "Turning the transmitter") !== false) {
 						break;
 					};
+					if (strpos($line, "The squelch is") !== false) {
+						break;
+					};
 
 					$clearedLine = removeTimestamp($line);
 					if (!empty($clearedLine)) {
