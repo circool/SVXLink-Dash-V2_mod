@@ -12,14 +12,18 @@
 
 [+] Squelch messages must to stop collecting packet El chat message parsing
 
+[ ] Think of a way to recognize logic when modules are active (for displaying the callsign and destination).
+
 ## Unimplemented features.
 
 [+] Add EchoLink conference server & proxy state to left panel
 
 [+] Add APRS server state to left panel
+
 [+] Macro commands must use logic-specific `DTMF_CTRL_PTY` instead `$_SESSION_['DTMF_CTRL_PTY']`
 
 [+] DTMF Keypad need handling target logic selector
+
 [+] Reflector link need handling target logic selector too
 
 ### Error control and their display. 
@@ -34,5 +38,5 @@
 
 [ ] Any valuable features that fellow amateur radio colleagues might suggest to me.
 
-[ ] Need process alse Talker audio timeout on TG #... messages too - drop Transmitter timer or change transmitt cell color to something specific color
+[ ] Need process also Talker audio timeout on TG #... messages too - drop Transmitter timer or change transmitt cell color to something specific color
 
