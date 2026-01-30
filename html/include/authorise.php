@@ -15,7 +15,7 @@ require_once $_SERVER["DOCUMENT_ROOT"] . "/include/init.php";
 include_once $_SERVER["DOCUMENT_ROOT"] . "/include/fn/getTranslation.php";
 
 ?>
-<link rel="stylesheet" href="/css/menu.php">
+<link rel="stylesheet" href="/css/menu.css">
 <div class="auth-overlay" id="authOverlay"></div>
 <div class="auth-container" id="authContainer" style="display: none;">
 	<div class="auth-form">
