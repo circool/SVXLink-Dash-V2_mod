@@ -174,34 +174,29 @@ Service state data is stored in the session (a single session with a fixed ID is
 - `name`: string
 - `is_active`: bool
 - `timestamp_format`: string
-- `aprs_sever` : array ['start':int,'name':srtring]
-- `status_server` : array ['has_error':bool,'name':string]
-- `directory_server` : array ['start':int,'name':srtring]
-- `proxy_server` : array ['start':int,'name':srtring]
+- `aprs_sever` : array 
+		- `start` : int
+		-	`name` : srtring		
+	- `status_server` : array
+		- `has_error` : bool
+		- `name`. :string
+	- `directory_server` : array 
+		- `start` : int
+		-	`name` : srtring
+	- `proxy_server` : array
+		- `start` : int
+		- `name` : srtring
 
 #### `multiple_device[deviceName]` Structure
 - `device_name`: string (list of transmitters, comma-separated)
 
 ## 6. File Structure Organization
 
-**Actual root path (for reference)**: `/var/www/html/`  
-**Test server URL**: `http://svxlink_development_dashboard.local`
-
-During development, symlinks point to current versions. After development, symlinks will be replaced with production versions. Some files are leftovers from previous versions. The current version is indicated at the beginning of this file.
 
 ```
 /                                       # Project root
 ├── index.php                           # Main page (production)
-├── index_debug.php                     # Main page for debug mode
-├── backup.sh                           # Backup script
-├── clear_and_show_apache_error_log     # View Apache logs
-├── clear_and_show_dashboard_debug_log  # Clear and show debug logs
-├── clear_ans_show_websocketserver_log  # Show WebSocket server logs
-├── fake_log_msg                        # SvxLink test message generator
 ├── favicon.ico                         # Site icon
-├── kill_ws_and_show_log.sh             # Stop WS and show logs
-├── sessions_clear                      # Clear sessions
-├── update_simlink.sh                   # Update symlinks
 ├── websocket_server.log                # WebSocket server log
 ├── ws_state.php                        # WebSocket status
 ├── include/                            # PHP include files
@@ -211,13 +206,13 @@ During development, symlinks point to current versions. After development, symli
 │   ├── browserdetect.php               # Browser detection
 │   ├── change_password.php             # Password change
 │   ├── connection_details.php          # Connection details
-│   ├── debug_page.php                  # Debug data
 │   ├── dtmf_handler.php                # DTMF commands handler
 │   ├── footer.php                      # Footer
 │   ├── init.php                        # Main initialization
 │   ├── js_utils.php                    # JavaScript utilities
 │   ├── keypad.php                      # DTMF keypad
 │   ├── languages/                      # Localizations
+│   │   └── ru.php
 │   ├── left_panel.php                  # Left status panel
 │   ├── logout.php                      # Logout
 │   ├── macros.php                      # Macros
@@ -230,7 +225,6 @@ During development, symlinks point to current versions. After development, symli
 │   ├── session_header.php              # Lightweight session start
 │   ├── settings.php                    # Application settings
 │   ├── top_menu.php                    # Main command menu
-│   ├── update_simlink.sh               # Symlink update script
 │   ├── websocket_client_config.php     # WebSocket client configuration
 │   ├── websocket_server.php            # WebSocket server (PHP)
 │   ├── exct/                           # Versioned sources
@@ -241,31 +235,20 @@ During development, symlinks point to current versions. After development, symli
 │       ├── getTranslation.php          # Translation handling
 │       ├── compareTimestampMilis.php   # 
 │       ├── getLineTime.php             # Time from log string
-│       ├── dlog.php                    # Debug logging
 │       ├── formatDuration.php          # Formatting duration string
 │       ├── parseXmlTags.php            # XML tag parsing
 │       ├── removeTimestamp.php         # Remove timestamp from log line
-│       ├── getActualStatus.php         # Build initial system state
-│       └── exct/                       # Versioned sources
-│           ├── getActualStatus.0.4.0.php
-│           └── ...
+│       └── getActualStatus.php         # Build initial system state
 ├── scripts/                            # JS scripts
 │   ├── dashboard_ws_client.js          # WebSocket state client
 │   ├── dashboard_ws_server.js          # WebSocket state server
 │   ├── featherlight.js                 # Modal window library
 │   ├── jquery.min.js                   # jQuery library
-│   ├── svxlink-audio-proxy-server.js   # WebSocket Audio Monitor :8001
-│   ├── restart_audio_proxy_server      # Restart audio proxy server
-│   ├── show_audio_proxy_server_log     # Show audio proxy server logs
-│   ├── update_simlink.sh               # Symlink update script
-│   └── exct/                           # Versioned sources
-│       ├── dashboard_ws_server.4.17.js # WebSocket server v4.17
-│       ├── dashboard_ws_client.4.2.js  # WebSocket client v4.2
-│       └── svxlink-audio-proxy-server.0.0.2.js # Audio Monitor 0.0.2
+│   └── svxlink-audio-proxy-server.js   # WebSocket Audio Monitor :8001
 ├── css/                                # Styles
 │   ├── css.php                         # Main styles
 │   ├── css-mini.php                    # Min styles
-│   ├── menu.php                        # Additional styles
+│   ├── menu.css                        # Additional styles
 │   ├── websocket_control.css           # WS control button styles
 │   ├── font-awesome.min.css            # Awesome Fonts
 │   └── font-awesome-4.7.0/
@@ -280,6 +263,7 @@ During development, symlinks point to current versions. After development, symli
 │   ├── cli_setup.php                   # CLI Setup Script 0.1.1
 │   └── setup_auth.php                  # Authorization setup script
 └── config/                             # Configuration files
+		└── sample.auth.php                 # Sample
 ```
 
 ## 7. WebSocket System v4.0
@@ -385,9 +369,18 @@ div.container
 │
 ├── div.content (main content)
 │   ├── div#lcmsg (messages)
-│   ├── div#radio_activity (radio status)
-│   │   ├── div#ra_header (table header)
-│   │   └── div#ra_table (table body – rows per logic)
+│   ├── div.radio_activity (radio status)
+│   │   └── div#divTable
+│		│    		├── div#divTableBody
+│		│    		├── div#divTableRow lines, per logics (... - logic name)
+│		│       │		├─ div.radio_logic_...
+│		│       │		├─ div.device_..._rx
+│		│       │		├─ div.device_..._rx_status
+│		│       │		├─ div.device_..._tx
+│		│       │		├─ div.device_..._tx_status
+│		│       │		├─ div.radio_logic_..._callsign #callsign
+│		│       │		└─ div.radio_logic_..._destination #destination
+│   │   		└── div#divTableRow - lines, per reflectors
 │   ├── div#connection_details (connection details, optional)
 │   │   ├── div#refl_header (reflector data?)
 │   │   └── div#frn_server_table (nodes connected to Frn server)

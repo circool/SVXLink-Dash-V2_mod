@@ -209,11 +209,19 @@
   - `start`: int
   - `name`: string
   - `is_active`: bool
-  - `timestamp_format`: string
-	- `aprs_sever` : array ['start':int,'name':srtring]
-- `status_server` : array ['has_error':bool,'name':string]
-- `directory_server` : array ['start':int,'name':srtring]
-- `proxy_server` : array ['start':int,'name':srtring]
+  - `timestamp_format` : string
+	- `aprs_sever` : array 
+		- `start` : int
+		-	`name` : srtring		
+	- `status_server` : array
+		- `has_error` : bool
+		- `name`. :string
+	- `directory_server` : array 
+		- `start` : int
+		-	`name` : srtring
+	- `proxy_server` : array
+		- `start` : int
+		- `name` : srtring
 	
 
 #### Структура multiple_device[deviceName]
@@ -222,24 +230,13 @@
 
 ## 6. Организация файловой структуры
 
-Фактическое абсолютное значение корня тестовой среды (для справки) - /var/www/html/
-Тестовый сервер по адресу http://svxlink_development_dashboard.local
-
-На время разработки вместо реальных файлов в каталогах размещены симлинки на текущие версии.
-По окончании разработки симлинку будут заменены продакшн версиями.
-Некоторые из файлов - атавизмы от предыдущих версий. 
-Безусловно актуальными считать версии с текущим номером (см в начале файла)
 
 ```
 /                                       # Корень проекта
 ├── index.php                           # Основная страница (продакшн)
-├── index_debug.php                     # Основная страница для отладочного режима
-├── backup.sh                           # Скрипт резервного копирования
 ├── favicon.ico                         # Иконка сайта
 ├── ws_state.php                        # Состояние WebSocket
 ├── include/                            # PHP включаемые файлы
-│   ├── exct/                           # Версионированные источники
-│   │   └── ...                         
 │   ├── ajax_update.php                 # AJAX обновление
 │   ├── auth_config.php                 # Конфигурация авторизации
 │   ├── auth_handler.php                # Обработчик авторизации
@@ -253,6 +250,7 @@
 │   ├── js_utils.php                    # JavaScript утилиты
 │   ├── keypad.php                      # DTMF клавиатура
 │   ├── languages/                      # Локализации
+│   │   └── ru.php
 │   ├── left_panel.php                  # Левая панель состояний
 │   ├── logout.php                      # Выход из системы
 │   ├── macros.php                      # Макросы
@@ -268,8 +266,6 @@
 │   ├── websocket_client_config.php     # Конфигурация WebSocket клиента
 │   ├── websocket_server.php            # WebSocket сервер (PHP)
 │   └── fn/                             # Функции и пакеты функций
-│       ├── exct/                       # Версионированные источники
-│       │   └── ...
 │       ├── dlog.php                    # Журналирование для отладки
 │       ├── formatDuration.php          # Форматирование продолжительности
 │       ├── getActualStatus.php         # Строит начальное состояние системы
@@ -279,8 +275,6 @@
 │       ├── parseXmlTags.php            # Парсит XML-теги строки журнала
 │       └── removeTimestamp.php         # Удаляет временную метку из строки лога
 ├── scripts/                            # JS скрипты
-│   ├── exct/                           # Версионированные источники
-│   │   └── ...
 │   ├── dashboard_ws_client.js          # WebSocket клиент состояний
 │   ├── dashboard_ws_server.js          # WebSocket сервер состояний
 │   ├── featherlight.js                 # Библиотека
@@ -289,7 +283,7 @@
 ├── css/                                # Стили
 │   ├── css-mini.php                    # Стили
 │   ├── css.php                         # Основной набор стилей
-│   ├── menu.php                        # Дополнения к основному набору
+│   ├── menu.css                        # Дополнения к основному набору
 │   ├── websocket_control.css           # Стили для кнопки управления WS
 │   └── font-awesome.min.css            # Awesome Fonts
 ├── fonts/                              # Шрифты
@@ -299,20 +293,23 @@
 │   ├── cli_setup.php                   # CLI Setup Script 0.1.1
 │   └── setup_auth.php                  # Скрипт установки авторизации
 └── config/                             # Конфигурационные файлы
+		└── sample.auth.php                 # Пример файла для хранения пароля пользователя
 ```
 
 ## 7. WebSocket система v4.0
 
 ### Назначение
+
 Обеспечение двусторонней коммуникации между сервером SvxLink и веб-интерфейсом Dashboard в реальном времени. 
 Сервер мониторит журнал SvxLink, разбирает события и отправляет команды DOM-обновлений всем подключенным клиентам.
 
 ### Архитектура
 
 #### Сервер WebSocket (Node.js, порт 8080)
+
 **Основные компоненты:**
 - **WebSocket сервер** - управление подключениями клиентов
-- **Парсер начального состояния** - получает начальные данные при подключении клиента
+- **Парсер начального состояния** - получает начальные данные при первом запуске (подключении клиента)
 - **Парсер логов SvxLink** - анализ событий в реальном времени
 - **Генератор DOM-команд** - преобразование событий в команды обновления интерфейса
 
@@ -322,11 +319,12 @@
 - Формирование команд DOM для обновления интерфейса
 - Рассылка обновлений всем подключенным клиентам
 
-Подробная документация в ws_server.md
+Подробная документация в `ws_server.md`
 
 #### Клиент WebSocket (JavaScript)
 
 Клиент автоматически инициализируется при загрузке страницы.
+
 ##### Формат команд
 
 Команды представляют собой объекты JSON с обязательным полем `action`:
@@ -402,16 +400,25 @@ div.header
 ```
 div.container
 ├── div.leftnav
-│   └── div#leftPanel      
+│   └── div.leftPanel      
 │               
 ├── div.content (основной контент)
 │   ├── div#lcmsg (сообщения)
-│   ├── div#radio_activity (статус радио)
-│   │   ├── div#ra_header (шапка табл)
-│   │   └── div#ra_table (тело таблицы - строки по количеству)
+│   ├── div.radio_activity (статус радио)
+│   │   └── div#divTable
+│		│    		├── div#divTableBody
+│		│    		├── div#divTableRow строки по полччеству логик (... - имя логики)
+│		│       │		├─ div.radio_logic_...
+│		│       │		├─ div.device_..._rx
+│		│       │		├─ div.device_..._rx_status
+│		│       │		├─ div.device_..._tx
+│		│       │		├─ div.device_..._tx_status
+│		│       │		├─ div.radio_logic_..._callsign #callsign
+│		│       │		└─ div.radio_logic_..._destination #destination
+│   │   		└── div#divTableRow - строки по количеству рефлекторов
 │   ├── div#connection_details (детали подключения (опционально))
 │   │   ├── div#refl_header (данные о рефлекторе ?)
-│   │   └── div#frn_server_table (подключенные к серверу Frn узлы)
+│   │   ├── div#frn_server_table (подключенные к серверу Frn узлы)
 │   │   └── div#el_msg_table (сообщения EchoLink)
 │   ├── div#reflector_activity (инфо рефлекторов)
 │   │   ├── div#refl_header

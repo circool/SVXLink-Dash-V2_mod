@@ -85,7 +85,7 @@ declare -A files_to_check=(
     # Основные файлы в css/
     ["css/css-mini.php"]="Styles"
     ["css/css.php"]="Main style set"
-    ["css/menu.php"]="Addition styles"
+    ["css/menu.css"]="Addition styles"
     ["css/websocket_control.css"]="Styles for WS button WS"
     ["css/font-awesome.min.css"]="Awesome Fonts"
 )
