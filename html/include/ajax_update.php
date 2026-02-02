@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 $docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/var/www/html';
 $block = $_GET['block'] ?? '';
-$allowedBlocks = ['rf_activity', 'net_activity', 'reflector_activity', 'connection_details'];
+$allowedBlocks = ['rf_activity', 'net_activity', 'reflector_activity', 'connection_details', 'left_panel','radio_activity'];
 
 if (!in_array($block, $allowedBlocks)) {
 	http_response_code(400);
@@ -36,10 +36,10 @@ if (session_status() === PHP_SESSION_NONE) {
 	session_start();
 }
 
-if (!isset($_SESSION['TIMEZONE'])) {
-	$_SESSION['TIMEZONE'] = "UTC";
+if (isset($_SESSION['TIMEZONE'])) {
+	date_default_timezone_set($_SESSION['TIMEZONE']);
 }
-date_default_timezone_set($_SESSION['TIMEZONE']);
+
 
 require_once $docRoot . '/include/fn/getActualStatus.php';
 

@@ -9,6 +9,12 @@
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.php';
+require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getActualStatus.php';
+
+$activeCellClass = ' disabled-mode-cell';
+$pausedCellClass = ' disabled-mode-cell';
+$inactiveCellClass = ' disabled-mode-cell';
+$disabledCellClass = ' disabled-mode-cell';
 
 function buildLogicData(array $lp_status): array
 {
@@ -18,13 +24,19 @@ function buildLogicData(array $lp_status): array
 		'unconnected_reflectors' => [],
 		'unconnected_links' => []
 	];
+	
 
 	$lp_service = $lp_status['service'];
 	$lp_logics = $lp_status['logic'];
 	$lp_links = $lp_status['link'];
 
 	$excl = ["Logic", "Reflector", "Link"];
-
+	
+	$activeCellClass = $lp_service['is_active'] ? ' active-mode-cell' : ' disabled-mode-cell';
+	$inactiveCellClass = $lp_service['is_active'] ? ' inactive-mode-cell' : ' disabled-mode-cell';
+	$pausedCellClass = $lp_service['is_active'] ? ' paused-mode-cell' : ' disabled-mode-cell';
+	$disabledCellClass = ' disabled-mode-cell';
+	
 	$getCellStyle = function ($active, $connected, $hasConnected = false) {
 		if ($hasConnected) {
 
@@ -41,10 +53,11 @@ function buildLogicData(array $lp_status): array
 	};
 
 	// @bookmark Service
-	$durationHtml = formatDuration($lp_service['start'] > 0 ? time() - $lp_service['start'] : 0);
+	$durationHtml = formatDuration($lp_service['start'] > 0 && $lp_service['is_active'] ? time() - $lp_service['start'] : '0');
 	$data['service'] = [
+		'is_active' => $lp_service['is_active'],
 		'name' => $lp_service['name'],
-		'style' => $lp_service['is_active'] ? 'active-mode-cell' : 'inactive-mode-cell',
+		'style' => $lp_service['is_active'] ? $activeCellClass : ' inactive-mode-cell',
 		'tooltip_start' => '<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br></span>',
 		'tooltip_end' => '</a>'
 	];
@@ -81,7 +94,7 @@ function buildLogicData(array $lp_status): array
 			continue;
 		}
 
-		$logicClass = $getCellStyle($logic['is_connected'], $logic['is_active'],  true); //@since 0.4
+		$logicClass = $getCellStyle($logic['is_connected'], $logic['is_active'],  true); 
 
 		$modules = [];
 		$activeModule = null;
@@ -148,6 +161,7 @@ function buildLogicData(array $lp_status): array
 
 					if (!isset($relatedReflectors[$reflectorName])) {
 						$reflector = $allReflectors[$reflectorName];
+
 						$reflectorClass = $getCellStyle($reflector['is_connected'], $reflector['is_active'], true);
 
 						$talkGroups = [];
@@ -173,20 +187,22 @@ function buildLogicData(array $lp_status): array
 							if (!empty($tg['temp_monitoring'])) $allGroups = array_merge($allGroups, $tg['temp_monitoring']);
 
 							foreach ($allGroups as $group) {
-								$groupStyle = 'disabled-mode-cell';
-
+								$groupStyle = $disabledCellClass;
+								
 								if (isset($tg['selected']) && $group == $tg['selected']) {
-									$groupStyle = 'active-mode-cell';
+									$groupStyle = $activeCellClass;
 								} elseif (!empty($tg['temp_monitoring']) && in_array($group, $tg['temp_monitoring'])) {
-									$groupStyle = 'paused-mode-cell';
+									$groupStyle = $pausedCellClass;
 								}
+
+
 
 								if (isset($tg['monitoring']) && in_array($group, $tg['monitoring'])) {
 									$groupStyle .= ' monitored';
 								}
 
 								if (isset($tg['default']) && $group == $tg['default']) {
-									$groupStyle .= ' default'; // или оставить disabled-mode-cell
+									$groupStyle .= ' default'; 
 								}
 
 								$talkGroups[] = [
@@ -315,11 +331,11 @@ function buildLogicData(array $lp_status): array
 				if (!empty($tg['temp_monitoring'])) $allGroups = array_merge($allGroups, $tg['temp_monitoring']);
 
 				foreach ($allGroups as $group) {
-					$groupStyle = 'disabled-mode-cell';
+					$groupStyle = $disabledCellClass;
 					if (isset($tg['selected']) && $group == $tg['selected']) {
-						$groupStyle = 'active-mode-cell';
+						$groupStyle = $activeCellClass;
 					} elseif (!empty($tg['temp_monitoring']) && in_array($group, $tg['temp_monitoring'])) {
-						$groupStyle = 'paused-mode-cell';
+						$groupStyle = $pausedCellClass;
 					}
 
 					$talkGroups[] = [
@@ -432,9 +448,14 @@ function buildLogicData(array $lp_status): array
 	return $data;
 }
 
-$lp_status = $_SESSION['status'];
+// $lp_status = $_SESSION['status'];
+$lp_status = getActualStatus();
 $displayData = buildLogicData($lp_status);
+
 $cellStyleStr = ' style="border: .5px solid #3c3f47;"';
+
+
+
 
 ?>
 <div class="mode_flex">
@@ -524,7 +545,7 @@ if (!empty($displayData['logics'])) {
 						<?php if (!empty($logic['active_module_nodes'])) {
 							foreach ($logic['active_module_nodes'] as $nodeName => $node) : ?>
 								<div id="logic_<?= $logic['name'] ?>_node_<?= $nodeName ?>"
-									class="mode_flex column disabled-mode-cell"
+									class="mode_flex column <?= $disabledCellClass ?>"
 									title="<?= $nodeName ?>"
 									<?= $cellStyleStr ?>>
 									<?= $node['tooltip_start'] . $node['name'] . $node['tooltip_end'] ?>
@@ -588,7 +609,7 @@ if (!empty($displayData['logics'])) {
 						<div id="logic_<?= $reflector['name'] ?>_nodes" class="divTableBody mode-flex row" style="white-space: nowrap;">
 							<?php if (!empty($reflector['nodes'])) {
 								foreach ($reflector['nodes'] as $node) {
-									echo '<div id="logic_' . $reflector['name'] . '_node_' . $node['name'] . '" class="mode_flex column disabled-mode-cell" title="' . $node['name'] . '"' . $cellStyleStr . '>' . $node['tooltip_start'] . $node['name'] . $node['tooltip_end'] . '</div>';
+									echo '<div id="logic_' . $reflector['name'] . '_node_' . $node['name'] . '" class="mode_flex column ' . $disabledCellClass . '" title="' . $node['name'] . '"' . $cellStyleStr . '>' . $node['tooltip_start'] . $node['name'] . $node['tooltip_end'] . '</div>';
 								}
 							}
 							?>
@@ -613,17 +634,17 @@ if (isset($displayData['aprs_server'])) : ?>
 		<div class="divTableBody">
 			<div class="divTableRow center">
 				<div class="divTableHeadCell"><?= getTranslation('Main') ?></div>
-				<div id="aprs_status" class="divTableCell cell_content center <?php echo $displayData['aprs_server']['start'] > 0 ? ' active-mode-cell' : ' inactive-mode-cell' ?>">
+				<div id="aprs_status" class="divTableCell cell_content center <?php echo $displayData['aprs_server']['start'] > 0 ? $activeCellClass : $inactiveCellClass ?>">
 					<?= $displayData['aprs_server']['name'] ?>
 				</div>
 			</div>
 			<?php if (isset($displayData['status_server'])) : ?>
-			<div class="divTableRow center">
-				<div class="divTableHeadCell"><?= getTranslation('EchoLink') ?></div>
-				<div id="<?= $displayData['status_server']['name'] ?>" class="divTableCell cell_content center <?php echo $displayData['status_server']['has_error'] ? ' inactive-mode-cell' : ' disabled-mode-cell' ?>">
-					<?= $displayData['status_server']['name'] ?>
+				<div class="divTableRow center">
+					<div class="divTableHeadCell"><?= getTranslation('EchoLink') ?></div>
+					<div id="<?= $displayData['status_server']['name'] ?>" class="divTableCell cell_content center <?php echo $displayData['status_server']['has_error'] ? $inactiveCellClass : $disabledCellClass ?>">
+						<?= $displayData['status_server']['name'] ?>
+					</div>
 				</div>
-			</div>
 			<?php endif; ?>
 		</div>
 	</div>
@@ -632,7 +653,7 @@ if (isset($displayData['aprs_server'])) : ?>
 <?php endif;
 
 // @bookmark EL Directory Server
-if (isset($displayData['directory_server'])) : ?>
+if ($displayData['service']['is_active'] && (!empty($displayData['directory_server'] || !empty($displayData['proxy_server']))) ) : ?>
 	<div class="divTable">
 		<div class="divTableHead"><?= getTranslation('Directory Server') ?></div>
 	</div>
@@ -640,14 +661,15 @@ if (isset($displayData['directory_server'])) : ?>
 		<div class="divTableBody">
 			<div class="divTableRow center">
 				<div class="divTableHeadCell"><?= getTranslation('Server') ?></div>
-				<div id="directory_server_status" class="divTableCell cell_content center <?php echo $displayData['directory_server']['start'] > 0 ? ' active-mode-cell' : ' inactive-mode-cell' ?>">
-					<?= getTranslation($displayData['directory_server']['name']) ?>
+				<div id="directory_server_status" class="divTableCell cell_content center <?php echo $displayData['directory_server']['start'] > 0 ? $activeCellClass : $inactiveCellClass ?>">
+					<?= empty($displayData['directory_server']['name']) ? getTranslation('Disconnected') : getTranslation($displayData['directory_server']['name']) ?>
 				</div>
 			</div>
 			<?php if (isset($displayData['proxy_server'])) : ?>
+				
 				<div class="divTableRow center">
 					<div class="divTableHeadCell"><?= getTranslation('Proxy') ?></div>
-					<div id="proxy_server_status" class="divTableCell cell_content center <?php echo $displayData['proxy_server']['start'] > 0 ? ' active-mode-cell' : ' inactive-mode-cell' ?>">
+					<div id="proxy_server_status" class="divTableCell cell_content center <?php echo $displayData['proxy_server']['start'] > 0 ? $activeCellClass : $inactiveCellClass ?>">
 						<?= $displayData['proxy_server']['name'] ?>
 					</div>
 				</div>

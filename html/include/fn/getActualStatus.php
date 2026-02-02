@@ -11,14 +11,13 @@ function getActualStatus(bool $forceRebuild = false): array
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.php';
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getLineTime.php';
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/parseXmlTags.php';
+	
 
 	if (isset($_SESSION['status']) === false) {
 		$forceRebuild = true;
 	}
-
+	$forceRebuild = true;
 	if ($forceRebuild) {
-		$start = microtime(true);
-
 		$has_error = '';
 		$stub = [
 			'link' => [],
@@ -33,10 +32,10 @@ function getActualStatus(bool $forceRebuild = false): array
 					'start' => 0
 				],
 			],
-			'radio_status' => [
-				'status' => "LOG ERROR",
-				'start' => time(),
-			],
+			// 'radio_status' => [
+			// 	'status' => "LOG ERROR",
+			// 	'start' => time(),
+			// ],
 			'callsign' => "LOG ERROR",
 		];
 
@@ -95,6 +94,13 @@ function getActualStatus(bool $forceRebuild = false): array
 			$stub['service']['name'] = 'EMPTY LOGICS'; 
 			return $stub;
 		}
+		
+		$service = [
+			'start' => 0,
+			'name' => SERVICE_TITLE,
+			'is_active' => false,
+			'timestamp_format' => $svxconfig['GLOBAL']['TIMESTAMP_FORMAT'],
+		];
 
 		$linkNames = isset($svxconfig['GLOBAL']['LINKS']) ?
 			array_filter(array_map('trim', explode(",", $svxconfig['GLOBAL']['LINKS'])), 'strlen') : [];
@@ -167,6 +173,7 @@ function getActualStatus(bool $forceRebuild = false): array
 		};
 
 		$multipleDevice = [];
+		// @bookmark Логика
 		$_logics = [];
 		foreach ($logics as $_logic) {
 
@@ -223,7 +230,7 @@ function getActualStatus(bool $forceRebuild = false): array
 				'dtmf_cmd' => $svxconfig[$_logic]['DTMF_CTRL_PTY'] ?? '',
 				'is_connected' => false
 			];
-
+			// @bookmark Модули
 			if (isset($svxconfig[$_logic]['MODULES'])) {
 				$item['module'] = [];
 				$moduleNames = array_filter(
@@ -241,6 +248,14 @@ function getActualStatus(bool $forceRebuild = false): array
 							'is_connected' => false,
 							'connected_nodes' => []
 						];
+						if($moduleName === 'EchoLink'){
+							if(!isset($service['directory_server'])){
+								$service['directory_server'] = [
+									'name' => '',
+									'start' => 0,
+								]	;
+							};
+						}
 					}
 				}
 			}
@@ -266,12 +281,7 @@ function getActualStatus(bool $forceRebuild = false): array
 			unset($rxDeviceName, $txDeviceName, $rxProcessed, $txProcessed);
 		}
 
-		$service = [
-			'start' => 0,
-			'name' => SERVICE_TITLE,
-			'is_active' => false,
-			'timestamp_format' => $svxconfig['GLOBAL']['TIMESTAMP_FORMAT'],
-		];
+		
 		
 		$locationInfoSection = $svxconfig['GLOBAL']['LOCATION_INFO'] ?? '';
 		
@@ -295,10 +305,7 @@ function getActualStatus(bool $forceRebuild = false): array
 					'has_error' => false,
 				];
 				$service['status_server'] = $statusServer;				
-				$service['directory_server'] = [
-					'name' => '',
-					'start' => 0,
-				];
+				
 			}
 		}
 
@@ -362,6 +369,7 @@ function getActualStatus(bool $forceRebuild = false): array
 	} else {
 		$status['service']['is_active'] = false;
 		$searchPattern = "SIGTERM";
+
 	}
 
 	$log_count = is_null($count) ? 0 : $count;
@@ -376,7 +384,7 @@ function getActualStatus(bool $forceRebuild = false): array
 	$status['service']['log_line_count'] = $logLineCount;
 
 	if ($status['service']['is_active'] === false) {
-		error_log("getActualStatus: Svxlink session is not active, stopping");
+		// error_log("getActualStatus: Svxlink session is not active, stopping");
 		return $status;
 	}
 
@@ -746,7 +754,7 @@ function getActualStatus(bool $forceRebuild = false): array
 			if ($logic['type'] === "Reflector") $logic['is_active'] = false;
 		}
 	}
-
+	
 	// @bookmark APRS
 	if(isset($service['aprs_server'])){
 		$required_condition = "APRS";
@@ -765,10 +773,11 @@ function getActualStatus(bool $forceRebuild = false): array
 
 	// @bookmark EchoLink directory server
 	if (isset($service['directory_server'])) {
+
 		$required_condition = "EchoLink directory status";
 		$directoryLogState = getLogTailFiltered(1, $required_condition, [], $status['service']['log_line_count']);
 		if ($directoryLogState !== false) {
-			
+			$status['service']['directory_server']['name'] = "Unknown";
 			if (str_contains($directoryLogState[0], "changed to ON") !== false) {
 				$status['service']['directory_server']['name'] = "Connected";
 				$status['service']['directory_server']['start'] = getLineTime($directoryLogState[0]);
@@ -776,34 +785,36 @@ function getActualStatus(bool $forceRebuild = false): array
 				$status['service']['directory_server']['name'] = "Disconnected";
 				$status['service']['directory_server']['start'] = 0;
 			}
-
-			// ...: Connected to EchoLink proxy 44.137.75.93:8100
-			// ...: Disconnected from EchoLink proxy 44.137.75.93:8100
-			$required_condition = "EchoLink proxy";
-			$proxyLogState = getLogTailFiltered(1, $required_condition, [], $status['service']['log_line_count']);
-			if ($proxyLogState !== false) {
-				
-				if (str_contains($proxyLogState[0], "Connected") !== false) {
-					$pattern = '/Connected to EchoLink proxy (\S+)/';
-					if (preg_match($pattern, $proxyLogState[0], $matches)) {
-						$proxyAddress = $matches[1];
-						$proxyName = strstr($proxyAddress, ':', true);
-						if ($proxyName === false) {
-							$proxyName = $proxyAddress;
-							
-						}
-						$proxyStartTime = getLineTime($proxyLogState[0]);
-						$proxyServer = [
-							'name' => $proxyName,
-							'start' => $proxyStartTime,
-						];
-						$status['service']['proxy_server'] = $proxyServer;						
-					}
-				} elseif (str_contains($proxyLogState[0], "Disconnected") !== false && isset($status['service']['proxy_server'])) {
-					$status['service']['proxy_server']['start'] = 0;
-				}
-			}		
+			
 		}
 	}
+	
+	// ...: Connected to EchoLink proxy 44.137.75.93:8100
+	// ...: Disconnected from EchoLink proxy 44.137.75.93:8100
+	$required_condition = "EchoLink proxy";
+	$proxyLogState = getLogTailFiltered(1, $required_condition, [], $status['service']['log_line_count']);
+	if ($proxyLogState !== false) {
+		
+		$status['service']['proxy_server'] = ['name' => '', 'start' => 0];
+		if (str_contains($proxyLogState[0], "Connected") !== false) {
+			$pattern = '/Connected to EchoLink proxy (\S+)/';
+			if (preg_match($pattern, $proxyLogState[0], $matches)) {
+				$proxyAddress = $matches[1];
+				$proxyName = strstr($proxyAddress, ':', true);
+				if ($proxyName === false) {
+					$proxyName = $proxyAddress;
+				}
+				$proxyStartTime = getLineTime($proxyLogState[0]);
+				$proxyServer = [
+					'name' => $proxyName,
+					'start' => $proxyStartTime,
+				];
+				$status['service']['proxy_server'] = $proxyServer;
+			}
+		} elseif (str_contains($proxyLogState[0], "Disconnected") !== false && isset($status['service']['proxy_server'])) {
+			$status['service']['proxy_server']['start'] = 0;
+		}
+	}
+	
 	return $status;
 }

@@ -8,29 +8,44 @@
  */
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
+require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getActualStatus.php';
+// require_once $_SERVER["DOCUMENT_ROOT"] . '/include/init.php';
+require_once $_SERVER["DOCUMENT_ROOT"] . '/include/session_header.php';
 
 function renderRadioActivityTable()
 {
-	if (!isset($_SESSION['status']['logic'])) {
-		return '';
-	}
+	// if (isset($_SESSION['TIMEZONE'])) {
+	// 	date_default_timezone_set($_SESSION['TIMEZONE']);
+	// }
 
-	$logics = $_SESSION['status']['logic'];
-	$multipleDevices = $_SESSION['status']['multiple_device'] ?? [];
+	// $status = getActualStatus();
+	// $logics = $status['logic'];
+	// $multipleDevices = $status['multiple_device'] ?? [];	
+	
+	if (isset($_SESSION['status']['logic'])) {
+		$logics = $_SESSION['status']['logic'];
+		$multipleDevices = $_SESSION['status']['multiple_device'] ?? [];
+		// return '';
+	} else {
+		$status = getActualStatus(true);
+		$logics = $status['logic'];
+		$multipleDevices = $status['multiple_device'];
+	}
+	
+	
+	
 
 	$html = '';
 
 	foreach ($logics as $logicName => $logic) {
 		$isActive = $logic['is_active'] ?? false;
 		$isConnected = $logic['is_connected'] ?? false;
-
-		if (!$isActive && !$isConnected) {
-			continue; 
-		}
+		$rowClass = $logic['is_active'] ? '' : 'offline';
+		
 
 		$rxDevice = $logic['rx']['name'] ?? '';
 		$txDevice = $logic['tx']['name'] ?? '';
-		
+
 		if (empty($rxDevice) && empty($txDevice)) {
 			if ($logic['type'] !== 'Reflector') continue;
 		}
@@ -38,26 +53,25 @@ function renderRadioActivityTable()
 		$rowDevice = $logicName;
 
 		if ($logic['type'] !== 'Reflector') {
-			$rowClass = '';
+			// $rowClass = '';
 			$rowStyle = ' style = "font-size:1.3em; text-align: center;" ';
 			$row_rxDevice = htmlspecialchars($rxDevice);
 			$row_txDevice = htmlspecialchars($txDevice);
-			
+
 			$rxDeviceStart = !empty($rxDevice) ? $logic['rx']['start'] : 0;
 			$rxCellClass = $rxDeviceStart > 0 ? ' active-mode-cell' : '';
 			$rxDuration = $rxDeviceStart > 0 ? time() - $rxDeviceStart : 0;
 			$rxDuration = $rxDuration < 60 ? $rxDuration . ' s' : formatDuration($rxDuration);
-			$rxDeviceState = $rxDeviceStart > 0 ? 'RECEIVE ( ' . $rxDuration .' )' : "STANDBY";
+			$rxDeviceState = $rxDeviceStart > 0 ? 'RECEIVE ( ' . $rxDuration . ' )' : "STANDBY";
 
 			$txDeviceStart = !empty($txDevice) ? $logic['tx']['start'] : 0;
 			$txCellClass = $txDeviceStart > 0 ? ' inactive-mode-cell' : '';
-			$txDuration = $txDeviceStart > 0 ? time() - $txDeviceStart : 0;			
-			$txDuration = $txDuration < 60 ? $txDuration . ' s' : formatDuration($txDuration);			
+			$txDuration = $txDeviceStart > 0 ? time() - $txDeviceStart : 0;
+			$txDuration = $txDuration < 60 ? $txDuration . ' s' : formatDuration($txDuration);
 			$txDeviceState = $txDeviceStart > 0 ? 'TRANSMIT ( ' . $txDuration . ' )' : "STANDBY";
 
 			$callsign = $logic['callsign'] ?? '';
 			$callsign = '';
-			
 		} else {
 			$rowClass = 'hidden';
 			$rowStyle = ' style = "padding: 0px; margin: 0px" ';
@@ -113,7 +127,7 @@ function renderRadioActivityTable()
 
 		$html .= '</div>';
 	}
-	
+
 	return $html;
 }
 ?>
@@ -123,12 +137,12 @@ function renderRadioActivityTable()
 	<div class="divTable">
 		<div class="divTableBody">
 			<div class="divTableRow">
-				<div style="width: 10%;" class="divTableHeadCell"><?php echo getTranslation('Logic') ?></div>
-				<div style="width: 10%;" class="divTableHeadCell"><?php echo getTranslation('Device') ?> RX</div>
-				<div style="width: 10%;" class="divTableHeadCell"><?php echo getTranslation('Status') ?> RX</div>
-				<div style="width: 10%;" class="divTableHeadCell"><?php echo getTranslation('Device') ?> TX </div>
-				<div style="width: 10%;" class="divTableHeadCell"><?php echo getTranslation('Status') ?> TX</div>
-				<div style="width: 30%;" class="divTableHeadCell"><?php echo getTranslation('Callsign') ?></div>
+				<div style="width: 200px" class="divTableHeadCell"><?php echo getTranslation('Logic') ?></div>
+				<div style="width: 200px" class="divTableHeadCell"><?php echo getTranslation('Device') ?> RX</div>
+				<div style="width: 200px" class="divTableHeadCell"><?php echo getTranslation('Status') ?> RX</div>
+				<div style="width: 200px" class="divTableHeadCell"><?php echo getTranslation('Device') ?> TX </div>
+				<div style="width: 200px" class="divTableHeadCell"><?php echo getTranslation('Status') ?> TX</div>
+				<div class="divTableHeadCell"><?php echo getTranslation('Callsign') ?></div>
 				<div class="divTableHeadCell"><?php echo getTranslation('Destination') ?></div>
 			</div>
 			<?php echo renderRadioActivityTable(); ?>
