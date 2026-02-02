@@ -96,7 +96,9 @@ if (!file_exists($auth_file)) {
 
 			<?php
 			if (!defined("SHOW_RADIO_ACTIVITY") || constant("SHOW_RADIO_ACTIVITY") === true) {
+				echo '<div id="radio_activity_content">';
 				include $_SERVER["DOCUMENT_ROOT"] . "/include/radio_activity.php";
+				echo '</div>';
 			}
 			?>
 
@@ -149,6 +151,7 @@ if (!file_exists($auth_file)) {
 
 	<script>
 		window.UPDATE_INTERVAL = <?php echo defined('UPDATE_INTERVAL') ? UPDATE_INTERVAL : 3000; ?>;
+		window.WS_ENABLED = <?php echo (defined('WS_ENABLED') && WS_ENABLED) ? 'true' : 'false'; ?>;
 	</script>
 	<script src="/scripts/block_updater.js"></script>
 
