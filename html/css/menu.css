@@ -149,7 +149,11 @@ audio-monitor:before {
 	color: #ffffff;
 }
 
-span.error {
+
+
+
+
+span.error, em.error {
 	color: #ffffff;
 	background-color: #8C0C26;
 	padding: 0.2em 0.4em;
@@ -158,6 +162,9 @@ span.error {
 	border-radius: 0.2em;
 }
 
+em.error {
+	font-style: normal;
+}
 span.success {
 	color: #ffffff;
 	background-color: rgb(192, 240, 30);
@@ -820,4 +827,18 @@ span.operate {
 .message_block .mode_flex:first-child {
 	font-weight: bold;
 	color: #ff8800;
+}
+
+.offline {
+	opacity: 0.4;
+}
+
+.macro-button {
+	flex: 1;
+	padding: 2px 8px;
+	
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+	transition: all 0.3s ease;
 }

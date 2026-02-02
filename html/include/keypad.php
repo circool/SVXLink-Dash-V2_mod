@@ -119,7 +119,7 @@ $singleLogic = count($dtmfLogics) === 1 ? key($dtmfLogics) : null;
 		</div>
 	</div>
 </div>
-
+<?php unset($logicData, $dtmfLogics, $logics); ?>
 <script>
 	// Глобальная переменная для хранения выбранной логики
 	let selectedLogic = '<?= $singleLogic ? htmlspecialchars($singleLogic) : "" ?>';
