@@ -26,9 +26,11 @@ try {
 			'modules' => [],
 			'links' => [],
 			'nodes' => [],
-			'module_logic' => [], 
+			'module_logic' => [],
+			'device_logic' => [],
 			'service' => [],
 			'logics' => [],
+			'multiple_device' => [],
 		]
 	];
 
@@ -57,22 +59,65 @@ try {
 				'type' => $logic['type'] ?? 'Unknown'
 			];
 
-			if (!empty($logic['rx'])) {
-				$response['data']['devices'][$logic['rx']['name']] = [
+			// Обработка RX устройства
+			if (!empty($logic['rx']) && !empty($logic['rx']['name'])) {
+				$deviceName = $logic['rx']['name'];
+				$response['data']['devices'][$deviceName] = [
 					'start' => $logic['rx']['start'],
 					'type' => 'RX',
 					'logic' => $logicName
 				];
+
+				if (!isset($response['data']['device_logic'][$deviceName])) {
+					$response['data']['device_logic'][$deviceName] = [];
+				}
+				$response['data']['device_logic'][$deviceName][] = $logicName;
+
+				if (isset($status['multiple_device'][$deviceName]) && !empty($status['multiple_device'][$deviceName])) {
+					$components = explode(',', $status['multiple_device'][$deviceName]);
+
+					foreach ($components as $component) {
+						if (!empty($component)) {
+							$response['data']['devices'][$component] = [
+								'start' => $logic['rx']['start'],
+								'type' => 'RX',
+								'logic' => $logicName,
+								'is_component_of' => $deviceName
+							];
+						}
+					}
+				}
 			}
 
-			if (!empty($logic['tx'])) {
-				$response['data']['devices'][$logic['tx']['name']] = [
+			// Обработка TX устройства  
+			if (!empty($logic['tx']) && !empty($logic['tx']['name'])) {
+				$deviceName = $logic['tx']['name'];
+				$response['data']['devices'][$deviceName] = [
 					'start' => $logic['tx']['start'],
 					'type' => 'TX',
 					'logic' => $logicName
 				];
-			}
 
+				if (!isset($response['data']['device_logic'][$deviceName])) {
+					$response['data']['device_logic'][$deviceName] = [];
+				}
+				$response['data']['device_logic'][$deviceName][] = $logicName;
+
+				if (isset($status['multiple_device'][$deviceName]) && !empty($status['multiple_device'][$deviceName])) {
+					$components = explode(',', $status['multiple_device'][$deviceName]);
+
+					foreach ($components as $component) {
+						if (!empty($component)) {
+							$response['data']['devices'][$component] = [
+								'start' => $logic['tx']['start'],
+								'type' => 'TX',
+								'logic' => $logicName,
+								'is_component_of' => $deviceName
+							];
+						}
+					}
+				}
+			}
 
 			if (isset($logic['module']) && is_array($logic['module'])) {
 				foreach ($logic['module'] as $moduleName => $module) {
@@ -113,7 +158,6 @@ try {
 				}
 			}
 
-
 			if (($logic['type'] ?? '') === 'Reflector') {
 				if (isset($logic['connected_nodes']) && is_array($logic['connected_nodes'])) {
 					foreach ($logic['connected_nodes'] as $nodeName => $nodeData) {
@@ -139,8 +183,6 @@ try {
 
 			$isActive = $link['is_active'] ?? false;
 			$isConnected = $link['is_connected'] ?? false;
-			$link_destination = $link['destination']['logic'];
-			$link_source = $link['source']['logic'];
 			$linkStart = 0;
 			if (($isActive || $isConnected) && isset($link['start']) && $link['start'] > 0) {
 				$linkStart = (int)$link['start'];
@@ -178,18 +220,23 @@ try {
 		}
 	}
 
+	if (isset($status['multiple_device'])) {
+		foreach ($status['multiple_device'] as $c => $v) {
+			$response['data']['multiple_device'][$c] = array_filter(array_map('trim', explode(',', $v)));
+		}
+	}
 
 	$response['meta'] = [
 		'counts' => [
 			'devices' => count($response['data']['devices']),
 			'modules' => count($response['data']['modules']),
 			'links' => count($response['data']['links']),
-			'nodes' => count($response['data']['nodes'])
+			'nodes' => count($response['data']['nodes']),
+			'device_logic_relations' => array_sum(array_map('count', $response['data']['device_logic']))
 		],
 		'generated_at' => date('Y-m-d H:i:s'),
 		'session_id' => session_id()
 	];
-
 
 	echo json_encode($response, JSON_UNESCAPED_UNICODE);
 } catch (Exception $e) {

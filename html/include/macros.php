@@ -40,7 +40,8 @@ if ($hasMacros) {
 				if (strpos($value, "EchoLink") !== false) $styleColor = 'background-color: #1c381c;';
 				if (strpos($value, "Metar") !== false) $styleColor = 'background-color: #4b2b4b;';
 				if (strpos($value, "Parrot") !== false) $styleColor = 'background-color: #4e4e14;';
-				if (strpos($value, "Help") !== false) $styleColor = 'background-color: #6c5cac;';
+				if (strpos($value, "Help") !== false) $styleColor = 'background-color:rgb(50, 98, 90);';
+				if (strpos($value, "Frn") !== false) $styleColor = 'background-color: #3b3a70;';
 				echo '<a class="tooltip"><span><b>Macro:</b>' . htmlspecialchars($value) .
 					'</span><button style="' . $styleColor . '" class="button macro-button"
 								data-command="' . htmlspecialchars('D' . $key . '#') . '" 

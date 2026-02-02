@@ -11,10 +11,15 @@
 		'rf_activity': 'rf_activity_content',
 		'net_activity': 'net_activity_content',
 		'connection_details': 'connection_details_content',
-		'reflector_activity': 'reflector_activity_content'
+		
 	};
+	if (typeof window.WS_ENABLED !== 'undefined' && !window.WS_ENABLED) {
+		blocks['left_panel'] = 'leftPanel';
+		blocks['radio_activity'] = 'radio_activity_content';
+	}
 
 	const UPDATE_INTERVAL = window.UPDATE_INTERVAL || 5000;
+	
 
 	function updateAllBlocks() {
 		Object.entries(blocks).forEach(([blockName, containerId]) => {
@@ -25,6 +30,7 @@
 			}
 
 			fetch(`/include/ajax_update.php?block=${blockName}&t=${Date.now()}`)
+				
 				.then(response => {
 					if (!response.ok) {
 						throw new Error(`HTTP ${response.status}`);

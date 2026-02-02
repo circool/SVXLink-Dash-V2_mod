@@ -10,7 +10,7 @@
 if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 	header('Content-Type: text/html; charset=utf-8');
 	$docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/var/www/html';
-	require_once $docRoot . '/include/settings.php';
+	require_once $docRoot . '/include/session_header.php';
 
 	$requiredFiles = [
 		'/include/fn/getTranslation.php',
@@ -28,7 +28,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 
 	if (session_status() === PHP_SESSION_ACTIVE) {
 		session_write_close();
-	}
+	} 
 	echo generatePageHead();
 	echo buildLocalActivityTable();
 	echo generatePageTail();
@@ -41,9 +41,22 @@ require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.php';
 
 function buildLocalActivityTable(): string
 {
-	if (isset($_SESSION['TIMEZONE'])) {
-		date_default_timezone_set($_SESSION['TIMEZONE']);
-	}
+	// if (isset($_SESSION['TIMEZONE'])) {
+	// 	date_default_timezone_set($_SESSION['TIMEZONE']);
+	// }
+	// if (!isset($_SESSION['TIMEZONE'])) {
+	// 	if (file_exists('/etc/timezone')) {
+	// 		$systemTimezone = trim(file_get_contents('/etc/timezone'));
+	// 	} else {
+	// 		$systemTimezone = 'UTC';
+	// 		error_log("Cant found /etc/timezone file");
+	// 	}
+	// 	$_SESSION['TIMEZONE'] = $systemTimezone;
+	// } else {
+	// 	$systemTimezone = $_SESSION['TIMEZONE'];
+	// }
+	// date_default_timezone_set($systemTimezone);
+
 
 	$logLinesCount = $_SESSION['service']['log_line_count'] ?? 10000;
 

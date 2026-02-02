@@ -34,6 +34,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 		session_name(SESSION_NAME);
 		session_start();
 	}
+	if (isset($_SESSION['TIMEZONE'])) {
+		date_default_timezone_set($_SESSION['TIMEZONE']);
+	}
 
 	echo getConnectionDetailsTable();
 	exit;
@@ -49,7 +52,9 @@ require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/parseXmlTags.php';
 function getConnectionDetails(): array
 {
 	$result = [];
-
+	if (isset($_SESSION['TIMEZONE'])) {
+		date_default_timezone_set($_SESSION['TIMEZONE']);
+	}
 	if (!isset($_SESSION['status'])) {
 		error_log('Mandatory data not found in session. $_SESSION["status"]');
 		return [];
@@ -142,7 +147,14 @@ function getEchoLinkMsg($nodeName): array
 {
 	$result = [];
 	$msg = [];
+	// @todo Нужно собрать все логики и устройства которые могут генерировать сообщения чтобы понять, что пакет эходинка закончился
+	// $_SESSION['status']['logic']['rx']
+	// $_SESSION['status']['logic']['tx']
+	// $_SESSION['status']['logic']['name']
+	// $_SESSION['status']['multiple_device'] - ключ и разделенные запятыми значения
 
+
+	// 
 	if (isset($_SESSION['status'])) {
 
 		$actualLogSize = $_SESSION['status']['service']['log_line_count'];
@@ -174,7 +186,20 @@ function getEchoLinkMsg($nodeName): array
 				$firstLine = $logContent[0];
 				$nodes = [];
 
+				$timestamp1 = strstr($firstLine, ": ", true);
+				
 				foreach ($logContent as $line) {
+					
+					// @todo секундный интервал слишком велик!
+					if ($timestamp1 !== false) {
+						$timestamp2 = strstr($line, ": ", true);
+						if ($timestamp2 !== false) {
+							$t1 = substr($timestamp1, 0, -1);
+							$t2 = substr($timestamp2, 0, -1);
+							if($t1 !== $t2) break;
+						}
+					}
+					
 					$secDiff = getLineTime($line) - getLineTime($firstLine);
 					if ($secDiff > 1) {
 						break;
@@ -212,35 +237,121 @@ function getConnectionDetailsTable(): string
 {
 	$data = getConnectionDetails();
 
-	$html = '<table style="word-wrap: break-word; white-space:normal;">';
-	$html .= '<thead>';
-	$html .= '<tr>';
-	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Logic') . '<span><b>' . getTranslation('Source') . '</b></span></a></th>';
-	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Destination') . '<span><b>' . getTranslation('Destination of transmission') . '</b></span></a></th>';
-	$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration') . '</b></span></a></th>';
-	$html .= '</tr>';
-	$html .= '</thead>';
-	$html .= '<tbody>';
+	// $html = '<table style="word-wrap: break-word; white-space:normal;">';
+	// $html .= '<thead>';
+	// $html .= '<tr>';
+	// $html .= '<th><a class="tooltip" href="#">' . getTranslation('Logic') . '<span><b>' . getTranslation('Source') . '</b></span></a></th>';
+	// $html .= '<th><a class="tooltip" href="#">' . getTranslation('Destination') . '<span><b>' . getTranslation('Destination of transmission') . '</b></span></a></th>';
+	// $html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration') . '</b></span></a></th>';
+	// $html .= '</tr>';
+	// $html .= '</thead>';
+	// $html .= '<tbody>';
 
 	if (!empty($data)) {
+		$html = '';
 		foreach ($data as $logic) {
+			
+			$html .= '<table style="word-wrap: break-word; white-space:normal;">';
+			$html .= '<thead>';
+			$html .= '<tr>';
+			$html .= '<th><a class="tooltip" href="#">' . getTranslation('Logic') . '<span><b>' . getTranslation('Source') . '</b></span></a></th>';
+			$html .= '<th><a class="tooltip" href="#">' . getTranslation('Destination') . '<span><b>' . getTranslation('Destination of transmission') . '</b></span></a></th>';
+			$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration') . '</b></span></a></th>';
+			$html .= '</tr>';
+			$html .= '</thead>';
+			$html .= '<tbody>';
 			$html .= '<tr>';
 			$html .= '<td>' . htmlspecialchars($logic['name']) . '</td>';
 			$html .= '<td>' . htmlspecialchars($logic['destination']) . '</td>';
 			$html .= '<td >' . formatDuration($logic['duration']) . '</td>';
 			$html .= '</tr>';
+			$html .= '</tbody>';
+			$html .= '</table></br>';
+			if (!empty($logic['details'])) {
+				$isFrnModule = stripos($logic['destination'], 'Frn') !== false ||
+					(isset($logic['name']) && stripos($logic['name'], 'Frn') !== false);
+
+				$isEchoLinkModule = stripos($logic['destination'], 'EchoLink') !== false ||
+					(isset($logic['name']) && stripos($logic['name'], 'EchoLink') !== false);
+
+				// Frn
+				if ($isFrnModule) {
+					$html .= '<table style="word-wrap: break-word; white-space:normal;">';
+					$html .= '<tbody>';
+
+					if (!empty($logic['details'][0])) {
+						$html .= '<tr>';
+						foreach (array_keys($logic['details'][0]) as $key) {
+							$russianNames = [
+								'S' => getTranslation('Status'),
+								'M' => getTranslation('Messages'),
+								'NN' => getTranslation('Country'),
+								'CT' => getTranslation('City'),
+								'BC' => getTranslation('Frequency'),
+								'CL' => getTranslation('Node Type'),
+								'ON' => getTranslation('Callsign'),
+								'ID' => getTranslation('ID'),
+								'DS' => getTranslation('Details')
+							];
+
+							$header = isset($russianNames[$key]) ? $russianNames[$key] : $key;
+							$html .= '<th>' . htmlspecialchars($header) . '</th>';
+						}
+						$html .= '</tr>';
+					}
+
+					foreach ($logic['details'] as $node) {
+						$html .= '<tr>';
+						foreach ($node as $key => $value) {
+							if ($key == 'CL') {
+								$nodeTypes = [
+									'0' => getTranslation('crosslink'),
+									'1' => getTranslation('gateway'),
+									'2' => getTranslation('pc only')
+								];
+								$value = isset($nodeTypes[$value]) ? $nodeTypes[$value] : $value;
+							}
+							$html .= '<td>' . htmlspecialchars($value) . '</td>';
+						}
+						$html .= '</tr>';
+					}
+
+					$html .= '</tbody></table>';
+				}
+				// EchoLink
+				elseif ($isEchoLinkModule) {
+					$html .= '<div class="message_block">';
+					foreach ($logic['details'] as $message) {
+						$html .= '<div class="mode_flex">' . $message . '</div>';
+					}
+					$html .= '</div>';
+				}
+			}
+			$html .= '<br>';
 		}
 	} else {
+		$html = '<table style="word-wrap: break-word; white-space:normal;">';
+		$html .= '<thead>';
+		$html .= '<tr>';
+		$html .= '<th><a class="tooltip" href="#">' . getTranslation('Logic') . '<span><b>' . getTranslation('Source') . '</b></span></a></th>';
+		$html .= '<th><a class="tooltip" href="#">' . getTranslation('Destination') . '<span><b>' . getTranslation('Destination of transmission') . '</b></span></a></th>';
+		$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration') . '</b></span></a></th>';
+		$html .= '</tr>';
+		$html .= '</thead>';
+		$html .= '<tbody>';
 		$html .= '<tr><td colspan=3>' . getTranslation('No activity history found') . '</td></tr>';
+		$html .= '</tbody>';
+		$html .= '</table>';
 	}
 
-	$html .= '</tbody>';
-	$html .= '</table>';
+	// $html .= '</tbody>';
+	// $html .= '</table>';
 
 	$html .= '<br>';
 
 	if (!empty($data)) {
 		foreach ($data as $logic) {
+			continue;
 			if (!empty($logic['details'])) {
 				$isFrnModule = stripos($logic['destination'], 'Frn') !== false ||
 					(isset($logic['name']) && stripos($logic['name'], 'Frn') !== false);

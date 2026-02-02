@@ -14,6 +14,13 @@
 
 [ ] Think of a way to recognize logic when modules are active (for displaying the callsign and destination).
 
+[ ] getActualStatus - add parsing 
+	- "*** ERROR: Command timeout while communicating to the directory server"
+	- "*** ERROR: Directory server offline (status=OFF). Can't create outgoing connection."
+
+
+
+
 ## Unimplemented features.
 
 [+] Add EchoLink conference server & proxy state to left panel
@@ -28,7 +35,7 @@
 
 ### Error control and their display. 
 
-[ ] Show errors in audio devices (incl. multiple devices)
+[+] Show errors in audio devices (incl. multiple devices)
 
 [+] Show PEAK METER events
 
