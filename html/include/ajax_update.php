@@ -31,9 +31,9 @@ if (!in_array($block, $allowedBlocks)) {
 }
 
 if (session_status() === PHP_SESSION_NONE) {
-	require_once $docRoot . '/include/settings.php';
-	session_name(SESSION_NAME);
-	session_start();
+	require_once $docRoot . '/include/session_header.php';
+	// session_name(SESSION_NAME);
+	// session_start();
 }
 
 if (isset($_SESSION['TIMEZONE'])) {

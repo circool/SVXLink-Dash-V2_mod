@@ -10,10 +10,11 @@
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getActualStatus.php';
+require_once $_SERVER["DOCUMENT_ROOT"] . '/include/session_header.php';
 
-$activeCellClass = ' disabled-mode-cell';
-$pausedCellClass = ' disabled-mode-cell';
-$inactiveCellClass = ' disabled-mode-cell';
+$activeCellClass = ' active-mode-cell';
+$pausedCellClass = ' paused-mode-cell';
+$inactiveCellClass = ' inactive-mode-cell';
 $disabledCellClass = ' disabled-mode-cell';
 
 function buildLogicData(array $lp_status): array
@@ -24,19 +25,19 @@ function buildLogicData(array $lp_status): array
 		'unconnected_reflectors' => [],
 		'unconnected_links' => []
 	];
-	
+
 
 	$lp_service = $lp_status['service'];
 	$lp_logics = $lp_status['logic'];
 	$lp_links = $lp_status['link'];
 
 	$excl = ["Logic", "Reflector", "Link"];
-	
+
 	$activeCellClass = $lp_service['is_active'] ? ' active-mode-cell' : ' disabled-mode-cell';
 	$inactiveCellClass = $lp_service['is_active'] ? ' inactive-mode-cell' : ' disabled-mode-cell';
 	$pausedCellClass = $lp_service['is_active'] ? ' paused-mode-cell' : ' disabled-mode-cell';
 	$disabledCellClass = ' disabled-mode-cell';
-	
+
 	$getCellStyle = function ($active, $connected, $hasConnected = false) {
 		if ($hasConnected) {
 
@@ -94,7 +95,7 @@ function buildLogicData(array $lp_status): array
 			continue;
 		}
 
-		$logicClass = $getCellStyle($logic['is_connected'], $logic['is_active'],  true); 
+		$logicClass = $getCellStyle($logic['is_connected'], $logic['is_active'],  true);
 
 		$modules = [];
 		$activeModule = null;
@@ -104,11 +105,22 @@ function buildLogicData(array $lp_status): array
 				$moduleCanConnected = $module['name'] == "EchoLink" || $module['name'] == "Frn";
 				$moduleClass = $getCellStyle($module['is_active'], $module['is_connected'], $moduleCanConnected);
 				$durationHtml = formatDuration($module['start'] > 0 ? time() - $module['start'] : 0);
+				// $moduleData = [
+				// 	'name' => $module['name'],
+				// 	'style' => $moduleClass,
+				// 	'tooltip_start' => $module['start'] > 0 ?
+				// 		'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br></span>' : '',
+				// 	'tooltip_end' => $module['start'] > 0 ? '</a>' : ''
+				// ];
 				$moduleData = [
 					'name' => $module['name'],
 					'style' => $moduleClass,
 					'tooltip_start' => $module['start'] > 0 ?
-						'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br></span>' : '',
+						'<a class="tooltip" href="javascript:void(0)" ' .
+						(($module['is_connected'] || $module['is_active']) ?
+							'onclick="sendLinkCommand(\'#\', \'' . htmlspecialchars($logicName, ENT_QUOTES) . '\')" ' .
+							'title="' . getTranslation('Click for disconnect') . '" ' : '') .
+						'><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br></span>' : '',
 					'tooltip_end' => $module['start'] > 0 ? '</a>' : ''
 				];
 
@@ -188,7 +200,7 @@ function buildLogicData(array $lp_status): array
 
 							foreach ($allGroups as $group) {
 								$groupStyle = $disabledCellClass;
-								
+
 								if (isset($tg['selected']) && $group == $tg['selected']) {
 									$groupStyle = $activeCellClass;
 								} elseif (!empty($tg['temp_monitoring']) && in_array($group, $tg['temp_monitoring'])) {
@@ -202,7 +214,7 @@ function buildLogicData(array $lp_status): array
 								}
 
 								if (isset($tg['default']) && $group == $tg['default']) {
-									$groupStyle .= ' default'; 
+									$groupStyle .= ' default';
 								}
 
 								$talkGroups[] = [
@@ -252,12 +264,52 @@ function buildLogicData(array $lp_status): array
 
 					$linkClass = $getCellStyle($link['is_connected'], $link['is_active'],  false);
 					$durationHtml = formatDuration($link['start'] > 0 ? time() - $link['start'] : 0);
+					
+					// $tooltipParts = [];
+					// if (!empty($link['timeout'])) $tooltipParts[] = 'Timeout: ' . $link['timeout'] . " s.";
+					// if (!empty($link['source']['announcement_name'])) $tooltipParts[] = 'Source: ' . $link['source']['announcement_name'];
+					// if (!empty($link['destination']['announcement_name'])) $tooltipParts[] = 'Destination: ' . $link['destination']['announcement_name'];
+					// if (!empty($link['source']['command']['activate_command'])) $tooltipParts[] = 'Activate: ' . $link['source']['command']['activate_command'];
+					// if (!empty($link['source']['command']['deactivate_command'])) $tooltipParts[] = 'Deactivate: ' . $link['source']['command']['deactivate_command'];
+					// $shortname = trim(str_replace($excl, '', $linkName));
+					// if ($shortname === '') {
+					// 	$shortname = $linkName;
+					// }
+
+					// $relatedReflectors[$reflectorName]['links'][$linkName] = [
+					// 	'shortname' => $shortname,
+					// 	'name' => $linkName,
+					// 	'style' => $linkClass,
+					// 	'tooltip_start' => '<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br>' .
+					// 		implode(' | ', $tooltipParts) . '</span>',
+					// 	'tooltip_end' => '</a>'
+					// ];
+
 					$tooltipParts = [];
 					if (!empty($link['timeout'])) $tooltipParts[] = 'Timeout: ' . $link['timeout'] . " s.";
 					if (!empty($link['source']['announcement_name'])) $tooltipParts[] = 'Source: ' . $link['source']['announcement_name'];
 					if (!empty($link['destination']['announcement_name'])) $tooltipParts[] = 'Destination: ' . $link['destination']['announcement_name'];
 					if (!empty($link['source']['command']['activate_command'])) $tooltipParts[] = 'Activate: ' . $link['source']['command']['activate_command'];
 					if (!empty($link['source']['command']['deactivate_command'])) $tooltipParts[] = 'Deactivate: ' . $link['source']['command']['deactivate_command'];
+
+					// Определяем команду для переключения состояния линка
+					$toggleCommand = '';
+					$toggleTitle = '';
+					if (
+						!empty($link['source']['command']['activate_command']) &&
+						!empty($link['source']['command']['deactivate_command'])
+					) {
+
+						if ($link['is_connected']) {
+							// Линк активен - отправляем команду выключения
+							$toggleCommand = $link['source']['command']['deactivate_command'] . '#';
+							$toggleTitle = getTranslation('Click to deactivate');
+						} else {
+							// Линк неактивен - отправляем команду включения
+							$toggleCommand = $link['source']['command']['activate_command'] . '#';
+							$toggleTitle = getTranslation('Click to activate');
+						}
+					}
 
 					$shortname = trim(str_replace($excl, '', $linkName));
 					if ($shortname === '') {
@@ -268,10 +320,15 @@ function buildLogicData(array $lp_status): array
 						'shortname' => $shortname,
 						'name' => $linkName,
 						'style' => $linkClass,
-						'tooltip_start' => '<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br>' .
+						'tooltip_start' => '<a class="tooltip" href="javascript:void(0)" ' .
+							($toggleCommand ? 'onclick="sendLinkCommand(\'' . htmlspecialchars($toggleCommand, ENT_QUOTES) .
+								'\', \'' . htmlspecialchars($logicName, ENT_QUOTES) . '\')" ' .
+								'title="' . htmlspecialchars($toggleTitle) . '" ' : '') .
+							'><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br>' .
 							implode(' | ', $tooltipParts) . '</span>',
 						'tooltip_end' => '</a>'
 					];
+
 				}
 			}
 		}
@@ -653,7 +710,7 @@ if (isset($displayData['aprs_server'])) : ?>
 <?php endif;
 
 // @bookmark EL Directory Server
-if ($displayData['service']['is_active'] && (!empty($displayData['directory_server'] || !empty($displayData['proxy_server']))) ) : ?>
+if (!empty($displayData['directory_server'] || !empty($displayData['proxy_server']))) : ?>
 	<div class="divTable">
 		<div class="divTableHead"><?= getTranslation('Directory Server') ?></div>
 	</div>
@@ -665,15 +722,16 @@ if ($displayData['service']['is_active'] && (!empty($displayData['directory_serv
 					<?= empty($displayData['directory_server']['name']) ? getTranslation('Disconnected') : getTranslation($displayData['directory_server']['name']) ?>
 				</div>
 			</div>
-			<?php if (isset($displayData['proxy_server'])) : ?>
-				
-				<div class="divTableRow center">
-					<div class="divTableHeadCell"><?= getTranslation('Proxy') ?></div>
-					<div id="proxy_server_status" class="divTableCell cell_content center <?php echo $displayData['proxy_server']['start'] > 0 ? $activeCellClass : $inactiveCellClass ?>">
-						<?= $displayData['proxy_server']['name'] ?>
-					</div>
+
+
+			<div id="proxy_server" class=" divTableRow center <?php echo isset($displayData['proxy_server']) ? '' : 'hidden'; ?>">
+				<div class="divTableHeadCell"><?= getTranslation('Proxy') ?></div>
+				<div id="proxy_server_status" class="divTableCell cell_content center <?php echo $displayData['proxy_server']['start'] > 0 ? $activeCellClass : $inactiveCellClass ?>">
+					<?= $displayData['proxy_server']['name'] ?>
 				</div>
-			<?php endif ?>
+			</div>
+
+
 		</div>
 	</div>
 	<br>
@@ -696,3 +754,20 @@ unset(
 	$module
 );
 ?>
+<script>
+	function sendLinkCommand(command, source) {
+		fetch('/include/dtmf_handler.php', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded'
+				},
+				body: new URLSearchParams({
+					command: command,
+					source: source
+				})
+			})
+			.then(r => r.text())
+			.then(eval)
+			.catch(console.error);
+	}
+</script>

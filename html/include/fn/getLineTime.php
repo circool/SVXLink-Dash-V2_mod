@@ -2,12 +2,22 @@
 
 /**
  * @author vladimir@tsurkanenko.ru
- * @version 0.1.2.release
+ * @version 0.1.3.release
  * @filesource /include/fn/getLineTime.php
  */
 function getLineTime(string $line): int
 {
-	$timeZone = isset($_SESSION['TIMEZONE']) ? $_SESSION['TIMEZONE'] : "UTC";
+	
+	if (isset($_SESSION['TIMEZONE'])) {
+		$timeZone = $_SESSION['TIMEZONE'];
+	} else {
+		if (file_exists('/etc/timezone')) {
+			$timeZone = trim(file_get_contents('/etc/timezone'));
+		} else {
+			$timeZone = 'UTC';
+		}	
+	}
+	
 	
 	$pos = strpos($line, ': ');
 
@@ -25,4 +35,6 @@ function getLineTime(string $line): int
 
 	return $time;
 }
+
+
 ?>
