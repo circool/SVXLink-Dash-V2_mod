@@ -28,10 +28,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 
 	if (session_status() === PHP_SESSION_ACTIVE) {
 		session_write_close();
-	} 
-	echo generatePageHead();
-	echo buildLocalActivityTable();
-	echo generatePageTail();
+	}
+	echo getRfActivityTable();
 	exit;
 }
 
@@ -39,41 +37,26 @@ require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.php';
 
-function buildLocalActivityTable(): string
+function getRfActivityActions(): array
 {
-	// if (isset($_SESSION['TIMEZONE'])) {
-	// 	date_default_timezone_set($_SESSION['TIMEZONE']);
-	// }
-	// if (!isset($_SESSION['TIMEZONE'])) {
-	// 	if (file_exists('/etc/timezone')) {
-	// 		$systemTimezone = trim(file_get_contents('/etc/timezone'));
-	// 	} else {
-	// 		$systemTimezone = 'UTC';
-	// 		error_log("Cant found /etc/timezone file");
-	// 	}
-	// 	$_SESSION['TIMEZONE'] = $systemTimezone;
-	// } else {
-	// 	$systemTimezone = $_SESSION['TIMEZONE'];
-	// }
-	// date_default_timezone_set($systemTimezone);
-
-
 	$logLinesCount = $_SESSION['service']['log_line_count'] ?? 10000;
 
-	$squelch_lines = getLogTailFiltered( RF_ACTIVITY_LIMIT * 20, null, ["The squelch is"], $logLinesCount);
+	$squelch_lines = getLogTailFiltered(RF_ACTIVITY_LIMIT * 20, null, ["The squelch is"], $logLinesCount);
 
 	if (!$squelch_lines) {
-		return generateEmptyTableBody();
+		return [];
 	}
+
 	$squelch_pairs = findSquelchPairs($squelch_lines);
 	if (empty($squelch_pairs)) {
-		return generateEmptyTableBody();
+		return [];
 	}
 
 	$activity_rows = [];
 	$defaultDestination = getTranslation('Unknown');
+
 	foreach ($squelch_pairs as $pair) {
-		$destination = $defaultDestination; 
+		$destination = $defaultDestination;
 		$open_colon_pos = strpos($pair['open_line'], ': ');
 		$close_colon_pos = strpos($pair['close_line'], ': ');
 
@@ -96,7 +79,6 @@ function buildLocalActivityTable(): string
 		$time_lines = getLogTailFiltered(100, $time_prefix, [], $logLinesCount);
 
 		if ($time_lines && is_array($time_lines)) {
-
 			$context_lines = [];
 			$open_found = false;
 
@@ -142,10 +124,10 @@ function buildLocalActivityTable(): string
 					$destination = $primary_destination;
 				} elseif (!empty($dtmf_digits)) {
 					$destination = $dtmf_prefix . ': <b>DTMF ' . implode('', $dtmf_digits) . '</b>';
-				}				
+				}
 			}
 		}
-		
+
 		$open_time = strtotime($open_timestamp);
 		$activity_rows[] = [
 			'date' => date('d M Y', $open_time),
@@ -159,9 +141,7 @@ function buildLocalActivityTable(): string
 		return strtotime($b['date'] . ' ' . $b['time']) <=> strtotime($a['date'] . ' ' . $a['time']);
 	});
 
-	$activity_rows = array_slice($activity_rows, 0, RF_ACTIVITY_LIMIT);
-	$html = generateActivityTableBody($activity_rows);
-	return $html;
+	return array_slice($activity_rows, 0, RF_ACTIVITY_LIMIT);
 }
 
 function findSquelchPairs(array $squelch_lines): array
@@ -254,56 +234,46 @@ function findPatternInLine(string $line): ?string
 	return null;
 }
 
-function generateActivityTableBody(array $activity_rows): string
+function getRfActivityTable(): string
 {
-	$html = '';
-	if (!empty($activity_rows)) {
-		foreach ($activity_rows as $row) {
-			$html .= '<tr class="divTable divTableRow">';
-			$html .= '<td class="divTableContent">' . htmlspecialchars($row['date']) . '</td>';
-			$html .= '<td class="divTableCol">' . htmlspecialchars($row['time']) . '</td>';
-			$html .= '<td class="divTableCol">' . $row['destination'] . '</td>';
-			$html .= '<td class="divTableCol">' . htmlspecialchars($row['duration']) . '</td>';
+	$net_data = getRfActivityActions();
+
+	$html = '<table style="word-wrap: break-word; white-space:normal;">';
+	$html .= '<tbody>';
+	$html .= '<tr>';
+	$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Date') . '<span><b>' . getTranslation('Date') . '</b></span></a></th>';
+	$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Time') . '<span><b>' . getTranslation('Local Time') . '</b></span></a></th>';
+	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Transmission destination') . '<span><b>' . getTranslation("Frn Server, Reflector's Talkgroup, Echolink Node, Conference etc.") . '</b></span></a></th>';
+	$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration in Seconds') . '</b></span></a></th>';
+	$html .= '</tr>';
+
+	if (!empty($net_data)) {
+		foreach ($net_data as $row) {
+			$html .= '<tr>';
+			$html .= '<td class="divTableContent">' . $row['date'] . '</td>';
+			$html .= '<td>' . $row['time'] . '</td>';
+			$html .= '<td>' . $row['destination'] . '</td>';
+			$html .= '<td>' . $row['duration'] . '</td>';
 			$html .= '</tr>';
 		}
-		return $html;
 	} else {
-		return generateEmptyTableBody();
+		$html .= '<tr><td colspan="4" >' . getTranslation('No activity history found') . '</td></tr>';
 	}
+
+	$html .= '</tbody>';
+	$html .= '</table>';
+
+	return $html;
 }
 
-function generateEmptyTableBody(): string
-{
-	return '<tr class="divTable divTableRow"><td colspan="4" class="divTableContent">' . getTranslation('No activity history found') . '</td></tr>';
-}
-
-function generatePageHead(): string
-{
-
-	$result = '</div><div id="rf_activity_content"><table class="divTable" style="word-wrap: break-word; white-space:normal;">';
-	$result .= '<tbody class="divTableBody"><tr>';
-	$result .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Date') . '<span><b>' . getTranslation('Date') . '</b></span></a></th>';
-	$result .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Time') . '<span><b>' . getTranslation('Local Time') . '</b></span></a></th>';
-	$result .= '<th><a class="tooltip" href="#">' . getTranslation('Transmission destination') . '<span><b>' . getTranslation("Frn Server, Reflector's Talkgroup, Echolink Node, Conference etc.") . '</b></span></a></th>';
-	$result .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration in Seconds') . '</b></span></a></th></tr>';
-	return $result;
-}
-
-function generatePageTail(): string
-{
-	return '</tbody></table></div></div>';
-}
-
-$tableHtml = buildLocalActivityTable();
 $rfResultLimit = RF_ACTIVITY_LIMIT . ' ' . getTranslation('Actions');
-echo '<div id="rf_activity"><div class="larger" style="vertical-align: bottom; font-weight:bold;text-align:left;margin-top:12px;">';
-echo getTranslation('Last') . ' ' . RF_ACTIVITY_LIMIT . ' ' . getTranslation('Actions') . " " . getTranslation('RF Activity');
-echo generatePageHead();
-echo $tableHtml;
-echo generatePageTail();
-
-
-unset($tableHtml, $rfResultLimit);
 ?>
-
-			
+<div id="rf_activity">
+	<div class="larger" style="vertical-align: bottom; font-weight:bold;text-align:left;margin-top:12px;">
+		<?php echo getTranslation('Last') . ' ' . RF_ACTIVITY_LIMIT . ' ' . getTranslation('Actions') . " " . getTranslation('RF Activity') ?>
+	</div>
+	<div id="rf_activity_content">
+		<?php echo getRfActivityTable(); ?>
+	</div>
+	<br>
+</div>

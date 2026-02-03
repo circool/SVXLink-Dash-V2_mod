@@ -288,11 +288,44 @@ class CommandParser {
 							action: 'add_class',
 							class: 'inactive-mode-cell'
 						},
-						// {
-						// 	id: 'service',
-						// 	action: 'set_content',
-						// 	payload: 'OFF'
-						// }
+						{
+							id: 'aprs_status',
+							action: 'remove_class',
+							class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell'
+						},
+						{
+							id: 'aprs_status',
+							action: 'add_class',
+							class: 'disabled-mode-cell'
+						},
+						//proxy_server
+						{
+							id: 'proxy_server_status',
+							action: 'remove_class',
+							class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell'
+						},
+						{
+							id: 'proxy_server_status',
+							action: 'add_class',
+							class: 'disabled-mode-cell'
+						},
+						{
+							id: 'proxy_server',
+							action: 'add_class',
+							class: 'hidden'
+						},
+						//directory_server
+						{
+							id: 'directory_server_status',
+							action: 'remove_class',
+							class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell'
+						},
+						{
+							id: 'directory_server_status',
+							action: 'add_class',
+							class: 'disabled-mode-cell'
+						},
+						
 					);
 					// stop all timers and clear all known content
 					for (const timerKey of this.sm.timers.keys()) {
@@ -487,7 +520,7 @@ class CommandParser {
 						return [
 							{ id: `device_${device}_tx_status`, action: 'set_content', payload: 'STANDBY' },
 							{ id: `device_${device}_tx_status`, action: 'remove_class', class: 'inactive-mode-cell' },
-							{ id: `device_${device}_tx`, action: 'set_content', payload: `<span class="error">${device}</span>` },
+							{ id: `device_${device}_tx`, action: 'set_content', payload: `<a class="tooltip" href="#"><span><b>Timeout</b></span><em class="error">${device}</em></a>` },
 						];
 					
 					} else {
@@ -531,7 +564,7 @@ class CommandParser {
 						return [
 							{ id: `device_${device}_tx_status`, action: 'set_content', payload: 'STANDBY' },
 							{ id: `device_${device}_tx_status`, action: 'remove_class', class: 'inactive-mode-cell' },
-							{ id: `device_${device}_tx`, action: 'set_content', payload: `<span class="error"><${device} /span>` },
+							{ id: `device_${device}_tx`, action: 'set_content', payload: `<a class="tooltip" href="#"><span><b>ERROR</b></span><em class="error">${device}</em></a>` },
 						];
 
 					} else {
@@ -725,12 +758,18 @@ class CommandParser {
 					const logic = match[2];
 					const talkgroup = match[3];
 					const callsign = match[4];
-
+					this.sm.startTimer(`device_${logic}_rx_status`, {
+						elementId: `device_${logic}_rx_status`,
+						replaceStart: '( ',
+						replaceEnd: ' )',
+						type: 'device'
+					});
 					return [
 						{ id: `radio_logic_${logic}_callsign`, action: 'set_content', payload: callsign },
 						{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: `Talkgroup: ${talkgroup}` },
-						{ id: `device_${logic}_tx_status`, action: 'set_content', payload: 'NET' },
-						{ id: `device_${logic}_tx_status`, action: 'add_class', class: 'active-mode-cell' },
+						{ id: `device_${logic}_rx`, action: 'set_content', payload: 'NET' },
+						{ id: `device_${logic}_rx_status`, action: 'set_content', payload: 'INCOMING ( 0 s )' },
+						{ id: `device_${logic}_rx_status`, action: 'add_class', class: 'active-mode-cell' },
 						{ id: `radio_logic_${logic}`, action: 'remove_parent_class', class: 'hidden' }
 					];
 				}
@@ -742,12 +781,13 @@ class CommandParser {
 				handler: (match) => {
 					const logic = match[2];
 					const group = match[3];
-
+					this.sm.stopTimer(`device_${logic}_rx_status`);
 					return [
 						{ id: `radio_logic_${logic}_callsign`, action: 'set_content', payload: '' },
 						{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: '' },
-						{ id: `device_${logic}_tx_status`, action: 'set_content', payload: '' },
-						{ id: `device_${logic}_tx_status`, action: 'remove_class', class: 'active-mode-cell' },
+						{ id: `device_${logic}_rx`, action: 'set_content', payload: '' },
+						{ id: `device_${logic}_rx_status`, action: 'set_content', payload: '' },
+						{ id: `device_${logic}_rx_status`, action: 'remove_class', class: 'active-mode-cell' },
 						{ id: `radio_logic_${logic}`, action: 'add_parent_class', class: 'hidden' }
 					];
 				}
@@ -1468,6 +1508,7 @@ class CommandParser {
 				regex: /^(.+?): EchoLink directory status changed to ON$/,
 				handler: (match) => {
 					return [
+						
 						{ id: 'directory_server_status', action: 'remove_class', class: 'inactive-mode-cell,paused-mode-cell,disabled-mode-cell'},
 						{ id: 'directory_server_status', action: 'add_class', class: 'active-mode-cell'},
 						{ id: 'directory_server_status', action: 'set_content', payload: 'Connected' }
@@ -1512,6 +1553,7 @@ class CommandParser {
 				handler: (match) => {
 					const host = match[2];
 					return [
+						{ id: 'proxy_server', action: 'remove_class', class: 'hidden' },
 						{ id: 'proxy_server_status', action: 'remove_class', class: 'inactive-mode-cell,disabled-mode-cell,paused-mode-cell' },
 						{ id: 'proxy_server_status', action: 'add_class', class: 'active-mode-cell' },
 						{ id: 'proxy_server_status', action: 'set_content', payload: host }

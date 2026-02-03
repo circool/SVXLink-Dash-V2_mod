@@ -22,7 +22,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 		'/include/fn/getLineTime.php',
 		'/include/fn/parseXmlTags.php'
 	];
-
+	
 	foreach ($requiredFiles as $file) {
 		$fullPath = $docRoot . $file;
 		if (file_exists($fullPath)) {
@@ -33,10 +33,24 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 	if (session_status() === PHP_SESSION_NONE) {
 		session_name(SESSION_NAME);
 		session_start();
+		// if (!isset($_SESSION['TIMEZONE'])) {
+
+		// 	if (file_exists('/etc/timezone')) {
+		// 		$systemTimezone = trim(file_get_contents('/etc/timezone'));
+		// 	} else {
+		// 		$systemTimezone = 'UTC';
+		// 	}
+		// 	$_SESSION['TIMEZONE'] = $systemTimezone;
+		// }
 	}
-	if (isset($_SESSION['TIMEZONE'])) {
-		date_default_timezone_set($_SESSION['TIMEZONE']);
-	}
+	
+
+	// if (isset($_SESSION['TIMEZONE'])) {
+	// 	date_default_timezone_set($_SESSION['TIMEZONE']);
+	// }
+
+	// error_log("TIMEZONE IS " . $_SESSION['TIMEZONE']);
+	// error_log("date_default_timezone IS " . date_default_timezone_get());
 
 	echo getConnectionDetailsTable();
 	exit;
@@ -182,28 +196,25 @@ function getEchoLinkMsg($nodeName): array
 		if ($logPosition !== false) {
 			$logContent = getLogTail($logPosition);
 			if ($logContent !== false) {
-
-				$firstLine = $logContent[0];
-				$nodes = [];
-
-				$timestamp1 = strstr($firstLine, ": ", true);
 				
+				$nodes = [];
+				$message_start_time = getLineTime($logContent[0]);
+							
 				foreach ($logContent as $line) {
-					
-					// @todo секундный интервал слишком велик!
-					if ($timestamp1 !== false) {
-						$timestamp2 = strstr($line, ": ", true);
-						if ($timestamp2 !== false) {
-							$t1 = substr($timestamp1, 0, -1);
-							$t2 = substr($timestamp2, 0, -1);
-							if($t1 !== $t2) break;
+					$time_diff = getLineTime($line) - $message_start_time;
+
+					if ($time_diff > 1) {
+						break;
+					} else {
+						$milis_end = (int)substr(strstr($line, ": ", true), -3);
+						$milis_start = (int)substr(strstr($logContent[0], ": ", true), -3);
+
+						if ($time_diff === 1) {
+							if (1000 + $milis_end - $milis_start > 10) break;
+						} else {
+							if (abs($milis_end - $milis_start) > 10) break;
 						}
 					}
-					
-					$secDiff = getLineTime($line) - getLineTime($firstLine);
-					if ($secDiff > 1) {
-						break;
-					};
 
 					if (strpos($line, "Trailing chat data") !== false) {
 						break;

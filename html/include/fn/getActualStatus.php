@@ -11,12 +11,13 @@ function getActualStatus(bool $forceRebuild = false): array
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.php';
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getLineTime.php';
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/parseXmlTags.php';
-	
+	// require_once $_SERVER["DOCUMENT_ROOT"] . '/include/session_header.php';
 
-	if (isset($_SESSION['status']) === false) {
+
+	if (!isset($_SESSION['status']['service']['log_line_count'])) {
 		$forceRebuild = true;
 	}
-	$forceRebuild = true;
+
 	if ($forceRebuild) {
 		$has_error = '';
 		$stub = [
@@ -32,10 +33,6 @@ function getActualStatus(bool $forceRebuild = false): array
 					'start' => 0
 				],
 			],
-			// 'radio_status' => [
-			// 	'status' => "LOG ERROR",
-			// 	'start' => time(),
-			// ],
 			'callsign' => "LOG ERROR",
 		];
 
@@ -91,10 +88,10 @@ function getActualStatus(bool $forceRebuild = false): array
 
 		if (empty($logics)) {
 			error_log("getActualStatus: $logics: logics empty");
-			$stub['service']['name'] = 'EMPTY LOGICS'; 
+			$stub['service']['name'] = 'EMPTY LOGICS';
 			return $stub;
 		}
-		
+
 		$service = [
 			'start' => 0,
 			'name' => SERVICE_TITLE,
@@ -248,12 +245,12 @@ function getActualStatus(bool $forceRebuild = false): array
 							'is_connected' => false,
 							'connected_nodes' => []
 						];
-						if($moduleName === 'EchoLink'){
-							if(!isset($service['directory_server'])){
+						if ($moduleName === 'EchoLink') {
+							if (!isset($service['directory_server'])) {
 								$service['directory_server'] = [
 									'name' => '',
 									'start' => 0,
-								]	;
+								];
 							};
 						}
 					}
@@ -281,10 +278,10 @@ function getActualStatus(bool $forceRebuild = false): array
 			unset($rxDeviceName, $txDeviceName, $rxProcessed, $txProcessed);
 		}
 
-		
-		
+
+
 		$locationInfoSection = $svxconfig['GLOBAL']['LOCATION_INFO'] ?? '';
-		
+
 		if (!empty($locationInfoSection) && isset($svxconfig[$locationInfoSection])) {
 			// APRS
 			$aprsServerList = $svxconfig[$locationInfoSection]['APRS_SERVER_LIST'] ?? '';
@@ -304,8 +301,7 @@ function getActualStatus(bool $forceRebuild = false): array
 					'name' => $serverName,
 					'has_error' => false,
 				];
-				$service['status_server'] = $statusServer;				
-				
+				$service['status_server'] = $statusServer;
 			}
 		}
 
@@ -321,6 +317,7 @@ function getActualStatus(bool $forceRebuild = false): array
 			'callsign' => $callsign,
 		];
 	} else {
+		
 		$status = [
 			'link' => $_SESSION['status']['link'],
 			'logic' => $_SESSION['status']['logic'],
@@ -331,64 +328,74 @@ function getActualStatus(bool $forceRebuild = false): array
 	}
 
 	// @bookmark Заполнение конфигурации данными
-	if (isset($_SESSION['status']['service']['log_line_count'])) {
-		$count = $_SESSION['status']['service']['log_line_count'] + 100;
+	$search_limit = isset($_SESSION['status']['service']['log_line_count'])
+		? ($_SESSION['status']['service']['log_line_count'] > 0 ? $_SESSION['status']['service']['log_line_count'] : null)
+		: null;
+	
+	$log_growth_rate = ( (defined("UPDATE_INTERVAL") && UPDATE_INTERVAL > 1000 ) ? UPDATE_INTERVAL : 10000 ) / 3 ;
+	if(!is_null($search_limit)) $search_limit = $search_limit + $log_growth_rate; 
+
+	$or_conditions = ["SIGTERM", "Tobias Blomberg"];
+	$search_result = getLogTailFiltered(1, null, $or_conditions, $search_limit);
+		
+	if ($search_result === false) {
+		
+		$status['service']['name'] = "SRV STATUS UNKNOWN";
+		return $status;
+
 	} else {
-		$count = null;
+		
+		$action_line = $search_result[0];
+		if (empty($action_line)) {
+			error_log("getActualStatus: Cant find svxlink start/stop actions in empty line $action_line");
+			$status['service']['name'] = "SRV STATUS EMPTY";
+			return $status;
+		}
 	}
-
-	$or_conditions[] = "Tobias Blomberg";
-	$or_conditions[] = "SIGTERM";
-
-	$logLines = getLogTailFiltered(1, null, $or_conditions, $count);
 	unset($or_conditions);
 
-	if ($logLines === false) {
-		error_log("getActualStatus: Log not found or empty.");
-		$status['service']['name'] = "LOG PARSE ERROR";
-		return $status;
-	}
-
-	$logStatusLine = trim($logLines[0]);
-	if (empty($logStatusLine)) {
-		error_log("getActualStatus: Cant find svxlink start/stop actions");
-		$status['service']['name'] = "LOG PARSE ERROR";
-		return $status;
-	}
-
-	$line_timestamp = getLineTime($logStatusLine);
-	if ($line_timestamp === false) {
-		error_log("getActualStatus: Cant parse timestamp from $logStatusLine");
+	$action_line_timestamp = getLineTime($action_line);
+	if ($action_line_timestamp === false || $action_line_timestamp === 0 ) {
+		error_log("getActualStatus: Cant parse timestamp from $service_action_line");
 		$status['service']['name'] = "LOG TIMESTAMP ERROR";
 		return $status;
 	}
-
-	if (strpos($logStatusLine, 'Tobias Blomberg', 0) !== false) {
+	
+	if (strpos($action_line, 'Tobias Blomberg', 0) !== false) {
 		$status['service']['is_active'] = true;
-		$searchPattern = "Tobias Blomberg";
+		$status['service']['start'] = $action_line_timestamp;
 	} else {
 		$status['service']['is_active'] = false;
-		$searchPattern = "SIGTERM";
+		return $status;
+	}
+	unset($or_conditions, $action_line_timestamp);
+
+	// Service up, calculate log size
+
+	
+	$max_lines = is_null($search_limit) ? 0 : $search_limit;
+	$log_size = countLogLines($action_line, $max_lines);
+	if ($log_size === false) {
+		
+		error_log("getActualStatus: Zero size log for pattetn $action_line last $max_lines");
+		$status['service']['name'] = "ZERO SERVICE SIZE";
+		return $status;
+	} else {
+		$status['service']['log_line_count'] = $log_size;
+		$session_log_size = $_SESSION['status']['service']['log_line_count'] ?? null;
+		if ($session_log_size !== $log_size) {
+			$_SESSION['status']['service']['log_line_count'] = $log_size;
+		}
+		unset($session_log_size, $max_lines);
 
 	}
+	
 
-	$log_count = is_null($count) ? 0 : $count;
-	$logLineCount = countLogLines($searchPattern, $log_count);
-	if ($logLineCount === false) {
-		$logLineCount = 0;
-		error_log("getActualStatus: Zero size log");
-		$status['service']['name'] = "LOG SIZE ERROR";
-	}
-
-	$status['service']['start'] = $line_timestamp;
-	$status['service']['log_line_count'] = $logLineCount;
 
 	if ($status['service']['is_active'] === false) {
-		// error_log("getActualStatus: Svxlink session is not active, stopping");
 		return $status;
 	}
 
-	$logCount = $status['service']['log_line_count'];
 	$isSomeModuleActive = false;
 
 	foreach ($status['logic'] as $logicName => &$logic) {
@@ -406,14 +413,18 @@ function getActualStatus(bool $forceRebuild = false): array
 		if ($logicType === 'Reflector') {
 			$or_conditions[] = "Authentication OK";
 			$or_conditions[] = "Disconnected from";
-			$serviceCommand = trim(getLogTailFiltered(1, $required_condition, $or_conditions, $logCount)[0]);
-			unset($or_conditions);
 		} else {
 			$or_conditions[] = "Event handler script successfully loaded";
 			$or_conditions[] = "ctivating module";
-			$serviceCommand = trim(getLogTailFiltered(1, $required_condition, $or_conditions, $logCount)[0]);
-			unset($or_conditions);
+		}		
+		$search_result = getLogTailFiltered(1, $required_condition, $or_conditions, $log_size + 50);
+		
+		if($search_result !== false){
+			$serviceCommand = $search_result[0];
+		} else {
+			error_log("getActualStatus: Cant found state for $logicName");
 		}
+		unset($search_result, $or_conditions);
 
 		if (empty($serviceCommand)) {
 			continue;
@@ -439,40 +450,37 @@ function getActualStatus(bool $forceRebuild = false): array
 
 			// Ищем 1 последнюю строку Connected nodes и обновляем массив connected_nodes
 			$or_conditions[] = "Connected nodes:";
-			$logConnectedNode = getLogTailFiltered(1, $required_condition, $or_conditions, $logCount)[0];
+			$search_result = getLogTailFiltered(1, $required_condition, $or_conditions, $log_size);
 			unset($or_conditions);
-			if (isset($logConnectedNode)) {
-				$nodesConnectingTime = getLineTime($logConnectedNode);
-			}
-			$nodesTimestamp = !empty($logConnectedNode) ? $nodesConnectingTime : 0; // @todo А зачем мне проверять время на 0?
+			
+			if ($search_result !== false) {			
+				$connected_nodes = $search_result[0];
+				$nodes_connecting_time = getLineTime($connected_nodes);
 
-			//Убедимся что время распарсилось
-			if ($nodesTimestamp === false) {
-				continue;
-			}
-
-			// Заполняем подключенные узлы для рефлектора
-			$logic['connected_nodes'] = [];
-			if (preg_match('/Connected nodes:\s*(.+)$/', $logConnectedNode, $matches)) {
-				$nodesStr = trim($matches[1]);
-				$callsigns = array_filter(array_map('trim', explode(',', $nodesStr)));
-				foreach ($callsigns as $fullCallsign) {
-					if (!empty($fullCallsign)) {
-						if (preg_match('/^([A-Za-z0-9]+)(?:[-\\/][A-Za-z0-9]+)?$/', $fullCallsign, $callMatch)) {
-							$baseCallsign = $callMatch[1];
-							$logic['connected_nodes'][$fullCallsign] = [
-								'callsign' => $baseCallsign,
-								'start' => $nodesTimestamp, 
-								'type' => 'Node'
-							];
+				// Заполняем подключенные узлы для рефлектора
+				$logic['connected_nodes'] = [];
+				if (preg_match('/Connected nodes:\s*(.+)$/', $connected_nodes, $matches)) {
+					$nodesStr = trim($matches[1]);
+					$callsigns = array_filter(array_map('trim', explode(',', $nodesStr)));
+					foreach ($callsigns as $fullCallsign) {
+						if (!empty($fullCallsign)) {
+							if (preg_match('/^([A-Za-z0-9]+)(?:[-\\/][A-Za-z0-9]+)?$/', $fullCallsign, $callMatch)) {
+								$baseCallsign = $callMatch[1];
+								$logic['connected_nodes'][$fullCallsign] = [
+									'callsign' => $baseCallsign,
+									'start' => $nodes_connecting_time,
+									'type' => 'Node'
+								];
+							}
 						}
 					}
 				}
 			}
+			
 
 			// @todo Разговорные группы Временный монитор            
 			$or_conditions[] = "emporary monitor";
-			$logLineTM = getLogTailFiltered(50, $required_condition, $or_conditions, $logCount);
+			$logLineTM = getLogTailFiltered(50, $required_condition, $or_conditions, $log_size);
 			unset($or_conditions);
 
 			if (!empty($logLineTM) !== false) {
@@ -505,7 +513,7 @@ function getActualStatus(bool $forceRebuild = false): array
 			// @bookmark Получаем текущие значения для выбранной группы
 			$selectedTG = $logic['talkgroups']['selected'];
 			$or_conditions[] = "Selecting TG";
-			$logLinesSG = getLogTailFiltered(1, $required_condition, $or_conditions, $logCount);
+			$logLinesSG = getLogTailFiltered(1, $required_condition, $or_conditions, $log_size);
 			unset($or_conditions);
 			if ($logLinesSG !== false) {
 				$logLineSG = $logLinesSG[0];
@@ -525,6 +533,23 @@ function getActualStatus(bool $forceRebuild = false): array
 
 			$logic['talkgroups']['selected'] = $selectedTG;
 			$logic['talkgroups']['temp_monitoring'] = $activeTMGroups;
+
+			if ($logic['is_connected']) {
+				// $required_condition = $logic['name'];
+				$or_conditions = ["Talker start on TG", "Talker stop on TG"];
+				$dev_last_action = getLogTailFiltered(1, $required_condition, $or_conditions, $log_size);
+				if ($dev_last_action !== false) {
+					if (strpos($dev_last_action[0], "Talker start") !== false) {
+						$logic['rx']['start'] = getLineTime($dev_last_action[0]);
+					} else {
+						$logic['rx']['start'] = 0;
+					}
+				} else {
+					$logic['rx']['start'] = 0;
+				}
+				unset($or_conditions);
+			}
+
 		} else {
 			if (isset($logic['module']) || is_array($logic['module'])) {
 				if (strpos($serviceCommand, 'module') === false) {
@@ -540,86 +565,89 @@ function getActualStatus(bool $forceRebuild = false): array
 							$module['start'] = $serviceCommandTimestamp;
 							$isSomeModuleActive = true;
 
+							// @bookmark Для модуля EchoLink
 							if ($moduleName === "EchoLink") {
-								$logELcount = countLogLines("Activating module EchoLink", $logCount);
-								$logEL = getLogTail($logELcount);
+								$logELcount = countLogLines("Activating module EchoLink", $log_size);
+								if($logELcount !== false) {
+									$logEL = getLogTail($logELcount);
+									if($logEL !== false) {
+										if (!isset($module['connected_nodes']) || !is_array($module['connected_nodes'])) {
+											$module['connected_nodes'] = [];
+										}
+										$foundNodes = [];
+										foreach ($module['connected_nodes'] as $nodeName => $node) {
+											if (is_array($node) && isset($node['name'])) {
+												$foundNodes[$node['name']] = $node;
+												//@todo Убрать эту проверку
+											} elseif (is_array($node)) {
+												$foundNodes[$nodeName] = $node;
+											}
+										}
+										foreach ($logEL as $logELline) {
+											$isConnected = strpos($logELline, "EchoLink QSO state changed to CONNECTED") !== false;
+											$isDisconnected = strpos($logELline, "EchoLink QSO state changed to DISCONNECTED") !== false;
 
-								if (!isset($module['connected_nodes']) || !is_array($module['connected_nodes'])) {
-									$module['connected_nodes'] = [];
-								}
+											if ($isConnected || $isDisconnected) {
+												$firstColonPos = strpos($logELline, ": ");
+												if ($firstColonPos !== false) {
+													$cleanLine = substr($logELline, $firstColonPos + 2); // +2 чтобы пропустить ": "
+													$parts = explode(":", $cleanLine, 2); // Разбиваем на 2 части: имя и остаток
 
-								$foundNodes = [];
-
-								foreach ($module['connected_nodes'] as $nodeName => $node) {
-									if (is_array($node) && isset($node['name'])) {
-										$foundNodes[$node['name']] = $node;
-										//@todo Убрать эту проверку
-									} elseif (is_array($node)) {
-										$foundNodes[$nodeName] = $node;
-									}
-								}
-
-								foreach ($logEL as $logELline) {
-									$isConnected = strpos($logELline, "EchoLink QSO state changed to CONNECTED") !== false;
-									$isDisconnected = strpos($logELline, "EchoLink QSO state changed to DISCONNECTED") !== false;
-
-									if ($isConnected || $isDisconnected) {
-										$firstColonPos = strpos($logELline, ": ");
-										if ($firstColonPos !== false) {
-											$cleanLine = substr($logELline, $firstColonPos + 2); // +2 чтобы пропустить ": "
-											$parts = explode(":", $cleanLine, 2); // Разбиваем на 2 части: имя и остаток
-
-											if (count($parts) >= 2) {
-												$nodeName = trim($parts[0]);
-												$restOfLine = trim($parts[1]);
-												if (preg_match('/^\s*\*(.*)\*\s*$/', $nodeName, $matches)) {
-													$rawName = $matches[1];
-													if (preg_match('/^\s*\*+/', $nodeName)) {
-														$type = "Conference";
-														$callsign = preg_replace('/^\*+/', '', $rawName);
-													}
-												} elseif (substr($nodeName, -2) === "-L") {
-													$type = "Simplex";
-													$callsign = substr($nodeName, 0, -2);
-												} elseif (substr($nodeName, -2) === "-R") {
-													$type = "Repeater";
-													$callsign = substr($nodeName, 0, -2);
-												} else {
-													$type = "User";
-													$callsign = $nodeName;
-												}
-												$startTime = getLineTime($logELline);
-												if ($isConnected) {
-													if (!isset($foundNodes[$nodeName])) {
-														$foundNodes[$nodeName] = [
-															'callsign' => $callsign,
-															'start' => $startTime,
-															'type' => $type,
-															'name' => $nodeName
-														];
-													} else {
-														$foundNodes[$nodeName]['start'] = $startTime;
-													}
-												} elseif ($isDisconnected) {
-													if (isset($foundNodes[$nodeName])) {
-														unset($foundNodes[$nodeName]);
+													if (count($parts) >= 2) {
+														$nodeName = trim($parts[0]);
+														$restOfLine = trim($parts[1]);
+														if (preg_match('/^\s*\*(.*)\*\s*$/', $nodeName, $matches)) {
+															$rawName = $matches[1];
+															if (preg_match('/^\s*\*+/', $nodeName)) {
+																$type = "Conference";
+																$callsign = preg_replace('/^\*+/', '', $rawName);
+															}
+														} elseif (substr($nodeName, -2) === "-L") {
+															$type = "Simplex";
+															$callsign = substr($nodeName, 0, -2);
+														} elseif (substr($nodeName, -2) === "-R") {
+															$type = "Repeater";
+															$callsign = substr($nodeName, 0, -2);
+														} else {
+															$type = "User";
+															$callsign = $nodeName;
+														}
+														$startTime = getLineTime($logELline);
+														if ($isConnected) {
+															if (!isset($foundNodes[$nodeName])) {
+																$foundNodes[$nodeName] = [
+																	'callsign' => $callsign,
+																	'start' => $startTime,
+																	'type' => $type,
+																	'name' => $nodeName
+																];
+															} else {
+																$foundNodes[$nodeName]['start'] = $startTime;
+															}
+														} elseif ($isDisconnected) {
+															if (isset($foundNodes[$nodeName])) {
+																unset($foundNodes[$nodeName]);
+															}
+														}
 													}
 												}
 											}
 										}
-									}
-								}
 
-								$module['connected_nodes'] = $foundNodes;
-								if (count($module['connected_nodes']) !== 0) {
-									$module['is_connected'] = true;
-									$logic['is_connected'] = true;
-								}
-								continue;
+										$module['connected_nodes'] = $foundNodes;
+										if (count($module['connected_nodes']) !== 0) {
+											$module['is_connected'] = true;
+											$logic['is_connected'] = true;
+										}
+										continue;
+
+									}
+								} 
 							}
+
 							// @bookmark Для модуля Frn
 							if ($moduleName === "Frn") {
-								$logFRNcount = countLogLines("Activating module Frn", $logCount);
+								$logFRNcount = countLogLines("Activating module Frn", $log_size);
 								$logFRN = getLogTail($logFRNcount);
 								$logFRN = array_reverse($logFRN);
 
@@ -659,13 +687,13 @@ function getActualStatus(bool $forceRebuild = false): array
 					}
 				}
 			}
-
+			
 			// @bookmark Состояние передатчика и приемника
+			
 			if (isset($logic['rx']) && !empty($logic['rx']['name'])) {
 				$required_condition = $logic['rx']['name'];
-
 				$or_conditions = ["The squelch is"];
-				$dev_last_action = getLogTailFiltered(1, $required_condition, $or_conditions, $logCount);
+				$dev_last_action = getLogTailFiltered(1, $required_condition, $or_conditions, $log_size);
 
 				if ($dev_last_action !== false) {
 					if (strpos($dev_last_action[0], "s OPEN") !== false) {
@@ -677,9 +705,8 @@ function getActualStatus(bool $forceRebuild = false): array
 			}
 			if (isset($logic['tx']) && !empty($logic['tx']['name'])) {
 				$required_condition = $logic['tx']['name'];
-
 				$or_conditions = ["Turning the transmitter"];
-				$dev_last_action = getLogTailFiltered(1, $required_condition, $or_conditions, $logCount);
+				$dev_last_action = getLogTailFiltered(1, $required_condition, $or_conditions, $log_size);
 
 				if ($dev_last_action !== false) {
 					if (strpos($dev_last_action[0], "r ON") !== false) {
@@ -689,6 +716,7 @@ function getActualStatus(bool $forceRebuild = false): array
 					}
 				}
 			}
+			
 		}
 	}
 
@@ -696,7 +724,7 @@ function getActualStatus(bool $forceRebuild = false): array
 		$required_condition = $linkName;
 		$or_conditions[] = "ctivating link";
 
-		$logLinks = getLogTailFiltered(1, $required_condition, $or_conditions, $logCount);
+		$logLinks = getLogTailFiltered(1, $required_condition, $or_conditions, $log_size);
 
 		unset($required_condition, $or_conditions);
 
@@ -754,19 +782,19 @@ function getActualStatus(bool $forceRebuild = false): array
 			if ($logic['type'] === "Reflector") $logic['is_active'] = false;
 		}
 	}
-	
+
 	// @bookmark APRS
-	if(isset($service['aprs_server'])){
+	if (isset($service['aprs_server'])) {
 		$required_condition = "APRS";
 		$aprsLogState = getLogTailFiltered(1, $required_condition, [], $status['service']['log_line_count']);
-		if ($aprsLogState !== false) {			
+		if ($aprsLogState !== false) {
 			if (str_contains($aprsLogState[0], "Connected") !== false) {
 				$pattern = '/Connected to APRS server (\S+) on port (\d+)/';
-				if (preg_match($pattern, $aprsLogState[0], $matches)){
+				if (preg_match($pattern, $aprsLogState[0], $matches)) {
 					$status['service']['aprs_server']['start'] = getLineTime($aprsLogState[0]);
 				}
 			} elseif (str_contains($aprsLogState[0], "Disconnected") !== false) {
-				$status['service']['aprs_server']['start'] = 0;			
+				$status['service']['aprs_server']['start'] = 0;
 			}
 		}
 	}
@@ -785,16 +813,15 @@ function getActualStatus(bool $forceRebuild = false): array
 				$status['service']['directory_server']['name'] = "Disconnected";
 				$status['service']['directory_server']['start'] = 0;
 			}
-			
 		}
 	}
-	
+
 	// ...: Connected to EchoLink proxy 44.137.75.93:8100
 	// ...: Disconnected from EchoLink proxy 44.137.75.93:8100
 	$required_condition = "EchoLink proxy";
 	$proxyLogState = getLogTailFiltered(1, $required_condition, [], $status['service']['log_line_count']);
 	if ($proxyLogState !== false) {
-		
+
 		$status['service']['proxy_server'] = ['name' => '', 'start' => 0];
 		if (str_contains($proxyLogState[0], "Connected") !== false) {
 			$pattern = '/Connected to EchoLink proxy (\S+)/';
@@ -815,6 +842,6 @@ function getActualStatus(bool $forceRebuild = false): array
 			$status['service']['proxy_server']['start'] = 0;
 		}
 	}
-	
+
 	return $status;
 }

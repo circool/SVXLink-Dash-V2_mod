@@ -9,6 +9,7 @@
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getActualStatus.php';
+require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.php';
 // require_once $_SERVER["DOCUMENT_ROOT"] . '/include/init.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/session_header.php';
 
@@ -40,7 +41,7 @@ function renderRadioActivityTable()
 	foreach ($logics as $logicName => $logic) {
 		$isActive = $logic['is_active'] ?? false;
 		$isConnected = $logic['is_connected'] ?? false;
-		$rowClass = $logic['is_active'] ? '' : 'offline';
+		// $rowClass = $logic['is_active'] ? '' : 'offline';
 		
 
 		$rxDevice = $logic['rx']['name'] ?? '';
@@ -53,7 +54,7 @@ function renderRadioActivityTable()
 		$rowDevice = $logicName;
 
 		if ($logic['type'] !== 'Reflector') {
-			// $rowClass = '';
+			$rowClass = '';
 			$rowStyle = ' style = "font-size:1.3em; text-align: center;" ';
 			$row_rxDevice = htmlspecialchars($rxDevice);
 			$row_txDevice = htmlspecialchars($txDevice);
@@ -72,13 +73,29 @@ function renderRadioActivityTable()
 
 			$callsign = $logic['callsign'] ?? '';
 			$callsign = '';
+		
 		} else {
-			$rowClass = 'hidden';
+			
+			$rxDeviceStart = $logic['rx']['start'] ;
+			if($rxDeviceStart > 0){
+				$rxCellClass = ' active-mode-cell';
+				$rxDevice = 'NET';
+				$rxDuration = time() - $rxDeviceStart;
+				$rxDuration = $rxDuration < 60 ? $rxDuration . ' s' : formatDuration($rxDuration);
+				$rxDeviceState = 'INCOMING ( ' . $rxDuration . ' )';
+				$rowClass = '';
+			} else {
+				$rxCellClass = '';
+				$rxDevice = '';
+				$rxDuration = 0;
+				$rxDeviceState = '';
+				$rowClass = 'hidden';
+			}
+			
 			$rowStyle = ' style = "padding: 0px; margin: 0px" ';
-
 			$row_rxDevice = htmlspecialchars($logicName);
 			$row_txDevice = htmlspecialchars($logicName);
-			$rxDeviceState = '';
+			// $rxDeviceState = '';
 			$txDeviceState = '';
 			$callsign = '';
 		}

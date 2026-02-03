@@ -158,7 +158,7 @@ function countLogLines(string $pattern, int $analyze_lines = 0): int|false {
 	if ($analyze_lines === 0) {
 		// Поиск во всем файле
 		$command = sprintf(
-			"grep -F -n '%s' %s 2>/dev/null | tail -1 | cut -d: -f1",
+			"grep -a -F -n '%s' %s 2>/dev/null | tail -1 | cut -d: -f1",
 			$shell_escaped_pattern,
 			escapeshellarg($logPath)
 		);
@@ -179,7 +179,7 @@ function countLogLines(string $pattern, int $analyze_lines = 0): int|false {
 	} else {
 		// Поиск только в последних N строках
 		$command = sprintf(
-			"tail -n %d %s 2>/dev/null | grep -F -n '%s' 2>/dev/null | tail -1 | cut -d: -f1",
+			"tail -n %d %s 2>/dev/null | grep -a -F -n '%s' 2>/dev/null | tail -1 | cut -d: -f1",
 			$analyze_lines,
 			escapeshellarg($logPath),
 			$shell_escaped_pattern
@@ -213,7 +213,7 @@ function countLogLines(string $pattern, int $analyze_lines = 0): int|false {
 /** Возвращает последние N строк из лог-файла SVXLink с фильтрацией по условиям
  * 
  * @note getLogTailFiltered
- * @version 0.1.12
+ * @version 0.1.13
  * @param int $num_lines Сколько строк вернуть в результате
  * @param string|null $required_condition Опциональное условие И
  * @param array $or_conditions Массив условий для ИЛИ
@@ -229,7 +229,7 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 	}
 
 	if (!is_array($or_conditions)) {
-		error_log("getLogTailFiltered: Wrong param");
+		error_log("getLogTailFiltered: Wrong param - or_conditions");
 		return false;
 	}
 
@@ -238,7 +238,7 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 
 	if ($search_limit !== null) {
 		if (!is_numeric($search_limit)) {
-			error_log("getLogTailFiltered: Wrong param");
+			error_log("getLogTailFiltered: Wrong param - search_limit");
 			return false;
 		}
 
@@ -290,6 +290,7 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 
 		$lines = explode("\n", trim($output));
 		$lines = array_map('trim', $lines);
+		
 		return $lines;
 	}
 
@@ -299,7 +300,7 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 	if ($has_required && !empty($valid_or_conditions)) {
 		
 		$command = sprintf(
-			'tail -n %d %s | grep -F %s | grep -F -e %s | tail -n %d 2>&1',
+			'tail -n %d %s | grep -a -F %s | grep -a -F -e %s | tail -n %d 2>&1',
 			$actual_search_limit,
 			escapeshellarg($logPath),
 			escapeshellarg($required_condition),
@@ -311,7 +312,7 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 	} elseif ($has_required) {
 
 		$command = sprintf(
-			'tail -n %d %s | grep -F %s | tail -n %d 2>&1',
+			'tail -n %d %s | grep -a -F %s | tail -n %d 2>&1',
 			$actual_search_limit,
 			escapeshellarg($logPath),
 			escapeshellarg($required_condition),
@@ -320,7 +321,7 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 	} else {
 
 		$command = sprintf(
-			'tail -n %d %s | grep -F -e %s | tail -n %d 2>&1',
+			'tail -n %d %s | grep -a -F -e %s | tail -n %d 2>&1',
 			$actual_search_limit,
 			escapeshellarg($logPath),
 			implode(' -e ', array_map('escapeshellarg', $valid_or_conditions)),

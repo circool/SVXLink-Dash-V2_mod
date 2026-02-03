@@ -19,9 +19,12 @@
 .footer {
 	margin: 0;
 }
-
-#local_activity table tr:hover td,
-#local_activity table tr:hover td a {
+#reflector_activity_content table tr:hover td,
+#reflector_activity_content table tr:hover td a,
+#net_activity_content table tr:hover td,
+#net_activity_content table tr:hover td a,
+#rf_activity_content table tr:hover td,
+#rf_activity_content table tr:hover td a {
 	background-color: #3c3f47;
 	color: #ffffff;
 }
