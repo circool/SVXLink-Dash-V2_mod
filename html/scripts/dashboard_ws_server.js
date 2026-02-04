@@ -67,12 +67,24 @@ function log(message, level = 'DEBUG') {
 	}
 }
 
-// 
+
 function getTimerTooltip(callsign, uptime = "0 s") {
 	const formattedUptime = uptime || "0 s";
 	return `<a class="tooltip" href="#"><span><b>Uptime:</b>${formattedUptime}<br></span>${callsign}</a>`;
 }
 
+// @todo implement to parser
+function getModuleTooltip(logicName, moduleName, command, uptime = "0 s") {
+	const formattedUptime = uptime || "0 s";
+	const isConnected = command === "#";
+
+	const title = isConnected ? "Click to deactivate" : "Click to activate";
+	const tooltipContent = isConnected
+		? `<span><b>Uptime:</b>${formattedUptime}<br>${title}</span>`
+		: `<span><b>${title}</b></span>`;
+
+	return `<a class="tooltip" href="javascript:void(0)" onclick="sendLinkCommand('${command}','${logicName}')">${tooltipContent}${moduleName}</a>`;
+}
 
 class StateManager {
 	constructor() {
@@ -1045,12 +1057,12 @@ class CommandParser {
 							action: 'remove_class',
 							class: 'disabled-mode-cell,inactive-mode-cell,active-mode-cell'
 						},
-
 						{
 							id: `logic_${logic}`,
 							action: 'add_class',
 							class: 'active-mode-cell'
 						},
+						// Сам модуль
 						{
 							id: `logic_${logic}_module_${module}`,
 							action: 'remove_class',
@@ -1061,17 +1073,18 @@ class CommandParser {
 							action: 'add_class',
 							class: newclass
 						},
+						// Tooltip with DTMF commands
 						{
 							id: `logic_${logic}_module_${module}`,
 							action: 'set_content',
-							payload: getTimerTooltip(module, this.sm.formatDuration(0))
+							payload: getModuleTooltip(logic,module,'#',this.sm.formatDuration(0))
 						},
 						{
 							id: `radio_logic_${logic}_destination`,
 							action: 'set_content',
 							payload: module
 						},
-						);
+					);
 					return commands;
 				}
 			},
@@ -1085,11 +1098,14 @@ class CommandParser {
 					this.sm.stopTimer(`logic_${logic}_module_${module}`);
 					this.sm.stopTimer(`logic_${logic}_active_content`);
 					const commands = [];
+					const command = 'TODO';
+
 					const allLogicsForModule = this.connections.getAllFrom(module);
 					let hasActiveLinks = false;
-
-					for (const relatedLogic of allLogicsForModule) {
-						const linksForLogic = this.connections.getAllFrom(relatedLogic)
+					
+					// for (const relatedLogic of allLogicsForModule) {
+						const linksForLogic = this.connections.getAllFrom(logic)
+						// const linksForLogic = this.connections.getAllFrom(relatedLogic)
 						for (const link of linksForLogic) {
 							if (this.sm.timers.has(`link_${link}`)) {
 								hasActiveLinks = true;
@@ -1112,8 +1128,8 @@ class CommandParser {
 								break;
 							}
 						}
-						if (hasActiveLinks) break;
-					}
+						// if (hasActiveLinks) break;
+					// }
 
 					let cellClass = 'active-mode-cell';
 					if (!hasActiveLinks) { 
@@ -1146,11 +1162,11 @@ class CommandParser {
 							action: 'add_class',
 							class: 'disabled-mode-cell'
 						},
-
+						//
 						{
 							id: `logic_${logic}_module_${module}`,
 							action: 'set_content',
-							payload: module
+							payload: getModuleTooltip(logic,module,command,''),
 						},
 
 						// Amodule nodes
