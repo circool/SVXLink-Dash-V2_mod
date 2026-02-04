@@ -58,6 +58,11 @@ The panel is designed for SVXLink owners/administrators, reflecting the server's
 ![EchoLink](./readme_images/el_panel.jpg)
 ![Frn](./readme_images/frn_panel.jpg)
 
+- Modules and Links management
+
+![Module deactivating](./readme_images/deactivating_module.jpg)
+
+
 - Reflectors, talk groups, links, connected nodes
 
 ![Reflector Talk Groups](./readme_images/reflectors_panel_rus.jpg)
