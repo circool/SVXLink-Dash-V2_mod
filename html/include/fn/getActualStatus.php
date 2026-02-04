@@ -785,7 +785,7 @@ function getActualStatus(bool $forceRebuild = false): array
 
 	// @bookmark APRS
 	if (isset($service['aprs_server'])) {
-		$required_condition = "APRS";
+		$required_condition = "APRS server";
 		$aprsLogState = getLogTailFiltered(1, $required_condition, [], $status['service']['log_line_count']);
 		if ($aprsLogState !== false) {
 			if (str_contains($aprsLogState[0], "Connected") !== false) {
