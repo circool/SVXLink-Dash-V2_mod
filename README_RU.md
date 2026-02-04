@@ -58,6 +58,10 @@ Original copyright: Copyright © 2023 WPSD Project Development Team, et al.
 ![EchoLink](./readme_images/el_panel.jpg)
 ![Frn](./readme_images/frn_panel.jpg)
 
+- Управление состоянием модулей и линков
+
+![Module deactivating](./readme_images/deactivating_module.jpg)
+
 - Рефлекторы, разговорные группы, линки, подключенные узлы
 
 ![Разговорные группы рефлектора](./readme_images/reflectors_panel_rus.jpg)
