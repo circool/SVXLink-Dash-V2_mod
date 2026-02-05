@@ -229,6 +229,10 @@ function getActualStatus(bool $forceRebuild = false): array
 			];
 			// @bookmark Модули
 			if (isset($svxconfig[$_logic]['MODULES'])) {
+				$cfgdir = $svxconfig['GLOBAL']['CFG_DIR'] ?? '';
+				if (!empty($cfgdir)) {
+					$module_id = $module_id ?? [];
+				}
 				$item['module'] = [];
 				$moduleNames = array_filter(
 					array_map('trim', explode(",", str_replace('Module', '', $svxconfig[$_logic]['MODULES']))),
@@ -236,26 +240,75 @@ function getActualStatus(bool $forceRebuild = false): array
 				);
 				foreach ($moduleNames as $moduleName) {
 					$moduleName = trim($moduleName);
+
 					if (!empty($moduleName)) {
+						$module_id_value = '';
+
+						// Проверяем, есть ли уже ID для этого модуля
+						if (isset($module_id[$moduleName])) {
+							$module_id_value = $module_id[$moduleName];
+						} elseif (!empty($cfgdir)) {
+							// Просто ищем ID в файле конфигурации модуля
+							$module_config_file = SVXCONFPATH . $cfgdir . '/Module' . $moduleName . '.conf';
+							if (file_exists($module_config_file)) {
+								$module_content = file_get_contents($module_config_file);
+								if ($module_content !== false) {
+									// Ищем строку с ID (после секции [ModuleИмяМодуля])
+									$lines = explode("\n", $module_content);
+									$in_module_section = false;
+									foreach ($lines as $line) {
+										$line = trim($line);
+
+										// Пропускаем комментарии
+										if (strpos($line, '#') === 0 || strpos($line, ';') === 0) {
+											continue;
+										}
+
+										// Проверяем начало секции
+										if (preg_match('/^\[Module' . preg_quote($moduleName, '/') . '\]$/i', $line)) {
+											$in_module_section = true;
+											continue;
+										}
+
+										// Если мы в нужной секции, ищем ID
+										if ($in_module_section && preg_match('/^ID\s*=\s*(.+)$/i', $line, $matches)) {
+											$module_id_value = trim($matches[1]);
+											$module_id[$moduleName] = $module_id_value;
+											break;
+										}
+
+										// Если нашли другую секцию, выходим из текущей
+										if ($in_module_section && preg_match('/^\[/', $line)) {
+											break;
+										}
+									}
+								}
+							}
+						}
+
 						$item['module'][$moduleName] = [
 							'start' => 0,
 							'name' => $moduleName,
 							'callsign' => '',
 							'is_active' => false,
 							'is_connected' => false,
-							'connected_nodes' => []
+							'connected_nodes' => [],
+							'id' => $module_id_value,
 						];
+
 						if ($moduleName === 'EchoLink') {
 							if (!isset($service['directory_server'])) {
 								$service['directory_server'] = [
 									'name' => '',
 									'start' => 0,
 								];
-							};
+							}
 						}
 					}
 				}
 			}
+
+			
 
 			$hasDefaultTg = isset($svxconfig[$_logic]['DEFAULT_TG']);
 			$hasMonitorTgs = isset($svxconfig[$_logic]['MONITOR_TGS']);

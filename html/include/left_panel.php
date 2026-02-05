@@ -105,23 +105,21 @@ function buildLogicData(array $lp_status): array
 				$moduleCanConnected = $module['name'] == "EchoLink" || $module['name'] == "Frn";
 				$moduleClass = $getCellStyle($module['is_active'], $module['is_connected'], $moduleCanConnected);
 				$durationHtml = formatDuration($module['start'] > 0 ? time() - $module['start'] : 0);
-				// $moduleData = [
-				// 	'name' => $module['name'],
-				// 	'style' => $moduleClass,
-				// 	'tooltip_start' => $module['start'] > 0 ?
-				// 		'<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br></span>' : '',
-				// 	'tooltip_end' => $module['start'] > 0 ? '</a>' : ''
-				// ];
+				$command = '';
+				if(!($module['is_connected'] || $module['is_active'])){
+					$command = isset($module['id']) && $module['id'] !== '' ? $module['id'] : '';
+				}
+				$command = $command . '#';
 				$moduleData = [
 					'name' => $module['name'],
 					'style' => $moduleClass,
-					'tooltip_start' => $module['start'] > 0 ?
-						'<a class="tooltip" href="javascript:void(0)" ' .
-						(($module['is_connected'] || $module['is_active']) ?
-							'onclick="sendLinkCommand(\'#\', \'' . htmlspecialchars($logicName, ENT_QUOTES) . '\')" ' .
-							'title="' . getTranslation('Click for disconnect') . '" ' : '') .
-						'><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br></span>' : '',
-					'tooltip_end' => $module['start'] > 0 ? '</a>' : ''
+					'tooltip_start' => '<a class="tooltip" href="javascript:void(0)"' .						
+						' onclick="sendLinkCommand(\'' . htmlspecialchars($command, ENT_QUOTES) . '\', \'' .
+						htmlspecialchars($logicName, ENT_QUOTES) . '\')">' .
+						
+							'<span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br>' .
+							getTranslation('Click to toggle') . '</span>' ,
+					'tooltip_end' => '</a>'
 				];
 
 				$modules[$moduleName] = $moduleData;
@@ -265,49 +263,26 @@ function buildLogicData(array $lp_status): array
 					$linkClass = $getCellStyle($link['is_connected'], $link['is_active'],  false);
 					$durationHtml = formatDuration($link['start'] > 0 ? time() - $link['start'] : 0);
 					
-					// $tooltipParts = [];
-					// if (!empty($link['timeout'])) $tooltipParts[] = 'Timeout: ' . $link['timeout'] . " s.";
-					// if (!empty($link['source']['announcement_name'])) $tooltipParts[] = 'Source: ' . $link['source']['announcement_name'];
-					// if (!empty($link['destination']['announcement_name'])) $tooltipParts[] = 'Destination: ' . $link['destination']['announcement_name'];
-					// if (!empty($link['source']['command']['activate_command'])) $tooltipParts[] = 'Activate: ' . $link['source']['command']['activate_command'];
-					// if (!empty($link['source']['command']['deactivate_command'])) $tooltipParts[] = 'Deactivate: ' . $link['source']['command']['deactivate_command'];
-					// $shortname = trim(str_replace($excl, '', $linkName));
-					// if ($shortname === '') {
-					// 	$shortname = $linkName;
-					// }
-
-					// $relatedReflectors[$reflectorName]['links'][$linkName] = [
-					// 	'shortname' => $shortname,
-					// 	'name' => $linkName,
-					// 	'style' => $linkClass,
-					// 	'tooltip_start' => '<a class="tooltip" href="#"><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br>' .
-					// 		implode(' | ', $tooltipParts) . '</span>',
-					// 	'tooltip_end' => '</a>'
-					// ];
+					
 
 					$tooltipParts = [];
 					if (!empty($link['timeout'])) $tooltipParts[] = 'Timeout: ' . $link['timeout'] . " s.";
-					if (!empty($link['source']['announcement_name'])) $tooltipParts[] = 'Source: ' . $link['source']['announcement_name'];
-					if (!empty($link['destination']['announcement_name'])) $tooltipParts[] = 'Destination: ' . $link['destination']['announcement_name'];
-					if (!empty($link['source']['command']['activate_command'])) $tooltipParts[] = 'Activate: ' . $link['source']['command']['activate_command'];
-					if (!empty($link['source']['command']['deactivate_command'])) $tooltipParts[] = 'Deactivate: ' . $link['source']['command']['deactivate_command'];
-
+					if (!empty($link['source']['announcement_name'])) $tooltipParts[] = getTranslation('Source') . ': ' . $link['source']['announcement_name'];
+					if (!empty($link['destination']['announcement_name'])) $tooltipParts[] = getTranslation('Destination') . ': ' . $link['destination']['announcement_name'];
+					if (!empty($link['source']['command']['activate_command'])) $tooltipParts[] = getTranslation('Activate') . ': ' . $link['source']['command']['activate_command'];
+					if (!empty($link['source']['command']['deactivate_command'])) $tooltipParts[] = getTranslation('Deactivate') . ': ' . $link['source']['command']['deactivate_command'];
+					
 					// Определяем команду для переключения состояния линка
 					$toggleCommand = '';
-					$toggleTitle = '';
 					if (
 						!empty($link['source']['command']['activate_command']) &&
 						!empty($link['source']['command']['deactivate_command'])
 					) {
 
 						if ($link['is_connected']) {
-							// Линк активен - отправляем команду выключения
 							$toggleCommand = $link['source']['command']['deactivate_command'] . '#';
-							$toggleTitle = getTranslation('Click to deactivate');
 						} else {
-							// Линк неактивен - отправляем команду включения
 							$toggleCommand = $link['source']['command']['activate_command'] . '#';
-							$toggleTitle = getTranslation('Click to activate');
 						}
 					}
 
@@ -322,10 +297,9 @@ function buildLogicData(array $lp_status): array
 						'style' => $linkClass,
 						'tooltip_start' => '<a class="tooltip" href="javascript:void(0)" ' .
 							($toggleCommand ? 'onclick="sendLinkCommand(\'' . htmlspecialchars($toggleCommand, ENT_QUOTES) .
-								'\', \'' . htmlspecialchars($logicName, ENT_QUOTES) . '\')" ' .
-								'title="' . htmlspecialchars($toggleTitle) . '" ' : '') .
+								'\', \'' . htmlspecialchars($logicName, ENT_QUOTES) . '\')" ' : '') .
 							'><span><b>' . getTranslation('Uptime') . ':</b>' . $durationHtml . '<br>' .
-							implode(' | ', $tooltipParts) . '</span>',
+							implode(' | ', $tooltipParts) . '<br>' .getTranslation("Click to toggle") . '</span>',
 						'tooltip_end' => '</a>'
 					];
 
@@ -430,7 +404,7 @@ function buildLogicData(array $lp_status): array
 					if (!empty($link['destination']['announcement_name'])) $tooltipParts[] = 'Destination: ' . $link['destination']['announcement_name'];
 					if (!empty($link['source']['command']['activate_command'])) $tooltipParts[] = 'Activate: ' . $link['source']['command']['activate_command'];
 					if (!empty($link['source']['command']['deactivate_command'])) $tooltipParts[] = 'Deactivate: ' . $link['source']['command']['deactivate_command'];
-
+					if (!empty($link['source']['command']['deactivate_command'])) $tooltipParts[] = 'Click to toggle';
 					$shortname = trim(str_replace($excl, '', $linkName));
 					if ($shortname === '') {
 						$shortname = $linkName;
@@ -482,6 +456,7 @@ function buildLogicData(array $lp_status): array
 				if (!empty($link['destination']['announcement_name'])) $tooltipParts[] = 'Destination: ' . $link['destination']['announcement_name'];
 				if (!empty($link['source']['command']['activate_command'])) $tooltipParts[] = 'Activate: ' . $link['source']['command']['activate_command'];
 				if (!empty($link['source']['command']['deactivate_command'])) $tooltipParts[] = 'Deactivate: ' . $link['source']['command']['deactivate_command'];
+				
 
 				$hasTooltip = !empty($tooltipParts) || $link['start'] > 0;
 				$shortname = trim(str_replace($excl, '', $linkName));

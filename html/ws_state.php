@@ -34,6 +34,7 @@ try {
 		]
 	];
 
+	// Service
 	if (isset($status['service']) && is_array($status['service'])) {
 		$serviceName = $status['service']['name'] ?? 'Unnamed';
 		$isActive = $status['service']['is_active'] ?? false;
@@ -45,7 +46,7 @@ try {
 			'start' => $startTime
 		];
 	}
-
+	// Logics
 	if (isset($status['logic']) && is_array($status['logic'])) {
 		foreach ($status['logic'] as $logicName => $logic) {
 			if (!is_array($logic)) continue;
@@ -59,7 +60,7 @@ try {
 				'type' => $logic['type'] ?? 'Unknown'
 			];
 
-			// Обработка RX устройства
+			// RX device
 			if (!empty($logic['rx']) && !empty($logic['rx']['name'])) {
 				$deviceName = $logic['rx']['name'];
 				$response['data']['devices'][$deviceName] = [
@@ -89,7 +90,7 @@ try {
 				}
 			}
 
-			// Обработка TX устройства  
+			// TX device  
 			if (!empty($logic['tx']) && !empty($logic['tx']['name'])) {
 				$deviceName = $logic['tx']['name'];
 				$response['data']['devices'][$deviceName] = [
@@ -118,18 +119,19 @@ try {
 					}
 				}
 			}
-
+			// Module
 			if (isset($logic['module']) && is_array($logic['module'])) {
 				foreach ($logic['module'] as $moduleName => $module) {
 					if (!is_array($module)) continue;
 
 					$moduleKey = 'logic_' . $logicName . '_module_' . $moduleName;
 					$moduleStart = isset($module['start']) ? (int)$module['start'] : $logicStart;
-
+					$moduleId = isset($module['id']) ? $module['id'] : '';
 					$response['data']['modules'][$moduleKey] = [
 						'start' => $moduleStart,
 						'logic' => $logicName,
-						'module' => $moduleName
+						'module' => $moduleName,
+						'id' => $moduleId,
 					];
 
 					if (!isset($response['data']['module_logic'][$moduleName])) {
@@ -176,7 +178,7 @@ try {
 			}
 		}
 	}
-
+	// Links
 	if (isset($status['link']) && is_array($status['link'])) {
 		foreach ($status['link'] as $linkName => $link) {
 			if (!is_array($link)) continue;
@@ -195,7 +197,7 @@ try {
 				}
 				if (!in_array($linkName, $response['data']['link_logic'][$sourceLogic])) {
 					$response['data']['link_logic'][$sourceLogic][] = $linkName;
-				}
+				}			
 			}
 
 			if (isset($link['destination']['logic']) && !empty($link['destination']['logic'])) {
@@ -215,11 +217,11 @@ try {
 				'timeout' => $link['timeout'] ?? 0,
 				'default_active' => $link['default_active'] ?? false,
 				'source' => $link['source'] ?? [],
-				'destination' => $link['destination'] ?? []
+				'destination' => $link['destination'] ?? [],
 			];
 		}
 	}
-
+	// Multiple devices
 	if (isset($status['multiple_device'])) {
 		foreach ($status['multiple_device'] as $c => $v) {
 			$response['data']['multiple_device'][$c] = array_filter(array_map('trim', explode(',', $v)));
