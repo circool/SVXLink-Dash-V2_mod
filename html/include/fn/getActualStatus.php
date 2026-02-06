@@ -243,6 +243,7 @@ function getActualStatus(bool $forceRebuild = false): array
 
 					if (!empty($moduleName)) {
 						$module_id_value = '';
+						$module_mute_logic_value = true;
 
 						// Проверяем, есть ли уже ID для этого модуля
 						if (isset($module_id[$moduleName])) {
@@ -270,11 +271,14 @@ function getActualStatus(bool $forceRebuild = false): array
 											continue;
 										}
 
-										// Если мы в нужной секции, ищем ID
+										// Если мы в нужной секции, ищем ID и MUTE_LOGIC_LINKING
 										if ($in_module_section && preg_match('/^ID\s*=\s*(.+)$/i', $line, $matches)) {
 											$module_id_value = trim($matches[1]);
 											$module_id[$moduleName] = $module_id_value;
-											break;
+										}
+										if ($in_module_section && preg_match('/^MUTE_LOGIC_LINKING\s*=\s*(.+)$/i', $line, $matches)) {
+											$module_mute_logic_value = trim($matches[1]);
+											$module_mute_logic[$moduleName] = $module_mute_logic_value;
 										}
 
 										// Если нашли другую секцию, выходим из текущей
@@ -294,6 +298,7 @@ function getActualStatus(bool $forceRebuild = false): array
 							'is_connected' => false,
 							'connected_nodes' => [],
 							'id' => $module_id_value,
+							'mute_logic' => $module_mute_logic_value ? true:false,
 						];
 
 						if ($moduleName === 'EchoLink') {
@@ -449,7 +454,7 @@ function getActualStatus(bool $forceRebuild = false): array
 		return $status;
 	}
 
-	$isSomeModuleActive = false;
+	$needMuteLogic = false;
 
 	foreach ($status['logic'] as $logicName => &$logic) {
 		if (!isset($logic['type'])) {
@@ -616,8 +621,8 @@ function getActualStatus(bool $forceRebuild = false): array
 							$logic['is_connected'] = true;
 							$module['is_active'] = true;
 							$module['start'] = $serviceCommandTimestamp;
-							$isSomeModuleActive = true;
-
+							
+							$needMuteLogic = $module['mute_logic'];
 							// @bookmark Для модуля EchoLink
 							if ($moduleName === "EchoLink") {
 								$logELcount = countLogLines("Activating module EchoLink", $log_size);
@@ -831,7 +836,7 @@ function getActualStatus(bool $forceRebuild = false): array
 	}
 
 	foreach ($status['logic'] as $logicName => &$logic) {
-		if ($isSomeModuleActive == true) {
+		if ($needMuteLogic == true) {
 			if ($logic['type'] === "Reflector") $logic['is_active'] = false;
 		}
 	}

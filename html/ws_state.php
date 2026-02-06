@@ -3,9 +3,9 @@
 /**
  * WebSocket State Provider
  * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
- * @version 1.0.0.release
+ * @version 0.4.22.release
  * @filesource /ws_state.php
- * @note Preliminary version.
+ * 
  */
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/init.php';
@@ -57,7 +57,8 @@ try {
 				'start' => $logicStart,
 				'is_active' => $logic['is_active'] ?? false,
 				'name' => $logicName,
-				'type' => $logic['type'] ?? 'Unknown'
+				'type' => $logic['type'] ?? 'Unknown',
+				'callsign' => $logic['callsign'],
 			];
 
 			// RX device
@@ -127,11 +128,13 @@ try {
 					$moduleKey = 'logic_' . $logicName . '_module_' . $moduleName;
 					$moduleStart = isset($module['start']) ? (int)$module['start'] : $logicStart;
 					$moduleId = isset($module['id']) ? $module['id'] : '';
+					$moduleMuteLogic = isset($module['mute_logic']) ? $module['mute_logic'] : false;
 					$response['data']['modules'][$moduleKey] = [
 						'start' => $moduleStart,
 						'logic' => $logicName,
 						'module' => $moduleName,
 						'id' => $moduleId,
+						'mute_logic' => $moduleMuteLogic,
 					];
 
 					if (!isset($response['data']['module_logic'][$moduleName])) {

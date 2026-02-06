@@ -1,6 +1,6 @@
 /**
  * @filesource /scripts/dashboard_ws_server.js
- * @version 0.4.21_release
+ * @version 0.4.22_release
  * @date 2026.01.22
  * @description Stateful WebSocket server
  */
@@ -13,7 +13,7 @@ const http = require('http');
 const { match } = require('assert');
 
 const CONFIG = {
-	version: '0.4.21_release',
+	version: '0.4.22_release',
 	ws: {
 		host: '0.0.0.0',
 		port: 8080,
@@ -61,7 +61,7 @@ function log(message, level = 'DEBUG') {
 				level: level,
 				message: message,
 				timestamp: new Date().toISOString(),
-				source: 'WS Server v 0.4.21'
+				source: 'WS Server v 0.4.22'
 			});
 		}
 	}
@@ -71,19 +71,6 @@ function log(message, level = 'DEBUG') {
 function getTimerTooltip(callsign, uptime = "0 s") {
 	const formattedUptime = uptime || "0 s";
 	return `<a class="tooltip" href="#"><span><b>Uptime:</b>${formattedUptime}<br></span>${callsign}</a>`;
-}
-
-
-function getModuleTooltip(logicName, moduleName, command, uptime = "0 s") {
-	const formattedUptime = uptime || "0 s";
-	const isConnected = command === "#";
-
-	const title = isConnected ? "Click to deactivate" : "Click to activate";
-	const tooltipContent = isConnected
-		? `<span><b>Uptime:</b>${formattedUptime}<br>${title}</span>`
-		: `<span><b>${title}</b></span>`;
-
-	return `<a class="tooltip" href="javascript:void(0)" onclick="sendLinkCommand('${command}','${logicName}')">${tooltipContent}${moduleName}</a>`;
 }
 
 
@@ -738,6 +725,9 @@ class CommandParser {
 					const logic = match[2];
 					const talkgroup = match[3];
 					const callsign = match[4];
+					const logicCallsign = this.server.wsState.logics?.[`logic_${logic}`]?.callsign || '';
+					const statusStyle = callsign === logicCallsign ? 'inactive-mode-cell' : 'active-mode-cell';
+
 					this.sm.startTimer(`device_${logic}_rx_status`, {
 						elementId: `device_${logic}_rx_status`,
 						replaceStart: '( ',
@@ -748,8 +738,8 @@ class CommandParser {
 						{ id: `radio_logic_${logic}_callsign`, action: 'set_content', payload: callsign },
 						{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: `Talkgroup: ${talkgroup}` },
 						{ id: `device_${logic}_rx`, action: 'set_content', payload: 'NET' },
-						{ id: `device_${logic}_rx_status`, action: 'set_content', payload: 'INCOMING ( 0 s )' },
-						{ id: `device_${logic}_rx_status`, action: 'add_class', class: 'active-mode-cell' },
+						//{ id: `device_${logic}_rx_status`, action: 'set_content', payload: 'INCOMING ( 0 s )' },
+						{ id: `device_${logic}_rx`, action: 'add_class', class: statusStyle },
 						{ id: `radio_logic_${logic}`, action: 'remove_parent_class', class: 'hidden' }
 					];
 				}
@@ -761,13 +751,17 @@ class CommandParser {
 				handler: (match) => {
 					const logic = match[2];
 					const group = match[3];
+					const callsign = match[4];
+					const logicCallsign = this.server.wsState.logics?.[`logic_${logic}`]?.callsign || '';
+					const statusStyle = callsign === logicCallsign ? 'inactive-mode-cell' : 'active-mode-cell';
+					
 					this.sm.stopTimer(`device_${logic}_rx_status`);
 					return [
 						{ id: `radio_logic_${logic}_callsign`, action: 'set_content', payload: '' },
 						{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: '' },
 						{ id: `device_${logic}_rx`, action: 'set_content', payload: '' },
 						{ id: `device_${logic}_rx_status`, action: 'set_content', payload: '' },
-						{ id: `device_${logic}_rx_status`, action: 'remove_class', class: 'active-mode-cell' },
+						{ id: `device_${logic}_rx_status`, action: 'remove_class', class: statusStyle },
 						{ id: `radio_logic_${logic}`, action: 'add_parent_class', class: 'hidden' }
 					];
 				}
@@ -957,6 +951,7 @@ class CommandParser {
 					const commands = [];
 					const allLogicsForModule = this.connections.getAllFrom(module);
 					let hasActiveLinks = false;
+					const muteLogic = this.server.wsState.modules?.[`logic_${logic}_module_${module}`]?.mute_logic || false;
 					for (const relatedLogic of allLogicsForModule) {
 						commands.push(
 							{
@@ -976,14 +971,13 @@ class CommandParser {
 								hasActiveLinks = true;
 								const allLogicsForLink = this.connections.getAllTo(link);
 								for (const reflector of allLogicsForLink) {
-									if (!allLogicsForModule.includes(reflector)) {
+									if (!allLogicsForModule.includes(reflector) && muteLogic) {
 										commands.push(
 										{ id: `logic_${reflector}`, action: 'remove_class', class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell,active-mode-cell'},
 										{ id: `logic_${reflector}`, action: 'add_class', class: 'paused-mode-cell' },
 										)
 									}
 								}
-								break;
 							}
 						}
 						if (hasActiveLinks) break;
@@ -1026,6 +1020,7 @@ class CommandParser {
 					const logic = match[2];
 					const module = match[3];
 					const activateCmd = this.server.wsState.modules?.[`logic_${logic}_module_${module}`]?.id || '';
+					const muteLogic = this.server.wsState.modules?.[`logic_${logic}_module_${module}`]?.mute_logic || false;
 					this.sm.stopTimer(`logic_${logic}_module_${module}`);
 					this.sm.stopTimer(`logic_${logic}_active_content`);
 					const commands = [];
@@ -1042,7 +1037,6 @@ class CommandParser {
 									{ id: `logic_${reflector}`, action: 'add_class', class: 'active-mode-cell' },
 								)
 							}
-							break;
 						}
 					}
 
@@ -2281,7 +2275,7 @@ class StatefulWebSocketServerV4 {
 				log('WebSocket server closed', 'INFO');
 				const uptime = Math.floor((Date.now() - this.stats.startedAt) / 1000);
 				const stateStats = this.stateManager.getStats();
-				log(`Server v 0.4.14 Statistics:`, 'INFO');
+				log(`Server v 0.4.22 Statistics:`, 'INFO');
 				log(`  Uptime: ${uptime}s`, 'INFO');
 				log(`  Clients connected: ${this.stats.clientsConnected}`, 'INFO');
 				log(`  Clients disconnected: ${this.stats.clientsDisconnected}`, 'INFO');
