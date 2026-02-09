@@ -188,6 +188,8 @@
     - `callsign`: string
     - `is_active`: bool
     - `is_connected`: bool
+		- `id` : string
+		- `mute_logic` : bool
     - `connected_nodes`: array[nodeName] (опционально)
       - `callsign` : string (nodeName без суффиксов и обрамляющих '*' ...-R,...-L, *...*)
       - `start` : int
