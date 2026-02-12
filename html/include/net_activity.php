@@ -1,10 +1,10 @@
 <?php
 
 /**
- * @version 0.4.11.release
- * @date 2026.01.26
- * @author vladimir@tsurkanenko.ru
- * @filesource /include/net_activity.php 
+ * @filesource /include/net_activity.php
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
+ * @date 2026.02.11
+ * @version 0.4.6
  */
 
 if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
@@ -32,9 +32,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 		session_name(SESSION_NAME);
 		session_start();
 	}
-	session_write_close();
+
 	echo getNetActivityTable();
-	exit;
+	return;
 }
 
 define("MIN_DURATION", 3);
@@ -73,6 +73,7 @@ function getNetActivityActions(): array
 		$source = '';
 
 		foreach ($log_actions as $line) {
+
 			if (strpos($line, "voice started") !== false) {
 				// Frn 
 				if ($row['start'] == 0) {
@@ -167,6 +168,8 @@ function getNetActivityActions(): array
 								'destination' => '',
 								'duration' => 0
 							];
+							$parent = '';
+							$source = '';
 						} else {
 							$dur = $stop - $row['start'];
 							$row = [
@@ -177,6 +180,9 @@ function getNetActivityActions(): array
 								'destination' => '',
 								'duration' => 0
 							];
+							$parent = '';
+							$source = '';
+
 						}
 					}
 				}
@@ -232,6 +238,7 @@ function getNetActivityTable(): string
 	return $html;
 }
 
+if (!isset($_GET['ajax'])) {
 $netResultLimit = NET_ACTIVITY_LIMIT . ' ' . getTranslation('Actions');
 ?>
 <div id="net_activity">
@@ -244,3 +251,4 @@ $netResultLimit = NET_ACTIVITY_LIMIT . ' ' . getTranslation('Actions');
 	<br>
 </div>
 
+<?php }

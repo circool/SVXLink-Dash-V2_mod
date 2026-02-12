@@ -170,6 +170,8 @@ Service state data is stored in the session (a single session with a fixed ID is
   - `start`: int
   - `type`: string ("Node")
 - `hosts`: string (optional) – comma-separated values
+- `caller_callsign` : string (reflectors only)
+- `caller_tg` : string (reflectors only)
 
 #### `service` Structure
 - `start`: int

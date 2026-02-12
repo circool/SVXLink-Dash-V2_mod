@@ -1,66 +1,38 @@
 <?php
 
 /**
- * @filesource /include/ajax_update.php
- * @version 0.1.0.release
- * @description AJAX handler for dynamic blocks
- * @author vladimir@tsurkanenko.ru
- * @date 2026.01.22
+ * Session updater & block proxy
+ * @filesource /include/ajax_update.js
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
+ * @date 2026.02.11
+ * @version 0.4.6
  */
+header('Content-Type: application/json');
 
+if (session_status() === PHP_SESSION_NONE) {
+	require_once __DIR__ . '/session_header.php';
+}
 
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-header('Access-Control-Max-Age: 86400');
-
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-	http_response_code(200);
+if (isset($_GET['update_session'])) {
+	require_once __DIR__ . '/fn/getActualStatus.php';
+	$_SESSION['status'] = getActualStatus();
+	session_write_close();
+	echo json_encode(['status' => 'ok', 'timestamp' => time()]);
 	exit;
 }
 
-$docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/var/www/html';
-$block = $_GET['block'] ?? '';
-$allowedBlocks = ['rf_activity', 'net_activity', 'reflector_activity', 'connection_details', 'left_panel','radio_activity'];
-
-if (!in_array($block, $allowedBlocks)) {
-	http_response_code(400);
-	header('Content-Type: text/plain; charset=utf-8');
-	exit('Invalid block');
+if (isset($_GET['block'])) {
+	$blockFile = __DIR__ . '/' . $_GET['block'] . '.php';
+	if (file_exists($blockFile)) {
+		$_GET['ajax'] = 1;
+		ob_start();
+		include $blockFile;
+		$html = ob_get_clean();
+		echo json_encode(['html' => $html]);
+		exit;
+	}
 }
 
-if (session_status() === PHP_SESSION_NONE) {
-	require_once $docRoot . '/include/session_header.php';
-	// session_name(SESSION_NAME);
-	// session_start();
-}
-
-if (isset($_SESSION['TIMEZONE'])) {
-	date_default_timezone_set($_SESSION['TIMEZONE']);
-}
-
-
-require_once $docRoot . '/include/fn/getActualStatus.php';
-
-if (!isset($_SESSION['status'])) {
-	$actualStatus = getActualStatus(true);
-} else {
-	$actualStatus = getActualStatus(false);
-}
-
-$_SESSION['status'] = $actualStatus;
-unset($actualStatus);
-
-session_write_close();
-
-$_GET['ajax'] = 1;
-
-$filepath = $docRoot . "/include/$block.php";
-if (!file_exists($filepath)) {
-	http_response_code(404);
-	header('Content-Type: text/plain; charset=utf-8');
-	exit('Block file not found: ' . $block);
-}
-
-require_once $filepath;
+http_response_code(400);
+echo json_encode(['error' => 'Invalid request']);
+exit;

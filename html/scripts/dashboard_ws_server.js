@@ -1,7 +1,7 @@
 /**
  * @filesource /scripts/dashboard_ws_server.js
- * @version 0.4.22_release
- * @date 2026.01.22
+ * @version 0.4.23
+ * @date 2026.02.11
  * @description Stateful WebSocket server
  */
 
@@ -13,7 +13,7 @@ const http = require('http');
 const { match } = require('assert');
 
 const CONFIG = {
-	version: '0.4.22_release',
+	version: '0.4.23',
 	ws: {
 		host: '0.0.0.0',
 		port: 8080,
@@ -61,7 +61,7 @@ function log(message, level = 'DEBUG') {
 				level: level,
 				message: message,
 				timestamp: new Date().toISOString(),
-				source: 'WS Server v 0.4.22'
+				source: 'WS Server v 0.4.23'
 			});
 		}
 	}
@@ -134,7 +134,6 @@ class StateManager {
 			return true;
 		}
 
-		// log(`Timer not found: ${key}`, 'WARNING');
 		return false;
 	}
 
@@ -196,7 +195,6 @@ class ConnectionHandler {
 			if (targets.size === 0) {
 				this.connections.delete(source);
 			}
-
 		}
 	}
 
@@ -226,8 +224,8 @@ class ConnectionHandler {
 			}
 		}
 	}
-
 }
+
 //@bookmark class CommandParser
 class CommandParser {
 	constructor(server) {
@@ -727,19 +725,20 @@ class CommandParser {
 					const callsign = match[4];
 					const logicCallsign = this.server.wsState.logics?.[`logic_${logic}`]?.callsign || '';
 					const statusStyle = callsign === logicCallsign ? 'inactive-mode-cell' : 'active-mode-cell';
-
-					this.sm.startTimer(`device_${logic}_rx_status`, {
-						elementId: `device_${logic}_rx_status`,
+					const activeCell = callsign === logicCallsign ? `device_${logic}_tx_status` : `device_${logic}_rx_status`;
+					this.sm.startTimer(activeCell, {
+						elementId: activeCell,
 						replaceStart: '( ',
 						replaceEnd: ' )',
 						type: 'device'
 					});
 					return [
 						{ id: `radio_logic_${logic}_callsign`, action: 'set_content', payload: callsign },
-						{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: `Talkgroup: ${talkgroup}` },
-						{ id: `device_${logic}_rx`, action: 'set_content', payload: 'NET' },
+						// { id: `radio_logic_${logic}_destination`, action: 'set_content', payload: `Talkgroup: ${talkgroup}` },
+						{ id: `radio_logic_${logic}_destination`, action: 'replace_content', payload: [`: `,`.`, `${talkgroup}`]  },
+						// { id: `device_${logic}_rx`, action: 'set_content', payload: 'NET' },
 						//{ id: `device_${logic}_rx_status`, action: 'set_content', payload: 'INCOMING ( 0 s )' },
-						{ id: `device_${logic}_rx`, action: 'add_class', class: statusStyle },
+						{ id: activeCell, action: 'add_class', class: statusStyle },
 						{ id: `radio_logic_${logic}`, action: 'remove_parent_class', class: 'hidden' }
 					];
 				}
@@ -756,12 +755,16 @@ class CommandParser {
 					const statusStyle = callsign === logicCallsign ? 'inactive-mode-cell' : 'active-mode-cell';
 					
 					this.sm.stopTimer(`device_${logic}_rx_status`);
+					this.sm.stopTimer(`device_${logic}_tx_status`);
 					return [
 						{ id: `radio_logic_${logic}_callsign`, action: 'set_content', payload: '' },
-						{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: '' },
-						{ id: `device_${logic}_rx`, action: 'set_content', payload: '' },
-						{ id: `device_${logic}_rx_status`, action: 'set_content', payload: '' },
+						// { id: `radio_logic_${logic}_destination`, action: 'set_content', payload: '' },
+						// { id: `device_${logic}_rx`, action: 'set_content', payload: '' },
+						// { id: `device_${logic}_rx_status`, action: 'set_content', payload: '' },
 						{ id: `device_${logic}_rx_status`, action: 'remove_class', class: statusStyle },
+						{ id: `device_${logic}_rx_status`, action: 'replace_content', payload: ['(',')',' 0 '] },
+						{ id: `device_${logic}_tx_status`, action: 'remove_class', class: statusStyle },
+						{ id: `device_${logic}_tx_status`, action: 'replace_content', payload: ['(', ')', ' 0 '] },
 						{ id: `radio_logic_${logic}`, action: 'add_parent_class', class: 'hidden' }
 					];
 				}

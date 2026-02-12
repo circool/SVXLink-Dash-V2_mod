@@ -2,18 +2,10 @@
 
 /**
  * @filesource /index.php
- * @version 0.4.1.release
- * @date 2026.01.26
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
+ * @date 2026.02.11
+ * @version 0.4.6
  */
-// destroy session on first open
-require_once $_SERVER["DOCUMENT_ROOT"] . "/include/session_header.php";
-$_SESSION = [];
-if (isset($_COOKIE[session_name()])) {
-	setcookie(session_name(), '', time() - 3600, "/");
-}
-if (session_status() === PHP_SESSION_ACTIVE && session_id() == SESSION_ID) session_destroy();
-
 
 require_once $_SERVER["DOCUMENT_ROOT"] . "/include/init.php";
 require_once $_SERVER["DOCUMENT_ROOT"] . "/include/fn/getTranslation.php";
@@ -28,7 +20,6 @@ if (!file_exists($auth_file)) {
 		exit;
 	}
 }
-
 
 ?>
 <!DOCTYPE html>
@@ -47,7 +38,6 @@ if (!file_exists($auth_file)) {
 		<?php include_once $_SERVER["DOCUMENT_ROOT"] . '/include/websocket_client_config.php'; ?>
 		<link rel="stylesheet" href="/css/websocket_control.css">
 	<?php endif; ?>
-
 </head>
 
 <body>
@@ -63,9 +53,7 @@ if (!file_exists($auth_file)) {
 					<span id="DateTime"><?= date('d-m-Y H:i:s') ?></span>
 				</div>
 
-				<?php
-				require_once $_SERVER["DOCUMENT_ROOT"] . "/include/top_menu.php";
-				?>
+				<?php require_once $_SERVER["DOCUMENT_ROOT"] . "/include/top_menu.php"; ?>
 
 			</div>
 		</div>
@@ -83,7 +71,6 @@ if (!file_exists($auth_file)) {
 					</div>
 				</div>
 			</div>
-			<!-- <br class="noMob"> -->
 		</div>
 		<br class="noMob">
 		<div class="leftnav">
@@ -126,8 +113,20 @@ if (!file_exists($auth_file)) {
 			}
 			?>
 
-			
+			<?php if (defined("DEBUG") && DEBUG): ?>
+				<div id="debug_block">
+					<div style="margin-top: 20px; padding: 10px; border: 1px solid #ddd;">
+						<h4>Debug Console Websocket</h4>
+						<div id="debugLog" style="height: 300px; overflow-y: auto;"></div>
+					</div>
 
+					<div class="debug" id="debug_section">
+						<?php
+						include $_SERVER["DOCUMENT_ROOT"] . "/include/debug_page.php";
+						?>
+					</div>
+				</div>
+			<?php endif; ?>
 		</div>
 	</div>
 
@@ -152,10 +151,15 @@ if (!file_exists($auth_file)) {
 	<script>
 		window.UPDATE_INTERVAL = <?php echo defined('UPDATE_INTERVAL') ? UPDATE_INTERVAL : 3000; ?>;
 		window.WS_ENABLED = <?php echo (defined('WS_ENABLED') && WS_ENABLED) ? 'true' : 'false'; ?>;
+		window.SHOW_RF_ACTIVITY = <?php echo (defined('SHOW_RF_ACTIVITY') && SHOW_RF_ACTIVITY) ? 'true' : 'false'; ?>;
+		window.SHOW_NET_ACTIVITY = <?php echo (defined('SHOW_NET_ACTIVITY') && SHOW_NET_ACTIVITY) ? 'true' : 'false'; ?>;
+		window.SHOW_REFLECTOR_ACTIVITY = <?php echo (defined('SHOW_REFLECTOR_ACTIVITY') && SHOW_REFLECTOR_ACTIVITY) ? 'true' : 'false'; ?>;
+		window.SHOW_RADIO_ACTIVITY = <?php echo (defined('SHOW_RADIO_ACTIVITY') && SHOW_RADIO_ACTIVITY) ? 'true' : 'false'; ?>;
+		window.SHOW_CON_DETAILS = <?php echo (defined('SHOW_CON_DETAILS') && SHOW_CON_DETAILS) ? 'true' : 'false'; ?>;
 	</script>
 	<script src="/scripts/block_updater.js"></script>
 
-	</div>
+
 </body>
 
 </html>

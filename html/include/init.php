@@ -2,13 +2,14 @@
 
 /**
  * @filesource /include/init.php
- * @version 0.4.1.release
- * @date 2026.01.26
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
+ * @date 2026.02.11
+ * @version 0.4.6
  */
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/settings.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getActualStatus.php';
+require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getConfig.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.php';
 
 if (!defined('ROOT_DIR')) {
@@ -41,12 +42,6 @@ if (!isset($_SESSION['TIMEZONE'])) {
 }
 date_default_timezone_set($systemTimezone);
 
-if (!isset($_SESSION['status'])) {
-	$actualStatus = getActualStatus(true);	
-} else {
-	$actualStatus = getActualStatus(false);
-}
-
-$_SESSION['status'] = $actualStatus;
-
-unset($actualStatus, $systemTimezone);
+$config = getConfig();
+$_SESSION['status'] = getActualStatus($config);
+unset($config, $systemTimezone);
