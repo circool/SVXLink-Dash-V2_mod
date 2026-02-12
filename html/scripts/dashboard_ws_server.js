@@ -734,10 +734,8 @@ class CommandParser {
 					});
 					return [
 						{ id: `radio_logic_${logic}_callsign`, action: 'set_content', payload: callsign },
-						// { id: `radio_logic_${logic}_destination`, action: 'set_content', payload: `Talkgroup: ${talkgroup}` },
-						{ id: `radio_logic_${logic}_destination`, action: 'replace_content', payload: [`: `,`.`, `${talkgroup}`]  },
-						// { id: `device_${logic}_rx`, action: 'set_content', payload: 'NET' },
-						//{ id: `device_${logic}_rx_status`, action: 'set_content', payload: 'INCOMING ( 0 s )' },
+						{ id: `radio_logic_${logic}_destination`, action: 'replace_content', payload: [`<span class="tg">`,`</span>`, `${talkgroup}`]  },
+						{ id: activeCell, action: 'remove_class', class: 'transparent' },
 						{ id: activeCell, action: 'add_class', class: statusStyle },
 						{ id: `radio_logic_${logic}`, action: 'remove_parent_class', class: 'hidden' }
 					];
@@ -753,18 +751,13 @@ class CommandParser {
 					const callsign = match[4];
 					const logicCallsign = this.server.wsState.logics?.[`logic_${logic}`]?.callsign || '';
 					const statusStyle = callsign === logicCallsign ? 'inactive-mode-cell' : 'active-mode-cell';
-					
-					this.sm.stopTimer(`device_${logic}_rx_status`);
-					this.sm.stopTimer(`device_${logic}_tx_status`);
+					const activeCell = callsign === logicCallsign ? `device_${logic}_tx_status` : `device_${logic}_rx_status`;
+					this.sm.stopTimer(activeCell);
 					return [
 						{ id: `radio_logic_${logic}_callsign`, action: 'set_content', payload: '' },
-						// { id: `radio_logic_${logic}_destination`, action: 'set_content', payload: '' },
-						// { id: `device_${logic}_rx`, action: 'set_content', payload: '' },
-						// { id: `device_${logic}_rx_status`, action: 'set_content', payload: '' },
-						{ id: `device_${logic}_rx_status`, action: 'remove_class', class: statusStyle },
-						{ id: `device_${logic}_rx_status`, action: 'replace_content', payload: ['(',')',' 0 '] },
-						{ id: `device_${logic}_tx_status`, action: 'remove_class', class: statusStyle },
-						{ id: `device_${logic}_tx_status`, action: 'replace_content', payload: ['(', ')', ' 0 '] },
+						{ id: activeCell, action: 'remove_class', class: statusStyle },
+						{ id: activeCell, action: 'add_class', class: 'transparent' },
+						{ id: activeCell, action: 'replace_content', payload: ['(',')',' 0 '] },
 						{ id: `radio_logic_${logic}`, action: 'add_parent_class', class: 'hidden' }
 					];
 				}

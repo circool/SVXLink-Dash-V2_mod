@@ -154,7 +154,9 @@ audio-monitor:before {
 
 
 
-
+span.tg {
+	font-style: normal;
+}
 
 span.error, em.error {
 	color: #ffffff;
@@ -165,16 +167,17 @@ span.error, em.error {
 	border-radius: 0.2em;
 }
 
-em.error {
-	font-style: normal;
-}
-span.success {
-	color: #ffffff;
+
+span.success, em.success {
+	color: #000000;
 	background-color: rgb(192, 240, 30);
 	padding: 0.2em 0.4em;
 	-webkit-border-radius: 0.2em;
 	-moz-border-radius: 0.2em;
 	border-radius: 0.2em;
+}
+em.error, em.success {
+	font-style: normal;
 }
 
 span.operate {
@@ -836,10 +839,13 @@ span.operate {
 	opacity: 0.4;
 }
 
+.transparent {
+	opacity: 0;
+}
+
 .macro-button {
 	flex: 1;
-	padding: 2px 8px;
-	
+	padding: 2px 8px;	
 	border: none;
 	border-radius: 5px;
 	cursor: pointer;

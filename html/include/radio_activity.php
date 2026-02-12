@@ -70,61 +70,47 @@ function renderRadioActivityTable()
 				}
 			}
 		} else {
-			// @todo How to show callsign and talkgroups?
+			// @bookmark Reflectors sending/receiving
 			$rxDeviceStart = $logic['rx']['start'] ;
-			
+			$incomingDuration = 0;
+			$outcomingDuration = 0;
+			$destination = $logic['talkgroups']['selected'];
+			$callsign = $logic['callsign'];
+
 			if($rxDeviceStart > 0){
-				
-				if(isset($logic['caller_callsign']) && isset($logic['caller_tg'])) {
-					
-					$callsign = $logic['caller_callsign'];
-					$destination = getTranslation('Talkgroup') . ': ' . $logic['caller_tg'] . '.';
-					
-					if($callsign === $logic['callsign']){
-						// direction to reflector
-						$txDevice = getTranslation("Network");
-						$txDeviceState = getTranslation('OUTCOMING') . ' ( ' . $rxDuration . ' )';
-						$txCellClass = ' inactive-mode-cell';
-						$txDuration = time() - $rxDeviceStart;
-						$txDuration = $rxDuration < 60 ? $rxDuration . ' s' : formatDuration($rxDuration);
-						$rxDevice = "";
-						$rxCellClass = '';
-						$rxDeviceState = getTranslation('INCOMING') . ' ( 0 )';
-						$rxDuration = 0;
-					} else {
-						// direction from reflector
-						$rxDevice = getTranslation("Network");
-						$txDevice = '';
-						$txDeviceState = getTranslation('OUTCOMING') . ' ( 0 )';
-						$txCellClass = '';
-						$txDuration = 0;
-						$rxCellClass = ' active-mode-cell';						
-						$rxDuration = time() - $rxDeviceStart;
-						$rxDuration = $rxDuration < 60 ? $rxDuration . ' s' : formatDuration($rxDuration);
-						$rxDeviceState = getTranslation('INCOMING') . ' ( ' . $rxDuration . ' )';
-					}
-
-				} else {
-					$callsign = '';
-					$destination = '';
-					$txDeviceState = getTranslation('OUTCOMING') . ' ( 0 )';
-					$rxDeviceState = getTranslation('INCOMING') . ' ( 0 )';
-					$rxCellClass = ' active-mode-cell';
-					$rxDeviceState = '';
-				}		
-
 				$rowClass = '';
-			
+				$netDuration = time() - $rxDeviceStart;
+				$netDuration = $netDuration < 60 ? $netDuration . ' s' : formatDuration($netDuration);
+				
+				if(!empty($logic['caller_tg'])) {
+					$destination = $logic['caller_tg'];
+				} 
+				
+				if (!empty($logic['caller_callsign'])) {
+					$callsign = $logic['caller_callsign'];
+				} 
+				
+				$isIncoming = $callsign !== $logic['callsign'];			
+				if($isIncoming){
+					$incomingDuration = $netDuration;				
+					$rxCellClass = ' active-mode-cell';				
+					$txCellClass = ' transparent';			
+				} else {
+					$outcomingDuration = $netDuration;
+					$rxCellClass = ' transparent';
+					$txCellClass = ' inactive-mode-cell';										
+				}
 			} else {
-				$rxCellClass = '';
-				$rxDuration = 0;
-				$txDuration = 0;
+				$rxCellClass = ' transparent';
+				$txCellClass = ' transparent';
 				$callsign = '';
-				$destination = getTranslation('Talkgroup') . ': ' . $logic['talkgroups']['selected'] . '.';
-				$rowClass = 'hidden';
-				$txDeviceState = getTranslation('OUTCOMING') . ' ( 0 )';
-				$rxDeviceState = getTranslation('INCOMING') . ' ( 0 )';
+				
+				$rowClass = 'hidden';				
 			}
+			
+			$rxDeviceState = getTranslation('INCOMING') . ' ( ' . $incomingDuration . ' )';
+			$txDeviceState = getTranslation('OUTCOMING') . ' ( ' . $outcomingDuration . ' )';
+			$destination = getTranslation('Talkgroup') . ': <span class="tg">' . $destination . '</span>';
 			
 			$rowStyle = ' style = "padding: 0px; margin: 0px" ';
 			$row_rxDevice = htmlspecialchars($logicName);
@@ -155,13 +141,13 @@ function renderRadioActivityTable()
 		// Status RX
 		$html .= '<div id="device_' . $row_rxDevice . '_rx_status" class="divTableCell cell_content middle' . $rxCellClass .  '" ' . $rowStyle . '>' . $rxDeviceState . '</div>';
 		// TX Device
-		$html .= '<div id="device_' . $row_txDevice . '_tx" class="divTableCell cell_content middle" ' . $rowStyle . '>' . $txDeviceHtml . '</div>';
+		$html .= '<div id="device_' . $row_txDevice . '_tx" class="divTableCell cell_content middle"' . $rowStyle . '>' . $txDeviceHtml . '</div>';
 		// Status TX
-		$html .= '<div id="device_' . $row_txDevice . '_tx_status" class="divTableCell cell_content middle' . $txCellClass .  '"' . $rowStyle . '>' . $txDeviceState . '</div>';
+		$html .= '<div id="device_' . $row_txDevice . '_tx_status" class="divTableCell cell_content middle ' . $txCellClass .  '"' . $rowStyle . '>' . $txDeviceState . '</div>';
 		// Callsign
-		$html .= '<div id="radio_logic_' . $logicName . '_callsign" class="callsign divTableCell cell_content middle"' . $rowStyle . '>' . htmlspecialchars($callsign) . '</div>';
+		$html .= '<div id="radio_logic_' . $logicName . '_callsign" class="callsign divTableCell cell_content middle"' . $rowStyle . '>' . $callsign . '</div>';
 		// Destination
-		$html .= '<div id="radio_logic_' . $logicName . '_destination" class="destination divTableCell cell_content middle"' . $rowStyle . '>' . htmlspecialchars($destination) . '</div>';
+		$html .= '<div id="radio_logic_' . $logicName . '_destination" class="destination divTableCell cell_content middle"' . $rowStyle . '>' . $destination . '</div>';
 
 		$html .= '</div>';
 	}
