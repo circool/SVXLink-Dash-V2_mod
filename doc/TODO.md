@@ -2,9 +2,9 @@
 
 ## Bugs.
 
-[ ] Sending DTMF from the keypad or macro panel works after 2 unsuccessful attempts (Links control works correctly).
+[+] Sending DTMF from the keypad or macro panel works after 2 unsuccessful attempts (Links control works correctly).
 
-[ ] `block_updater.js` does not have access to the updatable elements on the first run.
+[+] `block_updater.js` does not have access to the updatable elements on the first run.
 
 [+] When reflector connected ("...: ReflectorLogic...: Connected nodes: ..."), reflector's cell set to orange color(paused) instead green (connected)
 
@@ -14,7 +14,7 @@
 
 [ ] Think of a way to recognize logic when modules are active (for displaying the callsign and destination).
 
-[ ] getActualStatus - add parsing 
+[+] getActualStatus - add parsing 
 	- "*** ERROR: Command timeout while communicating to the directory server"
 	- "*** ERROR: Directory server offline (status=OFF). Can't create outgoing connection."
 
