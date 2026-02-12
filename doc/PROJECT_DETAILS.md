@@ -154,6 +154,8 @@ Service state data is stored in the session (a single session with a fixed ID is
   - `callsign`: string
   - `is_active`: bool
   - `is_connected`: bool
+	- `id` : string
+	- `mute_logic` : bool
   - `connected_nodes`: array[nodeName] (optional)
     - `callsign`: string (nodeName without suffixes and surrounding '*')
     - `start`: int
@@ -168,6 +170,8 @@ Service state data is stored in the session (a single session with a fixed ID is
   - `start`: int
   - `type`: string ("Node")
 - `hosts`: string (optional) – comma-separated values
+- `caller_callsign` : string (reflectors only)
+- `caller_tg` : string (reflectors only)
 
 #### `service` Structure
 - `start`: int

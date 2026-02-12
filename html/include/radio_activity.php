@@ -1,49 +1,32 @@
 <?php
 
 /**
- * @version 0.4.4.release
- * @date 2026.01.26
- * @author vladimir@tsurkanenko.ru
  * @filesource /include/radio_activity.php
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
+ * @date 2026.02.11
+ * @version 0.4.6
  */
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getActualStatus.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.php';
-// require_once $_SERVER["DOCUMENT_ROOT"] . '/include/init.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/session_header.php';
 
 function renderRadioActivityTable()
 {
-	// if (isset($_SESSION['TIMEZONE'])) {
-	// 	date_default_timezone_set($_SESSION['TIMEZONE']);
-	// }
-
-	// $status = getActualStatus();
-	// $logics = $status['logic'];
-	// $multipleDevices = $status['multiple_device'] ?? [];	
-	
 	if (isset($_SESSION['status']['logic'])) {
 		$logics = $_SESSION['status']['logic'];
 		$multipleDevices = $_SESSION['status']['multiple_device'] ?? [];
 		// return '';
 	} else {
-		$status = getActualStatus(true);
+		$status = getActualStatus();
 		$logics = $status['logic'];
 		$multipleDevices = $status['multiple_device'];
 	}
-	
-	
-	
 
 	$html = '';
 
 	foreach ($logics as $logicName => $logic) {
-		$isActive = $logic['is_active'] ?? false;
-		$isConnected = $logic['is_connected'] ?? false;
-		// $rowClass = $logic['is_active'] ? '' : 'offline';
-		
-
 		$rxDevice = $logic['rx']['name'] ?? '';
 		$txDevice = $logic['tx']['name'] ?? '';
 
@@ -63,67 +46,105 @@ function renderRadioActivityTable()
 			$rxCellClass = $rxDeviceStart > 0 ? ' active-mode-cell' : '';
 			$rxDuration = $rxDeviceStart > 0 ? time() - $rxDeviceStart : 0;
 			$rxDuration = $rxDuration < 60 ? $rxDuration . ' s' : formatDuration($rxDuration);
-			$rxDeviceState = $rxDeviceStart > 0 ? 'RECEIVE ( ' . $rxDuration . ' )' : "STANDBY";
+			$rxDeviceState = $rxDeviceStart > 0 ? getTranslation('RECEIVE') . ' ( ' . $rxDuration . ' )' : getTranslation('STANDBY');
 
 			$txDeviceStart = !empty($txDevice) ? $logic['tx']['start'] : 0;
 			$txCellClass = $txDeviceStart > 0 ? ' inactive-mode-cell' : '';
 			$txDuration = $txDeviceStart > 0 ? time() - $txDeviceStart : 0;
 			$txDuration = $txDuration < 60 ? $txDuration . ' s' : formatDuration($txDuration);
-			$txDeviceState = $txDeviceStart > 0 ? 'TRANSMIT ( ' . $txDuration . ' )' : "STANDBY";
+			$txDeviceState = $txDeviceStart > 0 ? getTranslation('TRANSMIT') . ' ( ' . $txDuration . ' )' : getTranslation('STANDBY');
 
 			$callsign = $logic['callsign'] ?? '';
 			$callsign = '';
-		
+
+			$destination = '';
+			if (isset($logic['module']) && is_array($logic['module'])) {
+				foreach ($logic['module'] as $moduleName => $module) {
+					$moduleActive = $module['is_active'] ?? false;
+					$moduleConnected = $module['is_connected'] ?? false;
+
+					if ($moduleActive || $moduleConnected) {
+						$destination = $moduleName;
+						break; // The first active module found is used
+					}
+				}
+			}
 		} else {
-			
+			// @todo How to show callsign and talkgroups?
 			$rxDeviceStart = $logic['rx']['start'] ;
+			
 			if($rxDeviceStart > 0){
-				$rxCellClass = ' active-mode-cell';
-				$rxDevice = 'NET';
-				$rxDuration = time() - $rxDeviceStart;
-				$rxDuration = $rxDuration < 60 ? $rxDuration . ' s' : formatDuration($rxDuration);
-				$rxDeviceState = 'INCOMING ( ' . $rxDuration . ' )';
+				
+				if(isset($logic['caller_callsign']) && isset($logic['caller_tg'])) {
+					
+					$callsign = $logic['caller_callsign'];
+					$destination = getTranslation('Talkgroup') . ': ' . $logic['caller_tg'] . '.';
+					
+					if($callsign === $logic['callsign']){
+						// direction to reflector
+						$txDevice = getTranslation("Network");
+						$txDeviceState = getTranslation('OUTCOMING') . ' ( ' . $rxDuration . ' )';
+						$txCellClass = ' inactive-mode-cell';
+						$txDuration = time() - $rxDeviceStart;
+						$txDuration = $rxDuration < 60 ? $rxDuration . ' s' : formatDuration($rxDuration);
+						$rxDevice = "";
+						$rxCellClass = '';
+						$rxDeviceState = getTranslation('INCOMING') . ' ( 0 )';
+						$rxDuration = 0;
+					} else {
+						// direction from reflector
+						$rxDevice = getTranslation("Network");
+						$txDevice = '';
+						$txDeviceState = getTranslation('OUTCOMING') . ' ( 0 )';
+						$txCellClass = '';
+						$txDuration = 0;
+						$rxCellClass = ' active-mode-cell';						
+						$rxDuration = time() - $rxDeviceStart;
+						$rxDuration = $rxDuration < 60 ? $rxDuration . ' s' : formatDuration($rxDuration);
+						$rxDeviceState = getTranslation('INCOMING') . ' ( ' . $rxDuration . ' )';
+					}
+
+				} else {
+					$callsign = '';
+					$destination = '';
+					$txDeviceState = getTranslation('OUTCOMING') . ' ( 0 )';
+					$rxDeviceState = getTranslation('INCOMING') . ' ( 0 )';
+					$rxCellClass = ' active-mode-cell';
+					$rxDeviceState = '';
+				}		
+
 				$rowClass = '';
+			
 			} else {
 				$rxCellClass = '';
-				$rxDevice = '';
 				$rxDuration = 0;
-				$rxDeviceState = '';
+				$txDuration = 0;
+				$callsign = '';
+				$destination = getTranslation('Talkgroup') . ': ' . $logic['talkgroups']['selected'] . '.';
 				$rowClass = 'hidden';
+				$txDeviceState = getTranslation('OUTCOMING') . ' ( 0 )';
+				$rxDeviceState = getTranslation('INCOMING') . ' ( 0 )';
 			}
 			
 			$rowStyle = ' style = "padding: 0px; margin: 0px" ';
 			$row_rxDevice = htmlspecialchars($logicName);
 			$row_txDevice = htmlspecialchars($logicName);
-			// $rxDeviceState = '';
-			$txDeviceState = '';
-			$callsign = '';
+			
 		}
 
 		$rxDeviceHtml = $rxDevice;
 		if (!empty($rxDevice) && isset($multipleDevices[$rxDevice])) {
 			$subDevices = $multipleDevices[$rxDevice];
-			$rxDeviceHtml = '<a class="tooltip" href="#"><span><b>Multiple device:</b>' . $subDevices . '</span>' . $rxDevice . '</a>';
+			$rxDeviceHtml = '<a class="tooltip" href="#"><span><b>' . getTranslation('Multiple device') . ':</b>' . $subDevices . '</span>' . $rxDevice . '</a>';
 		}
 
 		$txDeviceHtml = $txDevice;
 		if (!empty($txDevice) && isset($multipleDevices[$txDevice])) {
 			$subDevices = $multipleDevices[$txDevice];
-			$txDeviceHtml = '<a class="tooltip" href="#"><span><b>Multiple device:</b>' . $subDevices . '</span>' . $txDevice . '</a>';
+			$txDeviceHtml = '<a class="tooltip" href="#"><span><b>' . getTranslation('Multiple device') . ':</b>' . $subDevices . '</span>' . $txDevice . '</a>';
 		}
 
-		$destination = '';
-		if (isset($logic['module']) && is_array($logic['module'])) {
-			foreach ($logic['module'] as $moduleName => $module) {
-				$moduleActive = $module['is_active'] ?? false;
-				$moduleConnected = $module['is_connected'] ?? false;
-
-				if ($moduleActive || $moduleConnected) {
-					$destination = $moduleName;
-					break; // Берем первый найденный активный модуль
-				}
-			}
-		}
+		
 
 		$html .= '<div class="divTableRow ' . $rowClass .  '">';
 

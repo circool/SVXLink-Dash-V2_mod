@@ -2,11 +2,12 @@
 
 /**
  * @filesource /include/rf_activity.php
- * @version 0.4.12.release
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
+ * @date 2026.02.11
+ * @version 0.4.6
  */
 
-
+// AJAX
 if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 	header('Content-Type: text/html; charset=utf-8');
 	$docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/var/www/html';
@@ -26,11 +27,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 		}
 	}
 
-	if (session_status() === PHP_SESSION_ACTIVE) {
-		session_write_close();
-	}
 	echo getRfActivityTable();
-	exit;
+	return;  
 }
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';

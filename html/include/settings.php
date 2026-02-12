@@ -2,9 +2,9 @@
 
 /**
  * @filesource /include/settings.php
- * @version 0.2.2.release
- * @date 2026.01.26  
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
+ * @date 2026.02.11
+ * @version 0.4.6
  */
 
 
@@ -34,17 +34,21 @@ define("SVXCONFIG", 'svxlink.conf');
 define('SHOW_AUDIO_MONITOR', true);
 
 define('SHOW_MACROS', true);
+
+define('SHOW_AUTH', false);
+
 define('SHOW_CON_DETAILS', true);
+
 define('SHOW_RADIO_ACTIVITY', true);
 
-define('SHOW_REFLECTOR_ACTIVITY', true);
+define('SHOW_REFLECTOR_ACTIVITY', false);
 if (defined("SHOW_REFLECTOR_ACTIVITY") && SHOW_REFLECTOR_ACTIVITY) {
 	define('REFLECTOR_ACTIVITY_LIMIT', 5);
 }
 
 define('SHOW_NET_ACTIVITY', true);
 if (defined("SHOW_NET_ACTIVITY") && SHOW_NET_ACTIVITY) {
-	define('NET_ACTIVITY_LIMIT', 5);
+	define('NET_ACTIVITY_LIMIT', 10);
 }
 
 define('SHOW_RF_ACTIVITY', true);
@@ -73,3 +77,27 @@ define("AUTH_SETUP", 'install/setup_auth.php');
 
 // AJAX Updates
 define("UPDATE_INTERVAL", 2000);
+
+// DEBUG
+define("DEBUG", false);
+if (defined("DEBUG")) {
+
+	if (!defined("DEBUG_VERBOSE")) {
+		define("DEBUG_VERBOSE", 4);
+	}
+
+	if (!defined("DEBUG_WEB_CONSOLE")) {
+		define("DEBUG_WEB_CONSOLE", true);
+	}
+	if (!defined("DEBUG_LOG_CONSOLE")) {
+		define("DEBUG_LOG_CONSOLE", false);
+	}
+
+	define('DEBUG_LOG_FILE', '/tmp/svxlink-debug.log');
+	// Не логируем в журнал apache пока в сообщениях используется кириллица
+	// define ('DEBUG_LOG_TO_APACHE', '/var/log/apache2/svxlink_development.error.log');
+	if (!defined('LOG_LEVEL')) {
+		define('LOG_LEVEL', DEBUG_VERBOSE);
+	}
+	
+}

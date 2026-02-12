@@ -1,12 +1,10 @@
 <?php
-
 /**
+ * Connection details block rendering
  * @filesource /include/connection_details.php
- * @version 0.4.11.release
- * @author vladimir@tsurkanenko.ru
- * @since 0.2.0
- * @date 2026.01.26
- * @note Preliminary version.
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
+ * @date 2026.02.11
+ * @version 0.4.6
  */
 
 if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
@@ -33,27 +31,10 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 	if (session_status() === PHP_SESSION_NONE) {
 		session_name(SESSION_NAME);
 		session_start();
-		// if (!isset($_SESSION['TIMEZONE'])) {
-
-		// 	if (file_exists('/etc/timezone')) {
-		// 		$systemTimezone = trim(file_get_contents('/etc/timezone'));
-		// 	} else {
-		// 		$systemTimezone = 'UTC';
-		// 	}
-		// 	$_SESSION['TIMEZONE'] = $systemTimezone;
-		// }
 	}
 	
-
-	// if (isset($_SESSION['TIMEZONE'])) {
-	// 	date_default_timezone_set($_SESSION['TIMEZONE']);
-	// }
-
-	// error_log("TIMEZONE IS " . $_SESSION['TIMEZONE']);
-	// error_log("date_default_timezone IS " . date_default_timezone_get());
-
 	echo getConnectionDetailsTable();
-	exit;
+	return;
 }
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/removeTimestamp.php';
@@ -70,7 +51,7 @@ function getConnectionDetails(): array
 		date_default_timezone_set($_SESSION['TIMEZONE']);
 	}
 	if (!isset($_SESSION['status'])) {
-		error_log('Mandatory data not found in session. $_SESSION["status"]');
+		error_log('getConnectionDetails: Mandatory data not found in session. $_SESSION["status"]');
 		return [];
 	}
 	$con_det_logics = $_SESSION['status']['logic'];
@@ -86,10 +67,10 @@ function getConnectionDetails(): array
 		$lDetails = [];
 		$msg = [];
 		if ($logic['type'] == 'Reflector') {
-			$lDestination = 'TG #' . $logic['talkgroups']['selected'];
+			$lDestination = getTranslation('Talkgroup') . ': ' . $logic['talkgroups']['selected'];
 			if (!empty($logic['connected_nodes'])) {
 				$nodes = implode(', ', array_keys($logic['connected_nodes']));
-				$lDestination .= ': ' . $nodes;
+				$lDestination .= ', ' . getTranslation('Receivers') . ': ' . $nodes;
 			}
 		} else {
 			foreach ($logic['module'] as $moduleName => $module) {
@@ -153,6 +134,8 @@ function getFrnNodes(): array
 				}
 			}
 		}
+	} else {
+		error_log('getFrnNodes: Mandatory data not found in session. $_SESSION["status"]');
 	}
 	return $nodes;
 }
@@ -161,14 +144,7 @@ function getEchoLinkMsg($nodeName): array
 {
 	$result = [];
 	$msg = [];
-	// @todo Нужно собрать все логики и устройства которые могут генерировать сообщения чтобы понять, что пакет эходинка закончился
-	// $_SESSION['status']['logic']['rx']
-	// $_SESSION['status']['logic']['tx']
-	// $_SESSION['status']['logic']['name']
-	// $_SESSION['status']['multiple_device'] - ключ и разделенные запятыми значения
-
-
-	// 
+	
 	if (isset($_SESSION['status'])) {
 
 		$actualLogSize = $_SESSION['status']['service']['log_line_count'];
@@ -239,6 +215,8 @@ function getEchoLinkMsg($nodeName): array
 				return $nodes;
 			}
 		}
+	} else {
+		error_log('getEchoLinkMsg: Mandatory data not found in session. $_SESSION["status"]');
 	}
 	return $result;
 }
@@ -247,16 +225,6 @@ function getEchoLinkMsg($nodeName): array
 function getConnectionDetailsTable(): string
 {
 	$data = getConnectionDetails();
-
-	// $html = '<table style="word-wrap: break-word; white-space:normal;">';
-	// $html .= '<thead>';
-	// $html .= '<tr>';
-	// $html .= '<th><a class="tooltip" href="#">' . getTranslation('Logic') . '<span><b>' . getTranslation('Source') . '</b></span></a></th>';
-	// $html .= '<th><a class="tooltip" href="#">' . getTranslation('Destination') . '<span><b>' . getTranslation('Destination of transmission') . '</b></span></a></th>';
-	// $html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration') . '</b></span></a></th>';
-	// $html .= '</tr>';
-	// $html .= '</thead>';
-	// $html .= '<tbody>';
 
 	if (!empty($data)) {
 		$html = '';
@@ -338,7 +306,7 @@ function getConnectionDetailsTable(): string
 					$html .= '</div>';
 				}
 			}
-			$html .= '<br>';
+			// $html .= '<br>';
 		}
 	} else {
 		$html = '<table style="word-wrap: break-word; white-space:normal;">';
@@ -354,11 +322,6 @@ function getConnectionDetailsTable(): string
 		$html .= '</tbody>';
 		$html .= '</table>';
 	}
-
-	// $html .= '</tbody>';
-	// $html .= '</table>';
-
-	$html .= '<br>';
 
 	if (!empty($data)) {
 		foreach ($data as $logic) {
@@ -435,5 +398,4 @@ function getConnectionDetailsTable(): string
 	<div id="connection_details_content">
 		<?php echo getConnectionDetailsTable(); ?>
 	</div>
-	<br>
 </div>

@@ -1,15 +1,14 @@
 <?php
 
 /**
- * @author vladimir@tsurkanenko.ru
- * @date 2026-01-26
- * @version 0.4.4.release
  * @filesource /include/left_panel.php
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
+ * @date 2026.02.11
+ * @version 0.4.6
  */
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.php';
-require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getActualStatus.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/session_header.php';
 
 $activeCellClass = ' active-mode-cell';
@@ -329,7 +328,6 @@ function buildLogicData(array $lp_status): array
 		];
 	}
 
-	// return $data;
 
 	// @bookmark Unlinked reflectors (for future releases)
 	foreach ($allReflectors as $reflectorName => $reflector) {
@@ -480,14 +478,17 @@ function buildLogicData(array $lp_status): array
 	return $data;
 }
 
-// $lp_status = $_SESSION['status'];
-$lp_status = getActualStatus();
+if(isset($_SESSION['status'])){
+	$lp_status = $_SESSION['status'];
+} //else {
+	//@todo Первое обновление AJAX идет без данных в сессии!
+	//return;
+	//require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getConfig.php';
+	//$lp_status = getConfig();
+//}
+
 $displayData = buildLogicData($lp_status);
-
 $cellStyleStr = ' style="border: .5px solid #3c3f47;"';
-
-
-
 
 ?>
 <div class="mode_flex">
@@ -522,7 +523,6 @@ if (!empty($displayData['logics'])) {
 					<div id="logic_<?= $logic['name'] ?>" class="<?= $logic['style'] ?>"><?php echo $logic['tooltip_start'] . $logic['name'] . $logic['tooltip_end'];  ?></div>
 				</div>
 			</div>
-
 
 			<?php // @bookmark Header for Modules 
 			?>
