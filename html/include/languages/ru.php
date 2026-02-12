@@ -57,6 +57,7 @@ return [
 	'Enter your username' => 'Введите имя учетной записи',
 	'Enter your password' => 'Введите пароль',
 	'Frequency' => 'Частота',
+	'Hide Kerchunks' => 'Скрывать короче',
 	'Host' => 'Узел',
 	'HW Info' => 'Информация о системе',
 	'History' => 'История',
