@@ -344,9 +344,10 @@ function getActualStatus(array $config = null): array
 										if (count($module['connected_nodes']) !== 0) {
 											$module['is_connected'] = true;
 											$logic['is_connected'] = true;
+										} else {
+											$module['is_connected'] = false;
 										}
 										continue;
-
 									}
 								} 
 							}
