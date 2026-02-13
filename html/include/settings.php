@@ -41,11 +41,6 @@ define('SHOW_CON_DETAILS', true);
 
 define('SHOW_RADIO_ACTIVITY', true);
 
-define('SHOW_REFLECTOR_ACTIVITY', false);
-if (defined("SHOW_REFLECTOR_ACTIVITY") && SHOW_REFLECTOR_ACTIVITY) {
-	define('REFLECTOR_ACTIVITY_LIMIT', 5);
-}
-
 define('SHOW_NET_ACTIVITY', true);
 if (defined("SHOW_NET_ACTIVITY") && SHOW_NET_ACTIVITY) {
 	define('NET_ACTIVITY_LIMIT', 10);
