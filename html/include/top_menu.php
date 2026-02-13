@@ -79,10 +79,7 @@ if (defined("SHOW_CON_DETAILS") && SHOW_CON_DETAILS) : ?>
 	<a class="menuconnection" href="#"> <?= getTranslation('Connect Details') ?></a>
 <?php endif ?>
 
-<?php
-if (defined("SHOW_REFLECTOR_ACTIVITY") && SHOW_REFLECTOR_ACTIVITY) : ?>
-	<a class="menureflector" href="#"><?= getTranslation('Reflectors'); ?></a>
-<?php endif ?>
+
 
 <?php if (defined("SHOW_AUDIO_MONITOR") && SHOW_AUDIO_MONITOR): ?>
 	<a href="#" class="menuaudio" onclick="toggleMonitor(); return false;"><?php echo getTranslation('Monitor') ?></span></a>
@@ -124,18 +121,14 @@ if (defined("SHOW_REFLECTOR_ACTIVITY") && SHOW_REFLECTOR_ACTIVITY) : ?>
 				closeLogoutModal();
 			}
 		});
+		</script>
 		<?php endif; ?>
 
 			<script>
 			document.addEventListener('DOMContentLoaded', () => {
 				const blocks = [];
 
-				<?php if (defined("SHOW_REFLECTOR_ACTIVITY") && SHOW_REFLECTOR_ACTIVITY): ?>
-					blocks.push({
-						id: 'reflector_activity',
-						class: 'menureflector'
-					});
-				<?php endif; ?>
+				
 
 				<?php if (defined("SHOW_MACROS") && SHOW_MACROS): ?>
 					blocks.push({
