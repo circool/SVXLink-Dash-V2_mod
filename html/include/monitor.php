@@ -3,7 +3,7 @@
 /**
  * @version 0.2.0.release
  * @date 2025.12.17
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
  * @filesource /include/monitor.php
  * @description Audio monitor and menu button
  */
@@ -44,12 +44,12 @@ define('AUDIO_MONITOR_LOADED', true);
 			var button = getMonitorButton();
 			if (!button) return;
 
-			button.classList.remove('menuaudio_mute', 'menuaudio_active');
+			button.classList.remove('mute', 'unmute');
 
-			if (state === 'active') {
-				button.classList.add('menuaudio_active');
+			if (state === 'unmute') {
+				button.classList.add('unmute');
 			} else {
-				button.classList.add('menuaudio_mute');
+				button.classList.add('mute');
 			}
 		}
 
@@ -79,7 +79,7 @@ define('AUDIO_MONITOR_LOADED', true);
 			console.log('Monitor: Starting');
 			isPlaying = true;
 
-			updateMonitorIcon('active');
+			updateMonitorIcon('unmute');
 
 			try {
 				audioCtx = new(window.AudioContext || window.webkitAudioContext)();
@@ -163,7 +163,7 @@ define('AUDIO_MONITOR_LOADED', true);
 					clearTimeout(connectionTimeout);
 					connectionTimeout = null;
 					resetConnectionState();
-					updateMonitorIcon('active');
+					updateMonitorIcon('unmute');
 				};
 
 				ws.onmessage = function(event) {

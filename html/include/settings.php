@@ -35,7 +35,7 @@ define('SHOW_AUDIO_MONITOR', true);
 
 define('SHOW_MACROS', true);
 
-define('SHOW_AUTH', false);
+define('SHOW_AUTH', true);
 
 define('SHOW_CON_DETAILS', true);
 
@@ -51,13 +51,17 @@ if (defined("SHOW_RF_ACTIVITY") && SHOW_RF_ACTIVITY) {
 	define('RF_ACTIVITY_LIMIT', 5);
 }
 
-// WebSocket
+// WS transport for DOM updates (real-time)
 define("WS_ENABLED", true);
 if (WS_ENABLED) {
 	define("WS_HOST", '0.0.0.0');
 	define("WS_PORT", 8080);
 	define("WS_PATH", '/ws');
 }
+
+// AJAX transport for DOM updates (periodic)
+define("UPDATE_INTERVAL", 1000);
+
 
 // Cashe
 define("USE_CACHE", true);
@@ -70,8 +74,7 @@ if (USE_CACHE) {
 define("AUTH_FILE", '/etc/svxlink/dashboard/auth.ini');
 define("AUTH_SETUP", 'install/setup_auth.php');
 
-// AJAX Updates
-define("UPDATE_INTERVAL", 2000);
+
 
 // DEBUG
 define("DEBUG", false);

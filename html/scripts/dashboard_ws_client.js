@@ -1,9 +1,9 @@
 /**
  * @filesource /scripts/dashboard_ws_client.js
- * @version 0.4.3.release
- * @date 2026.01.26
- * @author vladimir@tsurkanenko.ru
- * @description WebSocket client v 0.4.x
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
+ * @date 2026.02.14
+ * @version 0.4.24
+ * @description DOM Command Executor with WebSocket transport
  */
 
 class DashboardWebSocketClientV4 {
@@ -32,10 +32,6 @@ class DashboardWebSocketClientV4 {
 		// Timers
 		this.pingTimer = null;
 		this.reconnectTimer = null;
-
-		// Parent elements cache
-		this.parentCache = new Map();
-
 		this.init();
 	}
 
@@ -66,14 +62,14 @@ class DashboardWebSocketClientV4 {
 		}
 
 		const button = document.createElement('a');
-		button.id = 'websocketStatus';
+		button.id = 'feedStatus';
 		button.href = 'javascript:void(0)';
-		button.className = 'menuwebsocket menuwebsocket-disconnected';
-		button.title = 'WebSocket: Offline. Click to connect';
+		button.className = 'menufeed ajax';
+		button.title = 'Try to connect with DOM Command Server';
 
 		const textSpan = document.createElement('span');
-		textSpan.id = 'websocketStatusText';
-		textSpan.textContent = 'WS';
+		textSpan.id = 'feedStatusText';
+		textSpan.textContent = 'Periodic';
 		button.appendChild(textSpan);
 
 		button.addEventListener('click', (e) => {
@@ -82,7 +78,7 @@ class DashboardWebSocketClientV4 {
 		});
 
 		navbar.appendChild(button);
-		this.log('INFO', 'WebSocket status button created');
+		this.log('INFO', 'Feed status button created');
 	}
 
 	handleStatusButton() {
@@ -106,16 +102,16 @@ class DashboardWebSocketClientV4 {
 	}
 
 	startPageReload() {
-		this.log('INFO', 'Starting page reload to launch WebSocket server...');
+		this.log('INFO', 'Starting page reload to launch DOM Command Server...');
 
-		const button = document.getElementById('websocketStatus');
-		const textSpan = document.getElementById('websocketStatusText');
+		const button = document.getElementById('feedStatus');
+		const textSpan = document.getElementById('feedStatusText');
 
 		if (button && textSpan) {
-			textSpan.textContent = 'WS';
-			button.title = 'Starting WebSocket server...';
-			button.classList.remove('menuwebsocket-disconnected', 'menuwebsocket-error');
-			button.classList.add('menuwebsocket-connecting');
+			textSpan.textContent = 'Connecting';
+			button.title = 'Starting DOM Command Server...';
+			button.classList.remove('ajax', 'icon-active', 'connecting', 'reconnecting');
+			button.classList.add('reconnecting');
 		}
 
 		setTimeout(() => {
@@ -126,11 +122,19 @@ class DashboardWebSocketClientV4 {
 	// @bookmark Connecting
 	connect() {
 		this.isManualDisconnect = false;
-
-		if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-			this.ws.close(1000, 'Reconnecting');
+		if (this.ws) {
+			try {
+				this.ws.onopen = null;
+				this.ws.onmessage = null;
+				this.ws.onclose = null;
+				this.ws.onerror = null;
+				if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+					this.ws.close(1000, 'Reconnecting');
+				}
+			} catch (e) { }
+			this.ws = null;
 		}
-
+		
 		const wsUrl = `ws://${this.config.host}:${this.config.port}`;
 		this.log('INFO', `Connecting to: ${wsUrl}`);
 
@@ -156,7 +160,7 @@ class DashboardWebSocketClientV4 {
 			return true;
 
 		} catch (error) {
-			this.log('ERROR', `Error creating WebSocket: ${error.message}`, error);
+			this.log('ERROR', `Error creating DOM Command Server: ${error.message}`, error);
 			this.updateStatus('error', 'Connection error');
 			this.scheduleReconnect();
 			return false;
@@ -181,8 +185,13 @@ class DashboardWebSocketClientV4 {
 		}
 
 		this.reconnectAttempts++;
-		const delay = this.config.reconnectDelay * this.reconnectAttempts;
-
+		if (this.reconnectAttempts >= 2) {
+			this.log('WARNING', 'Multiple reconnect failures, reloading page...');
+			this.startPageReload();
+			return;
+		}
+		// const delay = this.config.reconnectDelay * this.reconnectAttempts;
+		const delay = this.config.reconnectDelay;
 		this.log('INFO', `Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
 		this.updateStatus('reconnecting', `Reconnecting... (${this.reconnectAttempts})`);
 
@@ -204,11 +213,12 @@ class DashboardWebSocketClientV4 {
 
 	// @bookmark Event's handler
 	handleOpen(event) {
-		this.log('INFO', 'WebSocket connected successfully');
+		this.log('INFO', 'DOM Command Server connected successfully');
 		this.updateStatus('connected', 'Connected');
 		this.reconnectAttempts = 0;
 
 		this.startPingTimer();
+		window.setAJAXMode?.(true);  // Changing AJAX blocks set after DOM Command Server mode 
 	}
 
 	handleMessage(event) {
@@ -220,7 +230,6 @@ class DashboardWebSocketClientV4 {
 				this.log('INFO', `Connected to server v${data.version}, client ID: ${this.clientId}`);
 			
 			} else if (data.type === 'pong') {
-				// Игнорируем pong
 			
 			} else if (data.type === 'dom_commands' && Array.isArray(data.commands)) {
 				this.processCommands(data.commands, data.chunk, data.chunks);
@@ -244,11 +253,7 @@ class DashboardWebSocketClientV4 {
 						data.source
 					);
 				}
-				
-				
-			} else if (Array.isArray(data)) {
-				// Прямой массив команд (для совместимости)
-				this.processCommands(data);
+							
 			} else {
 				this.log('WARNING', `Unknown message format:`, data);
 			}
@@ -259,24 +264,23 @@ class DashboardWebSocketClientV4 {
 	}
 
 	handleClose(event) {
-		this.log('INFO', `WebSocket closed: code=${event.code}, reason=${event.reason}, clean=${event.wasClean}`);
+		this.log('INFO', `DOM Command Server closed: code=${event.code}, reason=${event.reason}, clean=${event.wasClean}`);
 
 		this.clearTimers();
+		window.setAJAXMode?.(false);
+		this.log('INFO', 'Switching to AJAX mode');
 
 		if (this.isManualDisconnect) {
 			this.log('INFO', 'Manual disconnect confirmed');
+			this.updateStatus('disconnected', 'Periodic');
 			return;
 		}
 
-		if (event.code !== 1000) {
-			this.scheduleReconnect();
-		} else {
-			this.updateStatus('disconnected', 'Disconnected');
-		}
+		this.startPageReload();
 	}
 
 	handleError(error) {
-		this.log('ERROR', 'WebSocket error', error);
+		this.log('ERROR', 'DOM Command Server error', error);
 		this.updateStatus('error', 'Connection error');
 	}
 
@@ -314,12 +318,6 @@ class DashboardWebSocketClientV4 {
 			return false;
 		}
 		
-		if (cmd.action !== 'set_content_by_class' && !cmd.id) {
-			this.log('ERROR', 'Invalid command: missing id', cmd);
-			return false;
-		}
-
-
 		//@bookmark Method selector
 		switch (cmd.action) {
 			
@@ -335,14 +333,8 @@ class DashboardWebSocketClientV4 {
 			case 'set_content':
 				return this.handleSetContent(cmd);
 			
-			case 'replace_class':  
-				return this.handleReplaceClass(cmd);
-										
 			case 'replace_content':
 				return this.handleReplaceContent(cmd);
-			
-			case 'set_content_by_class':
-				return this.handleSetContentByClass(cmd);
 			
 			case 'add_parent_class':
 				return this.handleParentClass(cmd, 'add');
@@ -359,9 +351,6 @@ class DashboardWebSocketClientV4 {
 			case 'replace_child_classes':
 
 				return this.replaceChildClasses(cmd);
-	
-			case 'set_checkbox_state':
-				return this.handleSetCheckboxState(cmd);
 			
 			default:
 				this.log('ERROR', `Unknown action: ${cmd.action}`, cmd);
@@ -381,102 +370,10 @@ class DashboardWebSocketClientV4 {
 	}
 
 	getParentElement(childId) {
-		if (this.parentCache.has(childId)) {
-			return this.parentCache.get(childId);
-		}
-
 		const childElement = this.getElement(childId);
-		if (!childElement) return null;
-
-		const parentElement = childElement.parentElement;
-		if (parentElement) {
-			this.parentCache.set(childId, parentElement);
-			return parentElement;
-		}
-
-		return null;
-	}
-
-	clearParentCache(childId = null) {
-		if (childId) {
-			this.parentCache.delete(childId);
-		} else {
-			this.parentCache.clear();
-		}
-	}
-
-	handleSetContentByClass(cmd) {
-		if (cmd.payload === undefined) {
-			this.log('ERROR', 'set_content_by_class missing payload', cmd);
-			return false;
-		}
-
-		if (!cmd.targetClass) {
-			this.log('ERROR', 'set_content_by_class missing targetClass parameter', cmd);
-			return false;
-		}
-
-		try {
-			const selector = `.${cmd.targetClass}`;
-			const elements = document.querySelectorAll(selector);
-
-			if (!elements || elements.length === 0) {
-				if (this.config.debugLevel >= 2) {
-					this.log('WARNING', `No elements found with class "${cmd.targetClass}"`);
-				}
-				return false;
-			}
-
-			const multipleElements = cmd.multipleElements === true;
-			const elementIndex = cmd.elementIndex !== undefined ? parseInt(cmd.elementIndex) : 0;
-			let elementsProcessed = 0;
-
-			if (multipleElements) {
-				elements.forEach((element, index) => {
-					try {
-						element.innerHTML = cmd.payload;
-						elementsProcessed++;
-
-						if (this.config.debugLevel >= 4) {
-							this.log('DEBUG', `Set content for element #${index} with class "${cmd.targetClass}"`);
-						}
-					} catch (error) {
-						this.log('ERROR', `Error setting content for element #${index} with class "${cmd.targetClass}": ${error.message}`);
-					}
-				});
-			} else {
-
-				if (elementIndex < 0 || elementIndex >= elements.length) {
-					this.log('ERROR', `Element index ${elementIndex} out of range (0-${elements.length - 1}) for class "${cmd.targetClass}"`);
-					return false;
-				}
-
-				const element = elements[elementIndex];
-				element.innerHTML = cmd.payload;
-				elementsProcessed = 1;
-
-				if (this.config.debugLevel >= 4) {
-					this.log('DEBUG', `Set content for element #${elementIndex} with class "${cmd.targetClass}"`);
-				}
-			}
-
-			if (elementsProcessed > 0) {
-				const countText = multipleElements ? `${elementsProcessed} elements` : `element #${elementIndex}`;
-				const payloadPreview = cmd.payload.length > 50 ?
-					cmd.payload.substring(0, 50) + '...' : cmd.payload;
-
-				this.log('INFO', `Set content "${payloadPreview}" for ${countText} with class "${cmd.targetClass}"`);
-				return true;
-			}
-
-			return false;
-
-		} catch (error) {
-			this.log('ERROR', `Error in set_content_by_class for class "${cmd.targetClass}": ${error.message}`, cmd);
-			return false;
-		}
-	}
-
+		return childElement ? childElement.parentElement : null;
+	}	
+	
 	handleAddClass(cmd) {
 		if (!cmd.class) {
 			this.log('ERROR', 'add_class missing class parameter', cmd);
@@ -540,51 +437,7 @@ class DashboardWebSocketClientV4 {
 			return false;
 		}
 	}
-
-	handleReplaceClass(cmd) {
-		if (!cmd.old_class) {
-			this.log('ERROR', 'replace_class missing old_class parameter', cmd);
-			return false;
-		}
-
-		if (!cmd.new_class) {
-			this.log('ERROR', 'replace_class missing new_class parameter', cmd);
-			return false;
-		}
-
-		if (!cmd.id) {
-			this.log('ERROR', 'replace_class missing id parameter', cmd);
-			return false;
-		}
-
-		const element = this.getElement(cmd.id);
-		if (!element) return false;
-
-		try {
-			
-			const oldClass = cmd.old_class.trim();
-			const newClass = cmd.new_class.trim();
-
-			if (!element.classList.contains(oldClass)) {
-				if (this.config.debugLevel >= 2) {
-					this.log('WARNING', `Element ${cmd.id} doesn't have old class: "${oldClass}"`);
-				}
-				return true;
-			}
-
-			element.classList.remove(oldClass);
-			element.classList.add(newClass);
-			if (this.config.debugLevel >= 3) {
-				this.log('INFO', `In  ${cmd.id} class "${oldClass}" changed to "${newClass}"`);
-			}
-
-			return true;
-
-		} catch (error) {
-			this.log('ERROR', `Error replacing class in ${cmd.id}: ${error.message}`, cmd);
-			return false;
-		}
-	}
+	
 		
 	handleSetContent(cmd) {
 		if (cmd.payload === undefined) {
@@ -699,55 +552,7 @@ class DashboardWebSocketClientV4 {
 			return false;
 		}
 	}
-
-	handleReplaceParentContent(cmd) {
-		if (!Array.isArray(cmd.payload) || cmd.payload.length !== 3) {
-			this.log('ERROR', 'replace_parent_content requires payload array of 3 items', cmd);
-			return false;
-		}
-
-		const parentElement = this.getParentElement(cmd.id);
-		if (!parentElement) {
-			if (this.config.debugLevel >= 2) {
-				this.log('WARNING', `Child elements not found for ${cmd.id}`);
-			}
-			return false;
-		}
-
-		try {
-			const [beginCond, endCond, newContent] = cmd.payload;
-			const html = parentElement.innerHTML;
-			const startIndex = html.indexOf(beginCond);
-
-			if (startIndex === -1) {
-				if (this.config.debugLevel >= 2) {
-					this.log('WARNING', `Begin condition not found in parent: "${beginCond}" for ${cmd.id}`);
-				}
-				return false;
-			}
-
-			const endIndex = html.indexOf(endCond, startIndex + beginCond.length);
-			if (endIndex === -1) {
-				if (this.config.debugLevel >= 2) {
-					this.log('WARNING', `End condition not found in parent: "${endCond}" for ${cmd.id}`);
-				}
-				return false;
-			}
-
-			const before = html.substring(0, startIndex + beginCond.length);
-			const after = html.substring(endIndex);
-			parentElement.innerHTML = before + newContent + after;
-
-			if (this.config.debugLevel >= 4) {
-				this.log('DEBUG', `Replaced parent content for ${cmd.id} with "${newContent}"`);
-			}
-			return true;
-
-		} catch (error) {
-			this.log('ERROR', `Error replacing parent content for ${cmd.id}: ${error.message}`, cmd);
-			return false;
-		}
-	}
+	
 	
 	handleRemoveElement(cmd) {
 		if (!cmd.id) {
@@ -934,18 +739,6 @@ class DashboardWebSocketClientV4 {
 		}
 	}
 	
-
-	handleSetCheckboxState(cmd) {
-
-		const element = document.getElementById(cmd.id);
-		if (!element) return false;
-		const shouldBeChecked = String(cmd.state).toLowerCase() === 'on';
-		element.checked = shouldBeChecked;
-		return true;
-
-	}
-	
-	
 	startPingTimer() {
 		if (this.pingTimer) {
 			clearInterval(this.pingTimer);
@@ -977,58 +770,51 @@ class DashboardWebSocketClientV4 {
 		}
 	}
 
+	
 	updateStatus(status, message) {
 		this.status = status;
 		this.log('INFO', `Status: ${status} - ${message}`);
 
-		const button = document.getElementById('websocketStatus');
-		const textSpan = document.getElementById('websocketStatusText');
+		const button = document.getElementById('feedStatus');
+		const textSpan = document.getElementById('feedStatusText');
 
 		if (button && textSpan) {
-			// Удаляем все классы состояния
 			button.classList.remove(
-				'menuwebsocket-disconnected',
-				'menuwebsocket-connected',
-				'menuwebsocket-connecting',
-				'menuwebsocket-error'
+				'ajax',
+				'icon-active',
+				'connecting',
+				'reconnecting'
 			);
 
-			// Добавляем соответствующий класс
-			let statusClass = 'menuwebsocket-disconnected';
-			let buttonText = 'WS';
-			let tooltip = `WebSocket: ${message}. `;
+			let statusClass = 'ajax';
+			let buttonText = 'Periodic';  // Облако
+			let tooltip = 'AJAX update mode (slow). Click to try realtime mode.';
 
 			switch (status) {
 				case 'connected':
-					statusClass = 'menuwebsocket-connected';
-					// buttonText = 'WS';
-					tooltip += 'Click to disconnect';
+					statusClass = 'icon-active';
+					buttonText = 'Realtime';  // WiFi зеленый
+					tooltip = 'Real-time updates active';
 					break;
 
 				case 'connecting':
-				case 'reconnecting':
-					statusClass = 'menuwebsocket-connecting';
-					// buttonText = 'WS';
-					tooltip += 'Connecting...';
+					statusClass = 'connecting';
+					buttonText = 'Connecting';  // Цепь желтая
+					tooltip = 'Connecting to real-time server...';
 					break;
 
 				case 'error':
-					statusClass = 'menuwebsocket-error';
-					// buttonText = 'WS';
-					tooltip += 'Click to reload page and restart';
-					break;
-
 				case 'timeout':
-					statusClass = 'menuwebsocket-error';
-					// buttonText = 'WS';
-					tooltip += 'Connection timeout. Click to reload';
+					statusClass = 'reconnecting';
+					buttonText = 'Connecting';  // Цепь красная
+					tooltip = 'Reconnecting to real-time server...';
 					break;
 
 				case 'disconnected':
 				default:
-					statusClass = 'menuwebsocket-disconnected';
-					// buttonText = 'WS';
-					tooltip += 'Offline. Click to reload page and start server';
+					statusClass = 'ajax';
+					buttonText = 'Periodic';  // Облако серое
+					tooltip = 'AJAX update mode (slow). Click to try realtime mode.';
 			}
 
 			button.classList.add(statusClass);
@@ -1036,7 +822,6 @@ class DashboardWebSocketClientV4 {
 			button.title = tooltip;
 		}
 	}
-
 	// @bookmark ЛОГИРОВАНИЕ
 
 	log(level, message, data = null) {
@@ -1056,7 +841,7 @@ class DashboardWebSocketClientV4 {
 		const timestamp = new Date().toISOString();
 
 		if (this.config.debugConsole) {
-			const prefix = `[WS Client ${level}]`;
+			const prefix = `[DOM CE Client ${level}]`;
 			
 			switch (levelNum) {
 				case 0:
@@ -1089,7 +874,7 @@ class DashboardWebSocketClientV4 {
 		const levelClass = `debug-${level.toLowerCase()}`;
 
 		let fullMessage = message;
-		let sender = "[WS Client v0.4.3]";
+		let sender = "[DOM CE Client v0.4.24]";
 		if (typeof data === 'string') {
 			sender = `[${data}]`;
 			
@@ -1139,7 +924,6 @@ class DashboardWebSocketClientV4 {
 			wsState: this.ws ? this.ws.readyState : null,
 			clientId: this.clientId,
 			reconnectAttempts: this.reconnectAttempts,
-			parentCacheSize: this.parentCache.size,
 			config: this.config
 		};
 	}
@@ -1156,8 +940,8 @@ document.addEventListener('DOMContentLoaded', () => {
 	const wsConfig = window.DASHBOARD_CONFIG?.websocket;
 
 	if (!wsConfig) {
-		console.error('WebSocket configuration not found in window.DASHBOARD_CONFIG.websocket');
-		console.warn('Dashboard WebSocket Client v4.0 will use default settings');
+		console.error('Configuration not found in window.DASHBOARD_CONFIG.websocket');
+		console.warn('DOM Command Executor v0.4.24 will use default settings');
 	}
 
 	window.dashboardWSClient = new DashboardWebSocketClientV4(wsConfig);
@@ -1175,45 +959,5 @@ document.addEventListener('DOMContentLoaded', () => {
 		return { status: 'no_client' };
 	};
 
-	// Testing
-	window.sendTestCommand = (command) => {
-		if (window.dashboardWSClient) {
-			const success = window.dashboardWSClient.executeTestCommand(command);
-			console.log('Test command result:', success ? 'SUCCESS' : 'FAILED');
-			return success;
-		}
-		console.error('WebSocket client not available');
-		return false;
-	};
-
-	// Примеры тестовых команд
-	window.testCommands = {
-		addClass: (id, className) => window.sendTestCommand({
-			id: id,
-			action: 'add_class',
-			class: className
-		}),
-		removeClass: (id, className) => window.sendTestCommand({
-			id: id,
-			action: 'remove_class',
-			class: className
-		}),
-		setContent: (id, content) => window.sendTestCommand({
-			id: id,
-			action: 'set_content',
-			payload: content
-		}),
-		addParentClass: (id, className) => window.sendTestCommand({
-			id: id,
-			action: 'add_parent_class',
-			class: className
-		}),
-		removeParentClass: (id, className) => window.sendTestCommand({
-			id: id,
-			action: 'remove_parent_class',
-			class: className
-		})
-	};
-
-	console.log('Dashboard WebSocket Client v 0.4.3 initialized with config:', wsConfig || 'default');
+	console.log('Dashboard DOM Command Executor Client v0.4.24 initialized with config:', wsConfig || 'default');
 });

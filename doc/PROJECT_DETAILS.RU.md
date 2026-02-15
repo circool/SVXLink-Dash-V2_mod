@@ -143,6 +143,14 @@
 
 ### ['TIMEZONE'] : string
 
+### RF Activity kerchunks filter:
+	- ['rf_filter'] : string ON | OFF (default: ON)
+	- ['rf_filter_max'] : float (default: 1)
+
+### NET Activity kerchunks filter:
+	- ['net_filter'] : string ON | OFF (default: ON)
+	- ['net_filter_max'] : float (default: 1)
+
 ### ['status'] : array
 
   - `link`: array[linkName] (массив связей)

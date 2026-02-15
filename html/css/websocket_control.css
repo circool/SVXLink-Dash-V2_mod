@@ -1,33 +1,37 @@
 /* websocket_control.css - стили для дополнительных кнопок управления WebSocket */
+.menufeed {
+	position: relative;
+	display: inline-block;
+}
 
-.menuwebsocket:before {
-	content: "\f1eb";
+.menufeed:before {
+	content: "\f1da";
 	font-family: FontAwesome;
 	font-style: normal;
 	font-weight: normal;
 	text-decoration: inherit;
 	padding-right: 0.2em;
 }
-.menuwebsocket-connected:before {
+.menufeed.realtime:before {
+	/* content: "\f1eb"; */
+	/* content: "\f1da"; */
 	color: rgb(192, 240, 30);
 }
-a.menuwebsocket-disconnected,.menuwebsocket-disconnected:before {
-	/* color: #dc2045; */
-}
-.menuwebsocket-connecting:before {
+
+.menufeed.connecting:before {
 	color: #f4ca22;
 	content: "\f127";
 }
-
-.menuwebsocket-disconnected:before{
+.menufeed.reconnecting:before {
+	color: #f85b18;
 	content: "\f127";
-	color: #e85110;
 }
 
-.menuwebsocket
-{ 
-	position: relative;
-	display: inline-block;
+.menufeed.ajax:before{
+	color: #ffffff;
+	/* content: "\f1da"; */
 }
+
+
 
 
