@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @filesource /include/websocket_client_config.php
  * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
@@ -9,6 +10,11 @@
 if (!defined('DASHBOARD_HOST')) {
 	define('DASHBOARD_HOST', $_SERVER['HTTP_HOST'] ?? ($_SERVER['SERVER_ADDR'] ?? 'localhost'));
 }
+
+$wsConnectedText = getTranslation('Realtime');
+$wsDisconnectedText = getTranslation('Periodic');
+$wsConnectingText = getTranslation('Connecting');
+
 
 if (defined('WS_ENABLED') && WS_ENABLED): ?>
 	<script>
@@ -25,6 +31,11 @@ if (defined('WS_ENABLED') && WS_ENABLED): ?>
 			debugConsole: <?php echo defined('DEBUG_LOG_CONSOLE') && DEBUG_LOG_CONSOLE ? "true" : "false"; ?>,
 			debugLevel: "<?php echo defined('DEBUG_VERBOSE') ? DEBUG_VERBOSE : 2; ?>",
 			debugWebConsole: <?php echo defined('DEBUG_WEB_CONSOLE') && DEBUG_WEB_CONSOLE ? "true" : "false"; ?>,
+			translations: {
+				connected: "<?php echo $wsConnectedText; ?>",
+				disconnected: "<?php echo $wsDisconnectedText; ?>",
+				connecting: "<?php echo $wsConnectingText; ?>",
+			}
 		};
 	</script>
 <?php endif; ?>

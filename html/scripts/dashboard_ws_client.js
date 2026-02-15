@@ -8,13 +8,19 @@
 
 class DashboardWebSocketClientV4 {
 	constructor(config = {}) {
+
 			// Default config
-			this.config = {
-				host: window.location.hostname,
-				port: 8080,
-				autoConnect: true,
-				reconnectDelay: 3000,
-				debugLevel: 2,  // 1=ERROR, 2=WARNING, 3=INFO, 4=DEBUG
+		this.config = {
+			translations: {
+				connected: 'Connected',
+				disconnected: 'Periodic',
+				connecting: 'Connecting',
+			},
+			host: window.location.hostname,
+			port: 8080,
+			autoConnect: true,
+			reconnectDelay: 3000,
+			debugLevel: 2,  // 1=ERROR, 2=WARNING, 3=INFO, 4=DEBUG
 			debugWebConsole: true,
 			debugConsole: false,
 			maxReconnectAttempts: 5,
@@ -33,6 +39,8 @@ class DashboardWebSocketClientV4 {
 		this.pingTimer = null;
 		this.reconnectTimer = null;
 		this.init();
+		this.t = this.config.translations;
+
 	}
 
 	// @bookmark INIT
@@ -69,7 +77,7 @@ class DashboardWebSocketClientV4 {
 
 		const textSpan = document.createElement('span');
 		textSpan.id = 'feedStatusText';
-		textSpan.textContent = 'Periodic';
+		textSpan.textContent = '...';
 		button.appendChild(textSpan);
 
 		button.addEventListener('click', (e) => {
@@ -108,7 +116,7 @@ class DashboardWebSocketClientV4 {
 		const textSpan = document.getElementById('feedStatusText');
 
 		if (button && textSpan) {
-			textSpan.textContent = 'Connecting';
+			textSpan.textContent = this.t.connecting;
 			button.title = 'Starting DOM Command Server...';
 			button.classList.remove('ajax', 'icon-active', 'connecting', 'reconnecting');
 			button.classList.add('reconnecting');
@@ -787,25 +795,25 @@ class DashboardWebSocketClientV4 {
 			);
 
 			let statusClass = 'ajax';
-			let buttonText = 'Periodic';  // Облако
+			let buttonText = this.t.disconnected;  // Облако
 			let tooltip = 'AJAX update mode (slow). Click to try realtime mode.';
 
 			switch (status) {
 				case 'connected':
 					statusClass = 'icon-active';
-					buttonText = 'Realtime';  // WiFi зеленый
+					buttonText = this.t.connected;  // WiFi зеленый
 					tooltip = 'Real-time updates active';
 					break;
 
 				case 'connecting':
 					statusClass = 'connecting';
-					buttonText = 'Connecting';  // Цепь желтая
+					buttonText = this.t.connecting;  // Цепь желтая
 					tooltip = 'Connecting to real-time server...';
 					break;
 
 				case 'error':
 				case 'timeout':
-					statusClass = 'reconnecting';
+					statusClass = this.t.connecting;
 					buttonText = 'Connecting';  // Цепь красная
 					tooltip = 'Reconnecting to real-time server...';
 					break;
@@ -813,7 +821,7 @@ class DashboardWebSocketClientV4 {
 				case 'disconnected':
 				default:
 					statusClass = 'ajax';
-					buttonText = 'Periodic';  // Облако серое
+					buttonText = this.t.disconnected;  // Облако серое
 					tooltip = 'AJAX update mode (slow). Click to try realtime mode.';
 			}
 
