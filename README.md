@@ -1,4 +1,4 @@
-![Project Status](https://img.shields.io/badge/Status-pre-release-red?style=flat)
+![Project Status](https://img.shields.io/badge/pre-release-red?style=flat)
 ![Version](https://img.shields.io/badge/Version-0.4.x-red?style=flat)
 ![License](https://img.shields.io/badge/License-GNU_FDL_v1.3-green?style=flat)
 
