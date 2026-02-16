@@ -4,7 +4,7 @@
  * Функции для работы с журналом svxlink
  * @filesource /include/fn/logTailer.php
  * @version 0.4.0.release
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
  * @date 2026.01.18
  */
 
@@ -353,7 +353,7 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
  * 
  * @param string $logPath Полный путь к лог-файлу
  * @return int Номер последней строки (0 при ошибке)
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
  * @since 0.2.1
  */
 

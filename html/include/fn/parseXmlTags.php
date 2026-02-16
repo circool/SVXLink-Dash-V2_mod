@@ -1,7 +1,7 @@
 <?php
 
 /** 
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
  * @filesource /include/fn/parseXmlTags.php
  * @date 2025.11.26
  * @version 0.1.5.release

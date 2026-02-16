@@ -6,7 +6,7 @@
  * @version 0.1.1
  */
 
-require_once $_SERVER["DOCUMENT_ROOT"] . '/../include/auth_config.php';
+require_once $_SERVER["DOCUMENT_ROOT"] . '/include/auth_config.php';
 
 function createAuthFileCli()
 {
@@ -41,11 +41,11 @@ function createAuthFileCli()
 
 // Run setup
 if (createAuthFileCli()) {
-	echo "✅ Setup completed successfully!\n";
-	echo "🔐 Default credentials: svxlink / svxlink\n";
-	echo "⚠️  Please change the password after first login!\n";
+	echo "Setup completed successfully!\n";
+	echo "Default credentials: svxlink / svxlink\n";
+	echo "Please change the password after first login!\n";
 } else {
-	echo "❌ Setup failed!\n";
+	echo "Setup failed!\n";
 	exit(1);
 }
 ?>

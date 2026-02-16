@@ -3,7 +3,7 @@
 /**
  * Форма авторизации в модальном окне
  * @filesource /include/authorise.php
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
  * @version 0.0.1
  * @note Preliminary version.
  */

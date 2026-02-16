@@ -1,19 +1,16 @@
 /**
  * @filesource /scripts/dashboard_ws_server.js
- * @version 0.4.23
- * @date 2026.02.11
- * @description Stateful WebSocket server
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
+ * @date 2026.02.14
+ * @version 0.4.24
+ * @description DOM Command Server over WebSocket transport
  */
 
 const WebSocket = require('ws');
 const { spawn } = require('child_process');
 const fs = require('fs');
-const path = require('path');
-const http = require('http');
-const { match } = require('assert');
-
 const CONFIG = {
-	version: '0.4.23',
+	version: '0.4.24',
 	ws: {
 		host: '0.0.0.0',
 		port: 8080,
@@ -61,7 +58,7 @@ function log(message, level = 'DEBUG') {
 				level: level,
 				message: message,
 				timestamp: new Date().toISOString(),
-				source: 'WS Server v 0.4.23'
+				source: 'WS Server v 0.4.24'
 			});
 		}
 	}
@@ -185,7 +182,6 @@ class ConnectionHandler {
 			this.connections.set(source, new Set());
 		}
 		this.connections.get(source).add(target);		
-		// log(`Add connection with ${source} and ${target}`, `INFO`);
 	}
 
 	remove(source, target) {
@@ -212,7 +208,6 @@ class ConnectionHandler {
 		}
 		return sources;
 	}
-
 
 	initFromData(data, sourceKey, targetKey) {
 		for (const [source, targets] of Object.entries(data || {})) {
@@ -391,7 +386,7 @@ class CommandParser {
 						{
 							id: `logic_${logic}`,
 							action: 'set_content',
-							payload: getTimerTooltip(logic, this.sm.formatDuration(0))
+							payload: getTimerTooltip(logic)
 						},
 						{
 							id: `logic_${logic}`,
@@ -441,83 +436,77 @@ class CommandParser {
 
 					const commands = [];
 
-					// is composite device?
-					const components = this.compositeDeviceManager.getComponents(device);
-					let deviceContent;
-
-					if (components && components.length > 0) {
-						const componentsList = components.join(', ');
-						deviceContent = `<a class="tooltip" href="#"><span><b>Multiple device:</b>${componentsList}</span>${device}</a>`;
-					} else {
-						deviceContent = device;
-					}
-
+					const components = this.compositeDeviceManager.getComponents(device);					
+					let isCompositeDevice = components && components.length > 0;
+					
 					if (state === 'ON') {
 						this.sm.startTimer(`device_${device}`, {
 							elementId: `device_${device}_tx_status`,
-							replaceStart: '( ',
-							replaceEnd: ' )',
+							replaceStart: '<span class="val">',
+							replaceEnd: '</span>',
 							type: 'device'
 						});
-						return [
-							{ id: `device_${device}_tx_status`, action: 'set_content', payload: 'TRANSMIT ( 0 s )' },
-							{ id: `device_${device}_tx_status`, action: 'add_class', class: 'inactive-mode-cell' },
-							{ id: `device_${device}_tx`, action: 'set_content', payload: deviceContent },
-						];
+						commands.push(
+							{ id: `device_${device}_tx_status`, action: 'add_class', class: 'transmitting-mode-cell' },
+							{ id: `device_${device}_tx_status`, action: 'remove_class', class: 'transparent' },
+						);
 					} else {					
 						this.sm.stopTimer(`device_${device}`);			
-						const allLogics = this.connections.getAllFrom(device);
-						for (const logic of allLogics) {							
-							commands.push(
-								{ id: `radio_logic_${logic}_callsign`, action: 'set_content', payload: '' },
-							);
-
-						}
+						
 						commands.push(
-							{ id: `device_${device}_tx_status`, action: 'set_content', payload: 'STANDBY' },
-							{ id: `device_${device}_tx_status`, action: 'remove_class', class: 'inactive-mode-cell' },
-							{ id: `device_${device}_tx`, action: 'set_content', payload: deviceContent },
-						);
-						return commands;
+							{ id: `device_${device}_tx_status`, action: 'remove_class', class: 'transmitting-mode-cell' },
+							{ id: `device_${device}_tx_status`, action: 'replace_content', payload: ['<span class="val">', '</span>', ''] },
+							{ id: `device_${device}_tx_status`, action: 'add_class', class: 'transparent' },
+						);						
 					}
+					
+					// restore device name after error's detect
+					if (isCompositeDevice) {
+						commands.push(
+							{ id: `device_${device}_tx`, action: 'replace_content', payload: ['</span>', '</a>', `${device}`] },
+						);
+					} else {
+						commands.push(
+							{ id: `device_${device}_tx`, action: 'set_content', payload: device },
+						);
+					}
+					return commands;
 				}
 			},
 			
 			// @bookmark ERRORS
 			// *** ERROR: Transmitter ... have been active for too long. Turning it off...
+			// Mark device as error, remove active flag, but stay visible (will to hide sisnce transmitter OFF)
 			{
 				regex: /^(.+?): \*\*\* ERROR: Transmitter (\S+) have been active for too long\. Turning it off\.\.\.$/,
 				
 				handler: (match) => {
-					
 					const device = match[2];
 					const hasTimer = this.sm.timers.has(`device_${device}`);
 					if (hasTimer) {						
-						this.sm.stopTimer(`device_${device}`);	
-						return [
-							{ id: `device_${device}_tx_status`, action: 'set_content', payload: 'STANDBY' },
-							{ id: `device_${device}_tx_status`, action: 'remove_class', class: 'inactive-mode-cell' },
-							{ id: `device_${device}_tx`, action: 'set_content', payload: `<a class="tooltip" href="#"><span><b>Timeout</b></span><em class="error">${device}</em></a>` },
-						];
-					
-					} else {
 						
+						this.sm.stopTimer(`device_${device}`);	
+						
+						return [
+							{ id: `device_${device}_tx_status`, action: 'remove_class', class: 'transmitting-mode-cell' },							
+							// Simple device (w/o tooltip) - just set new content
+							{ id: `device_${device}_tx`, action: 'set_content', payload: `<em class="error">${device}</em></a>` },
+						];
+						
+					} else {
+						// Composite device
 						const relatedDevices = this.compositeDeviceManager.getComponents(device);
 						const commands = [];
 						for (const relatedDevice of relatedDevices) { 
 							if (this.sm.timers.has(`device_${relatedDevice}`)) {
 								this.sm.stopTimer(`device_${relatedDevice}`);
 								commands.push(
-									{ id: `device_${relatedDevice}_tx_status`, action: 'set_content', payload: 'STANDBY' },
-									{ id: `device_${relatedDevice}_tx_status`, action: 'remove_class', class: 'inactive-mode-cell' },								
+									{ id: `device_${relatedDevice}_tx_status`, action: 'remove_class', class: 'transmitting-mode-cell' },
+									// Composite device (with tooltip)!		
 									{
 										id: `device_${relatedDevice}_tx`,
 										action: 'replace_content',
-										payload: [
-											'</span>',
-											'</a>',
-											`${relatedDevice} <em class="error">${device}</em>`
-										]										
+										payload: [ '</span>', '</a>', `${relatedDevice} <em class="error">${device}</em>` ]										
 									},
 								);
 							}							
@@ -527,39 +516,37 @@ class CommandParser {
 				}
 			},
 			// *** ERROR: Could not open audio device for transmitter "..."
+			// Like transmitter active for too long
 			{
 				regex: /^(.+?): \*\*\* ERROR: Could not open audio device for transmitter "(\S+)"$/,
 
 				handler: (match) => {
-
 					const device = match[2];
 					const hasTimer = this.sm.timers.has(`device_${device}`);
 					if (hasTimer) {
+
 						this.sm.stopTimer(`device_${device}`);
+
 						return [
-							{ id: `device_${device}_tx_status`, action: 'set_content', payload: 'STANDBY' },
-							{ id: `device_${device}_tx_status`, action: 'remove_class', class: 'inactive-mode-cell' },
-							{ id: `device_${device}_tx`, action: 'set_content', payload: `<a class="tooltip" href="#"><span><b>ERROR</b></span><em class="error">${device}</em></a>` },
+							{ id: `device_${device}_tx_status`, action: 'remove_class', class: 'transmitting-mode-cell' },
+							// Simple device (w/o tooltip) - just set new content
+							{ id: `device_${device}_tx`, action: 'set_content', payload: `<em class="error">${device}</em></a>` },
 						];
 
 					} else {
-
-						this.compositeDeviceManager.getComponents(device);
+						// Composite device
+						const relatedDevices = this.compositeDeviceManager.getComponents(device);
 						const commands = [];
 						for (const relatedDevice of relatedDevices) {
 							if (this.sm.timers.has(`device_${relatedDevice}`)) {
 								this.sm.stopTimer(`device_${relatedDevice}`);
 								commands.push(
-									{ id: `device_${relatedDevice}_tx_status`, action: 'set_content', payload: 'STANDBY' },
-									{ id: `device_${relatedDevice}_tx_status`, action: 'remove_class', class: 'inactive-mode-cell' },
+									{ id: `device_${relatedDevice}_tx_status`, action: 'remove_class', class: 'transmitting-mode-cell' },
+									// Composite device (with tooltip)!		
 									{
 										id: `device_${relatedDevice}_tx`,
 										action: 'replace_content',
-										payload: [
-											'</span>',
-											'</a>',
-											`${relatedDevice} <em class="error">${device}</em>`
-										]
+										payload: ['</span>', '</a>', `${relatedDevice} <em class="error">${device}</em>`]
 									},
 								);
 							}
@@ -579,22 +566,22 @@ class CommandParser {
 					if (state === 'OPEN') {
 						this.sm.startTimer(`device_${device}`, {
 							elementId: `device_${device}_rx_status`,
-							replaceStart: '( ',
-							replaceEnd: ' )',
+							replaceStart: '<span class="val">',
+							replaceEnd: '</span>',
 							type: 'device'
 						});
 						return [
 							{ id: `device_${device}_rx`, action: 'set_content', payload: device },
-							{ id: `device_${device}_rx_status`, action: 'set_content', payload: 'RECEIVE ( 0 s )' },
-							{ id: `device_${device}_rx_status`, action: 'add_class', class: 'active-mode-cell' },
+							{ id: `device_${device}_rx_status`, action: 'add_class', class: 'receiving-mode-cell' },
+							{ id: `device_${device}_rx_status`, action: 'remove_class', class: 'transparent' },
 						];
 					} else {
 						this.sm.stopTimer(`device_${device}`);
 						return [
-							{ id: `device_${device}_rx_status`, action: 'set_content', payload: 'STANDBY' },
-							{ id: `device_${device}_rx_status`, action: 'remove_class', class: 'active-mode-cell' },
-							// peak meter off
-							{ id: `device_${device}_rx`, action: 'remove_class', class: 'inactive-mode-cell' },
+							{ id: `device_${device}_rx_status`, action: 'remove_class', class: 'receiving-mode-cell' },
+							{ id: `device_${device}_rx_status`, action: 'add_class', class: 'transparent' },
+							{ id: `device_${device}_rx_status`, action: 'replace_content', payload: ['<span class="val">','</span>',''] },
+							// peak meter off				
 							{ id: `device_${device}_rx`, action: 'set_content', payload: device },
 						];
 					}
@@ -605,9 +592,9 @@ class CommandParser {
 				regex: /^(.+?): (\w+): Distortion detected/,
 				handler: (match) => {
 					const device = match[2];					
-						return [
-							{ id: `device_${device}_rx`, action: 'set_content', payload: `${device} <span class="error">Distortion!</span>` },						
-						];					
+					return [
+						{ id: `device_${device}_rx`, action: 'set_content', payload: `${device} <em class="error">Distortion!</em>` },						
+					];					
 				}
 			},
 
@@ -708,7 +695,7 @@ class CommandParser {
 								id: `logic_${logic}_node_${node}`,
 								class: 'mode_flex column disabled-mode-cell',
 								style: 'border: .5px solid #3c3f47;',
-								payload: `${getTimerTooltip(node, "0 s")}`
+								payload: `${getTimerTooltip(node)}`
 							});
 					}
 
@@ -724,17 +711,17 @@ class CommandParser {
 					const talkgroup = match[3];
 					const callsign = match[4];
 					const logicCallsign = this.server.wsState.logics?.[`logic_${logic}`]?.callsign || '';
-					const statusStyle = callsign === logicCallsign ? 'inactive-mode-cell' : 'active-mode-cell';
+					const statusStyle = callsign === logicCallsign ? 'transmitting-mode-cell' : 'receiving-mode-cell';
 					const activeCell = callsign === logicCallsign ? `device_${logic}_tx_status` : `device_${logic}_rx_status`;
 					this.sm.startTimer(activeCell, {
 						elementId: activeCell,
-						replaceStart: '( ',
-						replaceEnd: ' )',
+						replaceStart: '<span class="val">',
+						replaceEnd: '</span>',
 						type: 'device'
 					});
 					return [
 						{ id: `radio_logic_${logic}_callsign`, action: 'set_content', payload: callsign },
-						{ id: `radio_logic_${logic}_destination`, action: 'replace_content', payload: [`<span class="tg">`,`</span>`, `${talkgroup}`]  },
+						{ id: `radio_logic_${logic}_destination`, action: 'replace_content', payload: [`<span class="val">`,`</span>`, `${talkgroup}`]  },
 						{ id: activeCell, action: 'remove_class', class: 'transparent' },
 						{ id: activeCell, action: 'add_class', class: statusStyle },
 						{ id: `radio_logic_${logic}`, action: 'remove_parent_class', class: 'hidden' }
@@ -747,17 +734,18 @@ class CommandParser {
 				regex: /^(.+?): (\S+): Talker stop on TG #(\d+): (\S+)$/,
 				handler: (match) => {
 					const logic = match[2];
-					const group = match[3];
+					//const group = match[3];
 					const callsign = match[4];
 					const logicCallsign = this.server.wsState.logics?.[`logic_${logic}`]?.callsign || '';
-					const statusStyle = callsign === logicCallsign ? 'inactive-mode-cell' : 'active-mode-cell';
+					const statusStyle = callsign === logicCallsign ? 'transmitting-mode-cell' : 'receiving-mode-cell';
 					const activeCell = callsign === logicCallsign ? `device_${logic}_tx_status` : `device_${logic}_rx_status`;
 					this.sm.stopTimer(activeCell);
 					return [
 						{ id: `radio_logic_${logic}_callsign`, action: 'set_content', payload: '' },
 						{ id: activeCell, action: 'remove_class', class: statusStyle },
 						{ id: activeCell, action: 'add_class', class: 'transparent' },
-						{ id: activeCell, action: 'replace_content', payload: ['(',')',' 0 '] },
+						{ id: activeCell, action: 'replace_content', payload: ['<span class="val">', '</span>', ''] },
+						{ id: `radio_logic_${logic}_destination`, action: 'replace_content', payload: [`<span class="val">`, `</span>`, ``] },
 						{ id: `radio_logic_${logic}`, action: 'add_parent_class', class: 'hidden' }
 					];
 				}
@@ -1020,14 +1008,18 @@ class CommandParser {
 					this.sm.stopTimer(`logic_${logic}_module_${module}`);
 					this.sm.stopTimer(`logic_${logic}_active_content`);
 					const commands = [];
+					let linkedLogics = [];
 					let hasActiveLinks = false;
 					const linksForLogic = this.connections.getAllFrom(logic)
 					for (const link of linksForLogic) {
 						if (this.sm.timers.has(`link_${link}`)) {
 							hasActiveLinks = true;
+							const destLogic = this.server.wsState.links?.[link]?.destination?.logic;
+							if (destLogic) {
+								linkedLogics.push(destLogic);
+							}
 							const allLogicsForLink = this.connections.getAllTo(link);
 							for (const reflector of allLogicsForLink) {
-								// Logic's reflector
 								commands.push(
 									{ id: `logic_${reflector}`, action: 'remove_class', class: 'disabled-mode-cell,paused-mode-cell,inactive-mode-cell,active-mode-cell' },
 									{ id: `logic_${reflector}`, action: 'add_class', class: 'active-mode-cell' },
@@ -1035,6 +1027,10 @@ class CommandParser {
 							}
 						}
 					}
+
+					// Destination (linked reflectors)
+					let destinationString = linkedLogics.join(', ');
+					
 
 					let cellClass = 'active-mode-cell';
 					if (!hasActiveLinks) { 
@@ -1058,7 +1054,7 @@ class CommandParser {
 						{ id: `logic_${logic}_active_header`, action: 'set_content', payload: '' },
 						{ id: `logic_${logic}_active_content`, action: 'set_content', payload: '' },
 						// Clear callsign & destination	
-						{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: '' },
+						{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: destinationString },
 						{ id: `radio_logic_${logic}_callsign`, action: 'set_content', payload: '' },
 					);
 					return commands;
@@ -1105,7 +1101,7 @@ class CommandParser {
 									action: 'add_child',
 									class: 'mode_flex column disabled-mode-cell',
 									style: 'border: .5px solid #3c3f47;',
-									payload: `${getTimerTooltip(node, "0 s")}`
+									payload: `${getTimerTooltip(node)}`
 								},
 								{ id: `radio_logic_${logic}_destination`, action: 'set_content', payload: `EchoLink:  ${node}` },
 							);
@@ -1293,7 +1289,6 @@ class CommandParser {
 					const commands = [
 						{ id: `link_${link}`, action: 'remove_class', class: 'active-mode-cell,inactive-mode-cell,paused-mode-cell,disabled-mode-cell' },
 						{ id: `link_${link}`, action: 'add_class', class: 'active-mode-cell' },
-						{ id: `toggle-link-state-${link}`, action: "set_checkbox_state", state: "on" },
 						{ id: `link_${link}`, action: 'replace_content', payload: [`sendLinkCommand('`, `#'`, deactivateCmd] },
 					];
 
@@ -1305,7 +1300,23 @@ class CommandParser {
 							
 						);
 					}
+					// destination
+					const sourceLogic = this.server.wsState.links?.[link]?.source?.logic;
+					if (sourceLogic) {
+						const linksForLogic = this.connections.getAllFrom(sourceLogic);
+						const activeReflectors = linksForLogic
+							.filter(l => this.sm.timers.has(`link_${l}`))
+							.map(l => this.server.wsState.links?.[l]?.destination?.logic)
+							.filter(Boolean);
 
+						if (activeReflectors.length) {
+							commands.push({
+								id: `radio_logic_${sourceLogic}_destination`,
+								action: 'set_content',
+								payload: activeReflectors.join(', ')
+							});
+						}
+					}
 					return commands;
 				}
 			},
@@ -1315,45 +1326,55 @@ class CommandParser {
 				regex: /^(.+?): Deactivating link (\S+)$/,
 				handler: (match) => {
 					const link = match[2];
-					const relatedLogics = this.connections.getAllTo(link);
+
+					// Link state
 					const activateCmd = this.server.wsState.links?.[link]?.source?.command?.activate_command || '';
+					const sourceLogic = this.server.wsState.links?.[link]?.source?.logic;
+
 					this.sm.stopTimer(`link_${link}`);
+
 					const commands = [
 						{ id: `link_${link}`, action: 'remove_class', class: 'active-mode-cell,paused-mode-cell,inactive-mode-cell,disabled-mode-cell' },
 						{ id: `link_${link}`, action: 'add_class', class: 'disabled-mode-cell' },
-						{ id: `toggle-link-state-${link}`, action: "set_checkbox_state", state: "off" },
 						{ id: `link_${link}`, action: 'replace_content', payload: [`sendLinkCommand('`, `#'`, activateCmd] },
 					];
-					for (const logic of relatedLogics) {
-						let hasActiveConnections = false;
-						const allConnections = this.connections.getAllTo(logic);
 
-						for (const conn of allConnections) {
-							if (conn === link) continue;
+					// Logic state
+					if (sourceLogic) {
+						const relatedLinks = this.server.wsState.link_logic?.[sourceLogic] || [];
+						let logicStillConnected = false;
 
-							if (conn.startsWith('Link') || conn.startsWith('link_')) {
-								if (this.sm.timers.has(`link_${conn}`)) {
-									hasActiveConnections = true;
-									break;
-								}
-							} else {
-								if (this.sm.timers.has(`${logic}_${conn}`) || this.sm.timers.has(`logic_${logic}_module_${conn}`)) {
-									hasActiveConnections = true;
-									break;
-								}
+						for (const relatedLink of relatedLinks) {
+							if (relatedLink === link) continue;
+
+							if (this.sm.timers.has(`link_${relatedLink}`)) {
+								logicStillConnected = true;
+								break;
 							}
 						}
 
-						if (!hasActiveConnections) {
-
+						if (!logicStillConnected) {
 							commands.push(
-								{ id: `logic_${logic}`, action: 'remove_class', class: 'active-mode-cell' },
-								{ id: `logic_${logic}`, action: 'add_class', class: 'paused-mode-cell'},
+								{ id: `logic_${sourceLogic}`, action: 'remove_class', class: 'active-mode-cell' },
+								{ id: `logic_${sourceLogic}`, action: 'add_class', class: 'paused-mode-cell' },
 							);
 						}
+
+						// Destination - reflectors
+						const activeReflectors = relatedLinks
+							.filter(l => l !== link && this.sm.timers.has(`link_${l}`))
+							.map(l => this.server.wsState.links?.[l]?.destination?.logic)
+							.filter(Boolean);
+
+						commands.push({
+							id: `radio_logic_${sourceLogic}_destination`,
+							action: 'set_content',
+							payload: activeReflectors.length ? activeReflectors.join(', ') : ''
+						});
 					}
+
 					return commands;
-				}
+				},
 			},
 
 			// @bookmark APRS
@@ -1362,7 +1383,7 @@ class CommandParser {
 				regex: /^(.+?): Connected to APRS server (\S+) on port (\d+)$/,
 				handler: (match) => {
 					const aprs = match[2];
-					const port = match[3];
+					// const port = match[3];
 					return [
 						{ id: 'aprs_status', action: 'remove_class', class: 'inactive-mode-cell,paused-mode-cell,disabled-mode-cell'},
 						{ id: 'aprs_status', action: 'add_class', class: 'active-mode-cell'},
@@ -1904,14 +1925,14 @@ class StatefulWebSocketServerV4 {
 				const durationText = this.stateManager.formatDuration(duration * 1000);
 				if (info.type === 'TX') { 
 					commands.push(
-						{ id: `device_${device}_tx_status`, action: 'set_content', payload: `TRANSMIT ( ${durationText} )` },
-						{ id: `device_${device}_tx_status`, action: 'add_class', class: 'inactive-mode-cell' }
+						{ id: `device_${device}_tx_status`, action: 'replace_content', payload: ['<span class="val">', '</span>',`${durationText}`] },
+						{ id: `device_${device}_tx_status`, action: 'add_class', class: 'transmitting-mode-cell' }
 					);
 				}
 				if (info.type === 'RX') { 
 					commands.push(
-						{ id: `device_${device}_rx_status`, action: 'set_content', payload: `RECEIVE ( ${durationText} )` },
-						{ id: `device_${device}_rx_status`, action: 'add_class', class: 'active-mode-cell' }
+						{ id: `device_${device}_rx_status`, action: 'replace_content', payload: ['<span class="val">','</span>',`${durationText}`] },
+						{ id: `device_${device}_rx_status`, action: 'add_class', class: 'receiving-mode-cell' }
 					);
 				}
 			}
@@ -2242,7 +2263,7 @@ class StatefulWebSocketServerV4 {
 
 		this.shutdownTimer = setTimeout(() => {
 			if (this.clients.size === 0) {
-				log('No clients connected for 15000ms, shutting down...', 'INFO');
+				log('No clients connected since timeout, shutting down...', 'INFO');
 				this.gracefulShutdown();
 			}
 		}, this.config.ws.clientTimeout);
@@ -2271,7 +2292,7 @@ class StatefulWebSocketServerV4 {
 				log('WebSocket server closed', 'INFO');
 				const uptime = Math.floor((Date.now() - this.stats.startedAt) / 1000);
 				const stateStats = this.stateManager.getStats();
-				log(`Server v 0.4.22 Statistics:`, 'INFO');
+				log(`Server v${this.config.version} Statistics:`, 'INFO');
 				log(`  Uptime: ${uptime}s`, 'INFO');
 				log(`  Clients connected: ${this.stats.clientsConnected}`, 'INFO');
 				log(`  Clients disconnected: ${this.stats.clientsDisconnected}`, 'INFO');

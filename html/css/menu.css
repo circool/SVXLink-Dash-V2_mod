@@ -19,6 +19,7 @@
 .footer {
 	margin: 0;
 }
+
 #reflector_activity_content table tr:hover td,
 #reflector_activity_content table tr:hover td a,
 #net_activity_content table tr:hover td,
@@ -66,7 +67,7 @@
 	padding-right: 0.2em;
 }
 
-.menuaudio_mute:before {
+.menuaudio.mute:before {
 	content: "\f026";
 	font-family: FontAwesome;
 	font-style: normal;
@@ -75,7 +76,7 @@
 	padding-right: 0.2em;
 }
 
-.menuaudio_active:before {
+.menuaudio.unmute:before {
 	content: "\f028";
 	color: rgb(192, 240, 30);
 	font-family: FontAwesome;
@@ -137,6 +138,29 @@ audio-monitor:before {
 	color: #000000;
 }
 
+
+.receiving-mode-cell {
+	color: #000000;
+	border: 0;
+	text-align: center;
+	padding: 2px;
+	background: #bf7f18;
+}
+
+.transmitting-mode-cell {
+	color: #ffffff;
+	border: 0;
+	text-align: center;
+	padding: 2px;
+	background: #d11141;
+}
+
+
+
+.receiving-mode-cell a.tooltip,
+.receiving-mode-cell a.tooltip:link,
+.transmitting-mode-cell a.tooltip,
+.transmitting-mode-cell a.tooltip:link,
 .paused-mode-cell a.tooltip,
 .paused-mode-cell a.tooltip:link,
 .paused-mode-cell a.tooltip:visited,
@@ -152,7 +176,10 @@ audio-monitor:before {
 	color: #ffffff;
 }
 
-
+input.filter-activity-max,
+input.rf-filter-activity-max {
+	padding-left: 5px;
+}
 
 span.tg {
 	font-style: normal;
@@ -851,3 +878,4 @@ span.operate {
 	cursor: pointer;
 	transition: all 0.3s ease;
 }
+

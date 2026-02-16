@@ -3,11 +3,11 @@
 /**
  * @filesource /include/net_activity.php
  * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
- * @date 2026.02.11
+ * @date 2026.02.15
  * @version 0.4.6
  */
-// define("KERCHUNK_SIZE", 3);
-define("ACTION_LIFETIME", 1);
+
+define("ACTION_LIFETIME", 1); 
 
 if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 	header('Content-Type: text/html; charset=utf-8');
@@ -34,7 +34,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 		session_start();
 	}
 
-	// AJAX POST - сохраняем настройки в сессию
+	// AJAX POST
 	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		$data = json_decode(file_get_contents('php://input'), true);
 		if (isset($data['filter_activity'])) {
@@ -172,7 +172,6 @@ function getNetActivityActions(): array
 					}
 				}
 
-				// Флаги в запись не попадают
 				if ($source === 'Frn' || $source === 'Reflector' || $source === 'EchoLinkConference') {
 					$row['source'] = '';
 				} else {
@@ -277,8 +276,6 @@ if (!isset($_GET['ajax'])) {
 	}
 
 	$netResultLimit = NET_ACTIVITY_LIMIT . ' ' . getTranslation('Actions');
-
-	// Текущие значения из СЕССИИ для формы
 	$current_filter = $_SESSION['net_filter'] ?? 'ON';
 	$current_max = $_SESSION['net_filter_max'] ?? '1';
 	

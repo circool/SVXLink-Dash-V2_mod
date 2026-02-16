@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @author vladimir@tsurkanenko.ru 
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru> 
  * @version 0.0.1
  * @filesource /include/session_header.php
  */

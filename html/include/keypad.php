@@ -4,7 +4,7 @@
  * @filesource /include/keypad.php
  * @version 0.4.2.release
  * @date 2026-01-30
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
  * @note DTMF keypad with logic selection based on dtmf_cmd parameter
  */
 

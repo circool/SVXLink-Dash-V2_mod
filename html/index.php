@@ -96,12 +96,6 @@ if (!file_exists($auth_file)) {
 			?>
 
 			<?php
-			if (!defined("SHOW_REFLECTOR_ACTIVITY") || constant("SHOW_REFLECTOR_ACTIVITY") === true) {
-				include $_SERVER["DOCUMENT_ROOT"] . "/include/reflector_activity.php";
-			}
-			?>
-
-			<?php
 			if (!defined("SHOW_NET_ACTIVITY") || constant("SHOW_NET_ACTIVITY") === true) {
 				include $_SERVER["DOCUMENT_ROOT"] . "/include/net_activity.php";
 			}
@@ -153,7 +147,6 @@ if (!file_exists($auth_file)) {
 		window.WS_ENABLED = <?php echo (defined('WS_ENABLED') && WS_ENABLED) ? 'true' : 'false'; ?>;
 		window.SHOW_RF_ACTIVITY = <?php echo (defined('SHOW_RF_ACTIVITY') && SHOW_RF_ACTIVITY) ? 'true' : 'false'; ?>;
 		window.SHOW_NET_ACTIVITY = <?php echo (defined('SHOW_NET_ACTIVITY') && SHOW_NET_ACTIVITY) ? 'true' : 'false'; ?>;
-		window.SHOW_REFLECTOR_ACTIVITY = <?php echo (defined('SHOW_REFLECTOR_ACTIVITY') && SHOW_REFLECTOR_ACTIVITY) ? 'true' : 'false'; ?>;
 		window.SHOW_RADIO_ACTIVITY = <?php echo (defined('SHOW_RADIO_ACTIVITY') && SHOW_RADIO_ACTIVITY) ? 'true' : 'false'; ?>;
 		window.SHOW_CON_DETAILS = <?php echo (defined('SHOW_CON_DETAILS') && SHOW_CON_DETAILS) ? 'true' : 'false'; ?>;
 	</script>

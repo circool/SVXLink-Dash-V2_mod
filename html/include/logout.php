@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
  * @filesource /include/logout.php
  * @version 0.0.1.release
  * @note Preliminary version.

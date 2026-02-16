@@ -4,7 +4,7 @@
  * @filesource /include/dtmf_handler.php
  * @version 0.4.0.release
  * @date 2026.01.30
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
  * @description DTMF handler with clean center-positioned toast notifications
  */
 

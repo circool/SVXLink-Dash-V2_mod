@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
  * @data 2026.01.26
  * @filesource /include/change_password.php
  * @version 0.0.1
