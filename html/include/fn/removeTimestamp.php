@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
  * @version 0.1.14.release
  * @date 2025.12.20
  * @filesource include/fn/removeTimestamp.php

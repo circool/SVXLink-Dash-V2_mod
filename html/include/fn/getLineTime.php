@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
  * @version 0.1.3.release
  * @filesource /include/fn/getLineTime.php
  */

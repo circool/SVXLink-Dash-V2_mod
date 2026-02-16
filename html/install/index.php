@@ -131,11 +131,11 @@ function createAuthFile()
 
 <body>
 	<div class="container">
-		<h1>🎛️ SVXLink Dashboard Setup</h1>
+		<h1>SVXLink Dashboard Setup</h1>
 		<p>This setup will create the authentication configuration file for your dashboard.</p>
 
 		<div class="info-box">
-			<h3>📋 What will be created:</h3>
+			<h3>What will be created:</h3>
 			<ul>
 				<li>Authentication file: <code>/etc/svxlink/dashboard/auth.ini</code></li>
 				<li>Default user account: <strong>svxlink / svxlink</strong></li>
@@ -149,28 +149,28 @@ function createAuthFile()
 
 			if ($auth_file) {
 				echo "<div class='info-box'>";
-				echo "<p class='success'>✅ Setup completed successfully!</p>";
+				echo "<p class='success'>Setup completed successfully!</p>";
 				echo "<p>Authentication file created: <code>$auth_file</code></p>";
-				echo "<h3>🔐 Default Credentials:</h3>";
+				echo "<h3>Default Credentials:</h3>";
 				echo "<p><strong>Username:</strong> svxlink</p>";
 				echo "<p><strong>Password:</strong> svxlink</p>";
 				echo "<p class='warning'>⚠️ Please change the password after first login!</p>";
 				echo "</div>";
 
 				// Проверяем доступность файла для index.php
-				echo "<h3>🔍 File Access Test:</h3>";
+				echo "<h3>File Access Test:</h3>";
 				if (file_exists($auth_file) && is_readable($auth_file)) {
 					echo "<p class='success'>✓ File exists and is readable by web server</p>";
-					echo '<p><a href="/index.php"><button>🚀 Go to Dashboard</button></a></p>';
+					echo '<p><a href="/index.php"><button>Go to Dashboard</button></a></p>';
 				} else {
 					echo "<p class='error'>✗ File created but not accessible by web server</p>";
 					echo "<p>Try setting permissions manually:</p>";
 					echo "<code>sudo chown www-data:www-data $auth_file<br>sudo chmod 644 $auth_file</code>";
 				}
 			} else {
-				echo "<p class='error'>❌ Setup failed. Unable to create auth file.</p>";
+				echo "<p class='error'>Setup failed. Unable to create auth file.</p>";
 				echo "<div class='info-box'>";
-				echo "<h3>🔧 Manual Setup Required:</h3>";
+				echo "<h3>Manual Setup Required:</h3>";
 				echo "<p>Run these commands in terminal:</p>";
 				echo "<code>sudo mkdir -p /etc/svxlink/dashboard<br>";
 				echo "sudo cp config/sample.auth.ini /etc/svxlink/dashboard/auth.ini<br>";
@@ -178,12 +178,12 @@ function createAuthFile()
 				echo "sudo chmod 644 /etc/svxlink/dashboard/auth.ini</code>";
 				echo "</div>";
 				echo '<form method="POST" style="margin-top: 20px;">';
-				echo '<button type="submit" name="run_setup" value="1">🔄 Try Again</button>';
+				echo '<button type="submit" name="run_setup" value="1">Try Again</button>';
 				echo '</form>';
 			}
 		} else {
 			echo '<form method="POST">';
-			echo '<button type="submit" name="run_setup" value="1">🔧 Run Setup</button>';
+			echo '<button type="submit" name="run_setup" value="1">Run Setup</button>';
 			echo '</form>';
 		}
 		?>

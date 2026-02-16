@@ -1,26 +1,70 @@
-```markdown
 # Руководство по установке SVXLink Dashboard
 
 ## Обязательные требования
 
-1. Установите часовой пояс системы в файле `/etc/timezone`.
-2. Убедитесь, что в разделе `[GLOBAL]` конфигурации SVXLink установлен параметр `TIMESTAMP_FORMAT` с миллисекундами. Например:  
-   `TIMESTAMP_FORMAT = "%d %b %Y %H:%M:%S.%f"` (`.%f` — миллисекунды).
+1. **Часовой пояс**: Установите часовой пояс системы
+   ```bash
+   sudo timedatectl set-timezone Europe/Moscow
+   # или вручную:
+   echo "Europe/Moscow" | sudo tee /etc/timezone
+   ```
+
+2. **Настройка SVXLink**: Убедитесь, что в разделе `[GLOBAL]` конфигурации SVXLink установлен параметр `TIMESTAMP_FORMAT`:
+   ```bash
+   sudo nano /etc/svxlink/svxlink.conf
+   ```
+   Добавьте или раскомментируйте:
+   ```
+   [GLOBAL]
+   TIMESTAMP_FORMAT = "%d %b %Y %H:%M:%S.%f"
+   ```
+
+3. **Установка веб-сервера (если не установлен)**:
+   ```bash
+   sudo apt update
+   sudo apt install apache2 -y
+   ```
+
+4. **Установка PHP (если не установлен)**:
+   ```bash
+   sudo apt install php php-json php-mbstring -y
+   ```
+
+5. **Установка Node.js (если не установлен)**:
+   ```bash
+   curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+   sudo apt install nodejs -y
+   ```
 
 ## Необязательные настройки
 
-3. Для управления DTMF убедитесь, что в логике SVXLink установлен параметр `DTMF_CTRL_PTY` в значение `/dev/shm/dtmf_ctrl` или другой путь.
+### 1. Управление DTMF
+Для возможности управления через веб-интерфейс убедитесь, что в логике SVXLink установлен параметр `DTMF_CTRL_PTY`:
+```bash
+sudo nano /etc/svxlink/svxlink.conf
+```
+В нужной логике (например, `[SimplexLogic]`) добавьте:
+```
+DTMF_CTRL_PTY = /dev/shm/dtmf_ctrl
+```
 
-4.1. Для мониторинга аудио настройте в логике устройство `TX` с поддержкой нескольких устройств.
+### 2. Аудио мониторинг
+Для прослушивания эфира через браузер:
 
-```svxlink.conf
+**2.1.** В конфиге SVXLink настройте логику на использование нескольких устройств:
+```bash
+sudo nano /etc/svxlink/svxlink.conf
+```
+Замените в нужной логике:
+
+```
 [SimplexLogic]
 #TX = Tx1
-TX=MultiTx
+TX = MultiTx
 ```
-4.2. Добавить само устройство (по аналогии в [TX1])
 
-```svxlink.conf
+**2.2.** Добавьте устройство для стриминга:
+```
 [TxStream]
 TYPE = Local
 AUDIO_DEV = alsa:plughw:Loopback,0,0
@@ -33,109 +77,142 @@ PREEMPHASIS = 0
 [MultiTx]
 TYPE = Multi
 TRANSMITTERS = Tx1,TxStream
-
 ```
-## Быстрая установка
 
-1. **Загрузите файлы**: скопируйте все файлы на ваш веб-сервер.
-2. **Скопируйте и запустите скрипт установки** из `doc/install.sh`.
-3. @TODO **Автоматическая настройка**: откройте браузер и перейдите на адрес вашего сайта.
-4. @TODO **Установка в один клик**: вы будете автоматически перенаправлены на страницу настройки.
-5. @TODO **Нажмите "Run Setup"**: система создаст все необходимые файлы.
-6. **Войдите в систему**: используйте учетные данные по умолчанию: **svxlink** / **svxlink**.
-7. **Обеспечьте безопасность**: смените пароль после первого входа.
+## Установка Dashboard
 
-## Учетные данные по умолчанию
-- **Логин**: `svxlink`
-- **Пароль**: `svxlink`
+### Копирование файлов проекта
 
-## Ручная установка (при необходимости)
+1. **Перейдите в директорию с проектом** 
 
+2. **Скопируйте все содержимое в корень веб-сервера**:
+   
+	 ```bash
+   sudo cp -r * /var/www/html/
+   ```
+
+3. **Установите права доступа**:
+   
+	 ```bash
+   # Владелец файлов - (сервис svxlink)
+   sudo chown -R svxlink:svxlink /var/www/html/
+   
+   # Права на директории - 755 (rwxr-xr-x)
+   sudo find /var/www/html/ -type d -exec chmod 755 {} \;
+   
+   # Права на файлы - 644 (rw-r--r--)
+   sudo find /var/www/html/ -type f -exec chmod 644 {} \;
+   
+   # JavaScript и PHP файлы должны быть исполняемыми для владельца
+   sudo chmod 755 /var/www/html/scripts/*.js
+   sudo chmod 755 /var/www/html/include/*.php
+   ```
+
+### Настройка авторизации (опционально)
+
+#### Автоматическая установка (рекомендуется)
+1. Откройте браузер и перейдите по адресу:
+   ```
+   http://IP-адрес-вашего-сервера/install
+   ```
+2. Нажмите кнопку **"Run Setup"**
+3. Установщик создаст необходимые директории и файл с учетными данными
+4. После успешной установки перейдите на главную страницу:
+   ```
+   http://IP-адрес-вашего-сервера/index.php
+   ```
+
+#### Ручная установка (если автоматическая не сработала)
 ```bash
-# Создайте каталог для панели управления
+# Создайте каталог для конфигурации
 sudo mkdir -p /etc/svxlink/dashboard
 
-# Установите корректного владельца (при необходимости замените www-data на пользователя вашего веб-сервера)
+# Установите владельца каталога (пользователь svxlink)
 sudo chown svxlink:svxlink /etc/svxlink/dashboard
-
-# Установите соответствующие права доступа
 sudo chmod 755 /etc/svxlink/dashboard
 
 # Скопируйте пример конфигурации
-sudo cp config/sample.auth.ini /etc/svxlink/dashboard/auth.ini
+sudo cp /var/www/html/config/sample.auth.ini /etc/svxlink/dashboard/auth.ini
 
-# Установите права доступа (при необходимости измените для пользователя вашего веб-сервера)
-sudo chown www-data:www-data /etc/svxlink/dashboard/auth.ini
+# Установите владельца файла (пользователь svxlink)
+sudo chown svxlink:svxlink /etc/svxlink/dashboard/auth.ini
 sudo chmod 644 /etc/svxlink/dashboard/auth.ini
 ```
 
-## Поддержка
+### Учетные данные по умолчанию
+- **Логин**: `svxlink`
+- **Пароль**: `svxlink`
 
-Если настройка завершилась ошибкой, проверьте:
+**Важно**: После первого входа смените пароль через меню администратора!
 
-- Наличие прав на запись у веб-сервера.
-- Возможность создания каталогов PHP.
-- Отсутствие блокировок со стороны фаервола.
 
-После настройки удалите каталог установки в целях безопасности.
+## Настройка аудио мониторинга
 
-## Настройка SVXLink
-
-### Дополнительная логика
-
-При добавлении нестандартной логики (например, для `ReflectorLogicMyName`) не забудьте создать соответствующий TCL-файл, просто скопировав существующий стандартный и изменив его имя рабочей области.
-
+### Создание systemd сервиса
+Создайте файл сервиса:
 ```bash
-cp ReflectorLogic.tcl ReflectorLogicMyName.tcl
-nano ReflectorLogicMyName.tcl
+sudo nano /etc/systemd/system/svxlink-audio-proxy.service
 ```
 
-```tcl
-###############################################################################
-#
-# Обработчики событий ReflectorLogic
-#
-###############################################################################
+Вставьте содержимое (как в документации):
+```ini
+[Unit]
+Description=SVXLink Node.js Server
+After=network.target
 
-#
-# Это пространство имён, в котором будут находиться все функции ниже. Имя
-# должно соответствовать соответствующему разделу "[ReflectorLogic]" в файле
-# конфигурации. Имя можно изменить, но изменение должно быть выполнено в обоих местах.
-#
-namespace eval ReflectorLogic {
-...
+[Service]
+StandardOutput=journal
+StandardError=journal
+Restart=always
+RestartSec=5
+ExecReload=/bin/kill -HUP
+TimeoutStopSec=10
+Type=simple
+User=svxlink
+Group=svxlink
+ExecStart=/usr/bin/node /var/www/html/scripts/svxlink-audio-proxy-server.js
+Environment=NODE_ENV=production
 
+[Install]
+WantedBy=multi-user.target
 ```
 
-Замените `ReflectorLogic` на `ReflectorLogicMyName` и сохраните файл.
-
-## Примечания по бета-тестированию
-
-1. Убедитесь, что необходимые файлы присутствуют в каталоге сайта:
-
+### Управление сервисом аудио мониторинга
 ```bash
-sudo chmod +x files_check.sh
-./files_check.sh
+# Запустить сервер
+sudo systemctl start svxlink-audio-proxy.service
+
+# Остановить сервер
+sudo systemctl stop svxlink-audio-proxy.service
+
+# Перезапустить сервер
+sudo systemctl restart svxlink-audio-proxy.service
+
+# Добавить в автозагрузку
+sudo systemctl enable svxlink-audio-proxy.service
+
+# Отключить автозагрузку
+sudo systemctl disable svxlink-audio-proxy.service
+
+# Проверить статус
+sudo systemctl status svxlink-audio-proxy.service
+
+# Просмотр логов в реальном времени
+sudo journalctl -u svxlink-audio-proxy.service -f
+
+# Логи за последний час
+sudo journalctl -u svxlink-audio-proxy.service --since="1 hour ago"
 ```
 
-2. Обновите символические ссылки для каталогов `/include`, `/include/fn/` и `/scripts` и в корне :
+## Проверка установки
 
-```bash
-cd /var/www/html/include
-sudo chmod +x update_symlink.sh
-sudo ./update_symlink.sh exct
+1. **Перезапустите веб-сервер**:
+   ```bash
+   sudo systemctl restart apache2
+   ```
 
-cd /var/www/html/include/fn
-sudo chmod +x update_symlink.sh
-sudo ./update_symlink.sh exct
+2. **Откройте браузер** и перейдите по адресу:
+   ```
+   http://IP-адрес-вашего-сервера/index.php
+   ```
 
-cd /var/www/html/scripts
-sudo chmod +x update_symlink.sh
-sudo ./update_symlink.sh exct
-
-cd /var/www/html
-sudo chmod +x update_symlink.sh
-sudo ./update_symlink.sh include/exct
-
-sudo ./set_rights.sh
-```

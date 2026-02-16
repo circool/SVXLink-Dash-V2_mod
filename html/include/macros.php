@@ -4,7 +4,7 @@
  * @filesource /include/dtmf_handler.php
  * @version 0.0.3.release
  * @date 2026.01.16
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
  * @note Preliminary version.
  */
 

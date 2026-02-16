@@ -3,7 +3,7 @@
 /**
  * Обработчик авторизации
  * @filesource /include/auth_handler.php
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
  * @version 0.0.1
  * @note Preliminary version
  */

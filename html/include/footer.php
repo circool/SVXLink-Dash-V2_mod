@@ -3,7 +3,7 @@
 /**
  * @date 2021-12-01
  * @version 0.2.0
- * @author vladimir@tsurkanenko.ru
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
  * @filesource /include/footer.php
  * @note Preliminary version.
  */

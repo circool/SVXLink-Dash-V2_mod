@@ -77,7 +77,7 @@ define("AUTH_SETUP", 'install/setup_auth.php');
 
 
 // DEBUG
-define("DEBUG", false);
+define("DEBUG", true);
 if (defined("DEBUG")) {
 
 	if (!defined("DEBUG_VERBOSE")) {

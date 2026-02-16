@@ -1,12 +1,11 @@
-![Статус проекта](https://img.shields.io/badge/Статус-Тестируется-red?style=flat)
+![Статус проекта](https://img.shields.io/badge/Статус-Предрелиз-red?style=flat)
 ![Версия](https://img.shields.io/badge/Версия-0.4.x-red?style=flat)
 ![Лицензия](https://img.shields.io/badge/Лицензия-GNU_FDL_v1.3-green?style=flat)
 
 
 # Svxlink Dashboard
 
-Работоспособная бета-версия. 
-
+Пред-релизная версия. 
 
 ## Вдохновение
 
@@ -29,7 +28,7 @@ Original copyright: Copyright © 2023 WPSD Project Development Team, et al.
 
 Полностью переписанная реализация панели управления SVXLink с современной архитектурой.
 
-Подробная техническая информация находится в **PROJECT_DETAILS.md**
+Подробная техническая информация находится в **PROJECT_DETAILS.RU.md**
 
 ## Особенности
 

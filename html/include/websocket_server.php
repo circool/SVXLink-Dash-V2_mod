@@ -2,7 +2,7 @@
 
 /**
  * @filesource /include/websocket_server.php
- * @author vladimir@tsurkanenko.ru  
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>  
  * @version 0.4.0_release
  * @date 2026.01.26
  */
