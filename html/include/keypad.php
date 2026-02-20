@@ -14,7 +14,6 @@ require_once $_SERVER["DOCUMENT_ROOT"] . '/include/settings.php';
 // Загружаем функцию перевода
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
 
-// Получаем список логик с dtmf_cmd
 $dtmfLogics = [];
 if (isset($_SESSION['status']['logic']) && is_array($_SESSION['status']['logic'])) {
 	foreach ($_SESSION['status']['logic'] as $logicName => $logicData) {
@@ -27,7 +26,6 @@ if (isset($_SESSION['status']['logic']) && is_array($_SESSION['status']['logic']
 $singleLogic = count($dtmfLogics) === 1 ? key($dtmfLogics) : null;
 ?>
 
-<!-- Модальное окно DTMF клавиатуры -->
 <div id="keypadOverlay" class="auth-overlay" style="display: none;"></div>
 <div id="keypadContainer" class="auth-container" style="display: none;">
 	<div class="auth-form">
@@ -121,7 +119,7 @@ $singleLogic = count($dtmfLogics) === 1 ? key($dtmfLogics) : null;
 </div>
 <?php unset($logicData, $dtmfLogics, $logics); ?>
 <script>
-	// Глобальная переменная для хранения выбранной логики
+
 	let selectedLogic = '<?= $singleLogic ? htmlspecialchars($singleLogic) : "" ?>';
 
 	function updateSelectedLogic() {
@@ -162,8 +160,6 @@ $singleLogic = count($dtmfLogics) === 1 ? key($dtmfLogics) : null;
 		}, 10);
 
 		document.body.style.overflow = 'hidden';
-
-		// Инициализируем состояние кнопок при открытии
 		updateSelectedLogic();
 
 		if (selectedLogic) {
@@ -289,7 +285,6 @@ $singleLogic = count($dtmfLogics) === 1 ? key($dtmfLogics) : null;
 			});
 	}
 
-	// Обработка клавиш
 	document.addEventListener('keydown', function(e) {
 		if (e.key === 'Escape' && document.getElementById('keypadContainer').style.display === 'block') {
 			hideKeypad();
@@ -339,16 +334,12 @@ $singleLogic = count($dtmfLogics) === 1 ? key($dtmfLogics) : null;
 		}
 	});
 
-	// Экспортируем функции
 	window.showKeypad = showKeypad;
 	window.hideKeypad = hideKeypad;
 	window.sendDTMF = sendDTMF;
 	window.sendSequence = sendSequence;
 	window.updateSelectedLogic = updateSelectedLogic;
-
-	// Инициализация при загрузке страницы
 	document.addEventListener('DOMContentLoaded', function() {
-		// Устанавливаем начальное состояние кнопок
 		updateSelectedLogic();
 
 		const sequenceInput = document.getElementById('dtmfSequence');

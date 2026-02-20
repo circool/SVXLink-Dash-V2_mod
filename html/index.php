@@ -33,7 +33,7 @@ if (!file_exists($auth_file)) {
 	<link rel="stylesheet" type="text/css" href="/css/font-awesome-4.7.0/css/font-awesome.min.css">
 	<link rel="stylesheet" href="/fonts/stylesheet.css">
 	<link rel="stylesheet" href="/css/css.php">
-	<link rel="stylesheet" href="/css/menu.css">
+	<link rel="stylesheet" href="/css/custom.css">
 	<?php if (!defined("WS_ENABLED") || constant("WS_ENABLED") === true): ?>
 		<?php include_once $_SERVER["DOCUMENT_ROOT"] . '/include/websocket_client_config.php'; ?>
 		<link rel="stylesheet" href="/css/websocket_control.css">

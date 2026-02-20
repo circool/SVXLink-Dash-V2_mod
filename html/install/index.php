@@ -1,19 +1,19 @@
 <?php
 
 /**
- * Скрипт установки авторизации
+ * Auth files installation
+ * @deprecated sisnce 1.0
  * @filesource setup_auth.php
  */
 
 function createAuthFile()
 {
-	// Используем только один путь
+
 	$auth_file = '/etc/svxlink/dashboard/auth.ini';
 	$auth_dir = dirname($auth_file);
 
 	echo "<p>Target: $auth_file</p>";
 
-	// Пробуем создать директорию
 	if (!is_dir($auth_dir)) {
 		if (@mkdir($auth_dir, 0755, true)) {
 			echo "<p class='success'>✓ Created directory: $auth_dir</p>";
@@ -26,7 +26,6 @@ function createAuthFile()
 		echo "<p class='success'>✓ Directory exists: $auth_dir</p>";
 	}
 
-	// Пробуем создать файл
 	if (!file_exists($auth_file)) {
 		$default_user = 'svxlink';
 		$default_password = 'svxlink';
@@ -38,26 +37,24 @@ function createAuthFile()
 			@chmod($auth_file, 0644);
 			echo "<p class='success'>✓ Created auth file: $auth_file</p>";
 
-			// Проверяем что файл действительно создан и читается
 			if (file_exists($auth_file) && is_readable($auth_file)) {
-				echo "<p class='success'>✓ File verified and readable</p>";
+				echo "<p class='success'>File verified and readable</p>";
 				return $auth_file;
 			} else {
-				echo "<p class='error'>✗ File created but not readable</p>";
+				echo "<p class='error'>File created but not readable</p>";
 				return false;
 			}
 		} else {
-			echo "<p class='error'>✗ Cannot create file: $auth_file</p>";
+			echo "<p class='error'>Cannot create file: $auth_file</p>";
 			echo "<p class='warning'>Try creating manually: <code>sudo cp config/sample.auth.ini $auth_file</code></p>";
 			return false;
 		}
 	} else {
-		echo "<p class='success'>✓ Auth file already exists: $auth_file</p>";
+		echo "<p class='success'>Auth file already exists: $auth_file</p>";
 		return $auth_file;
 	}
 }
 
-// HTML страница установки
 ?>
 <!DOCTYPE html>
 <html>
@@ -156,8 +153,6 @@ function createAuthFile()
 				echo "<p><strong>Password:</strong> svxlink</p>";
 				echo "<p class='warning'>⚠️ Please change the password after first login!</p>";
 				echo "</div>";
-
-				// Проверяем доступность файла для index.php
 				echo "<h3>File Access Test:</h3>";
 				if (file_exists($auth_file) && is_readable($auth_file)) {
 					echo "<p class='success'>✓ File exists and is readable by web server</p>";
@@ -189,5 +184,4 @@ function createAuthFile()
 		?>
 	</div>
 </body>
-
 </html>

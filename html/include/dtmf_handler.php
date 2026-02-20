@@ -28,16 +28,13 @@ if (function_exists('getTranslation')) {
 	$translationFunction = 'getTranslationFallback';
 }
 
-/**
- * Формирует JavaScript код для toast-уведомления
- */
 function getToastNotification(string $message, string $type = 'info', array $data = []): string
 {
 	$types = [
-		'success' => ['color' => '#2c7f2c', 'duration' => 3000],
-		'error'   => ['color' => '#8C0C26', 'duration' => 5000],
-		'warning' => ['color' => '#cc9900', 'duration' => 4000],
-		'info'    => ['color' => '#0066cc', 'duration' => 3000]
+		'success' => ['duration' => 3000],
+		'error'   => ['duration' => 5000],
+		'warning' => ['duration' => 4000],
+		'info'    => ['duration' => 3000]
 	];
 
 	$config = $types[$type] ?? $types['info'];
@@ -45,29 +42,25 @@ function getToastNotification(string $message, string $type = 'info', array $dat
 	$dataJson = !empty($data) ? json_encode($data) : 'null';
 	$jsMessage = addslashes($message);
 	$jsType = addslashes($type);
-	$jsColor = addslashes($config['color']);
 	$jsToastId = addslashes($toastId);
 
 	return <<<JS
 (function() {
     let initToastContainer = function() {
-        let container = document.getElementById('dtmfGlobalToastContainer');
+        let container = document.getElementById('dtmfToast');
         if (!container) {
             container = document.createElement('div');
-            container.id = 'dtmfGlobalToastContainer';
-            container.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10001; display: flex; flex-direction: column; align-items: center; gap: 10px; pointer-events: none;';
+            container.id = 'dtmfToast';
             document.body.appendChild(container);
         }
         return container;
     };
     
-
-    let showToast = function(message, type, color, duration, toastId, data) {
+    let showToast = function(message, type, duration, toastId, data) {
         const container = initToastContainer();     
         const toast = document.createElement('div');
         toast.id = toastId;
-        toast.className = 'dtmf-global-toast ' + type;
-        toast.style.cssText = 'padding: 20px 40px; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 6px 20px rgba(0,0,0,0.4); color: white; background: ' + color + '; opacity: 0; transform: translateY(-20px) scale(0.9); transition: opacity 0.3s ease, transform 0.3s ease; min-width: 300px; max-width: 500px; text-align: center; word-wrap: break-word; pointer-events: auto; cursor: pointer; border: 1px solid rgba(255,255,255,0.1);';
+        toast.className = 'dtmf-toast ' + type;
         toast.innerHTML = message;
         
         if (data) {
@@ -90,8 +83,7 @@ function getToastNotification(string $message, string $type = 'info', array $dat
         container.appendChild(toast);
         
         setTimeout(function() {
-            toast.style.opacity = '1';
-            toast.style.transform = 'translateY(0) scale(1)';
+            toast.classList.add('show');
         }, 10);
         
         const autoClose = setTimeout(function() {
@@ -100,8 +92,8 @@ function getToastNotification(string $message, string $type = 'info', array $dat
         
         function removeToast(toastElement) {
             clearTimeout(autoClose);
-            toastElement.style.opacity = '0';
-            toastElement.style.transform = 'translateY(20px) scale(0.9)';
+            toastElement.classList.add('hide');
+            toastElement.classList.remove('show');
             setTimeout(function() {
                 if (toastElement.parentNode === container) {
                     container.removeChild(toastElement);
@@ -117,7 +109,6 @@ function getToastNotification(string $message, string $type = 'info', array $dat
     showToast(
         "{$jsMessage}",
         "{$jsType}",
-        "{$jsColor}",
         {$config['duration']},
         "{$jsToastId}",
         {$dataJson}

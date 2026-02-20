@@ -3,13 +3,13 @@
 /**
  * @filesource /include/settings.php
  * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
- * @date 2026.02.11
- * @version 0.4.6
+ * @date 2026.02.19
+ * @version 1.0
  */
 
 
 // Naming
-define('DASHBOARD_VERSION', '0.4');
+define('DASHBOARD_VERSION', '1.0');
 define('DASHBOARD_NAME', 'SvxLink Dashboard');
 define('DASHBOARD_TITLE', 'SvxLink Dashboard by R2ADU');
 
@@ -35,19 +35,20 @@ define('SHOW_AUDIO_MONITOR', true);
 
 define('SHOW_MACROS', true);
 
-define('SHOW_AUTH', true);
+
 
 define('SHOW_CON_DETAILS', true);
-
 define('SHOW_RADIO_ACTIVITY', true);
 
 define('SHOW_NET_ACTIVITY', true);
 if (defined("SHOW_NET_ACTIVITY") && SHOW_NET_ACTIVITY) {
+	// Number of rows in the table
 	define('NET_ACTIVITY_LIMIT', 10);
 }
 
 define('SHOW_RF_ACTIVITY', true);
 if (defined("SHOW_RF_ACTIVITY") && SHOW_RF_ACTIVITY) {
+	// Number of rows in the table 
 	define('RF_ACTIVITY_LIMIT', 5);
 }
 
@@ -60,7 +61,7 @@ if (WS_ENABLED) {
 }
 
 // AJAX transport for DOM updates (periodic)
-define("UPDATE_INTERVAL", 1000);
+define("UPDATE_INTERVAL", 3000);
 
 
 // Cashe
@@ -70,14 +71,15 @@ if (USE_CACHE) {
 	define("LOG_CACHE_TTL_MS", 1000);
 }
 
-// Auth
+// @deprecated since v1.0
+define('SHOW_AUTH', false);
 define("AUTH_FILE", '/etc/svxlink/dashboard/auth.ini');
 define("AUTH_SETUP", 'install/setup_auth.php');
 
 
 
 // DEBUG
-define("DEBUG", true);
+define("DEBUG", false);
 if (defined("DEBUG")) {
 
 	if (!defined("DEBUG_VERBOSE")) {

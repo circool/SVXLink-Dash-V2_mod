@@ -3,54 +3,55 @@
 /**
  * @filesource /include/rf_activity.php
  * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
- * @date 2026.02.15
- * @version 0.4.6
+ * @date 2026.02.20
+ * @version 0.4.7
  */
 
-// AJAX
-if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
-	header('Content-Type: text/html; charset=utf-8');
-	$docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/var/www/html';
-	require_once $docRoot . '/include/session_header.php';
+	// AJAX
+	if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+		header('Content-Type: text/html; charset=utf-8');
+		$docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/var/www/html';
+		require_once $docRoot . '/include/session_header.php';
 
-	$requiredFiles = [
-		'/include/fn/getTranslation.php',
-		'/include/fn/logTailer.php',
-		'/include/fn/formatDuration.php',
-		'/include/fn/getLineTime.php'
-	];
+		$requiredFiles = [
+			'/include/fn/getTranslation.php',
+			'/include/fn/logTailer.php',
+			'/include/fn/formatDuration.php',
+			'/include/fn/getLineTime.php'
+		];
 
-	foreach ($requiredFiles as $file) {
-		$fullPath = $docRoot . $file;
-		if (file_exists($fullPath)) {
-			require_once $fullPath;
+		foreach ($requiredFiles as $file) {
+			$fullPath = $docRoot . $file;
+			if (file_exists($fullPath)) {
+				require_once $fullPath;
+			}
 		}
+
+		// ОБРАБОТКА POST-ЗАПРОСОВ ДЛЯ ФИЛЬТРА
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			$data = json_decode(file_get_contents('php://input'), true);
+			if (isset($data['filter_activity'])) {
+				$_SESSION['rf_filter'] = $data['filter_activity'];
+			}
+			if (isset($data['filter_activity_max'])) {
+				$_SESSION['rf_filter_max'] = floatval($data['filter_activity_max']);
+			}
+			echo json_encode(['status' => 'ok']);
+			exit;
+		}
+
+		echo getRfActivityTable();
+		return;
 	}
-
-	// POST
-	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-		$data = json_decode(file_get_contents('php://input'), true);
-		if (isset($data['filter_activity'])) {
-			$_SESSION['rf_filter'] = $data['filter_activity'];
-		}
-		if (isset($data['filter_activity_max'])) {
-			$_SESSION['rf_filter_max'] = floatval($data['filter_activity_max']);
-		}
-		echo json_encode(['status' => 'ok']);
-		exit;
-	}
-
-	echo getRfActivityTable();
-	return;
-}
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/formatDuration.php';
+require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getLineTime.php';
 
 function getRfActivityActions(): array
 {
-
+	// ФИЛЬТР ДЛИТЕЛЬНОСТИ
 	$min_duration = 1; // default
 	if (isset($_SESSION['rf_filter']) && $_SESSION['rf_filter'] === 'OFF') {
 		$min_duration = 0;
@@ -97,8 +98,8 @@ function getRfActivityActions(): array
 
 		$time_lines = getLogTailFiltered(100, $time_prefix, [], $logLinesCount);
 
+		$context_lines = [];
 		if ($time_lines && is_array($time_lines)) {
-			$context_lines = [];
 			$open_found = false;
 
 			foreach ($time_lines as $line) {
@@ -115,41 +116,85 @@ function getRfActivityActions(): array
 					$context_lines[] = $line;
 				}
 			}
+		}
 
-			if ($context_lines) {
-				$primary_destination = null;
-				$dtmf_digits = [];
-				$dtmf_prefix = '';
+		$primary_destination = null;
+		$dtmf_digits = [];
+		$dtmf_prefix = '';
+		$module_name = null;
+		$module_logic = null;
 
-				foreach ($context_lines as $line) {
-					$pattern_match = findPatternInLine($line);
-					if ($pattern_match !== null) {
-						$primary_destination = $pattern_match;
-						$dtmf_digits = [];
-						$dtmf_prefix = '';
-					}
-
-					if (preg_match('/:\s*([^:]+):\s*digit=(.+)/', $line, $dtmf_matches)) {
-						if ($primary_destination === null && empty($dtmf_digits)) {
-							$dtmf_prefix = $dtmf_matches[1];
-						}
-						$dtmf_digits[] = $dtmf_matches[2];
-					}
-				}
-
-				if ($primary_destination !== null && !empty($dtmf_digits)) {
-					$destination = $primary_destination . ': <b>DTMF ' . implode('', $dtmf_digits) . '</b>';
-				} elseif ($primary_destination !== null) {
-					$destination = $primary_destination;
-				} elseif (!empty($dtmf_digits)) {
-					$destination = $dtmf_prefix . ': <b>DTMF ' . implode('', $dtmf_digits) . '</b>';
+		$open_time_utc = getLineTime($pair['open_line']);
+		if (isset($_SESSION['status']['modules_history'])) {
+			foreach ($_SESSION['status']['modules_history'] as $event) {
+				if ($open_time_utc >= $event['start'] && ($event['end'] === 0 || $open_time_utc <= $event['end'])) {
+					$module_name = $event['module'];
+					$module_logic = $event['logic'];
+					break;
 				}
 			}
 		}
 
-		$open_time = strtotime($open_timestamp);
+		if (!empty($context_lines)) {
+			foreach ($context_lines as $line) {
+				$pattern_match = findPatternInLine($line);
+				if ($pattern_match !== null) {
+					$primary_destination = $pattern_match;
+				}
+
+				if (preg_match('/:\s*([^:]+):\s*digit=(.+)/', $line, $dtmf_matches)) {
+					if (empty($dtmf_prefix)) {
+						$dtmf_prefix = $dtmf_matches[1];
+					}
+					$dtmf_digits[] = $dtmf_matches[2];
+				}
+			}
+		}
+
+		if ($primary_destination !== null) {
+			$destination = $primary_destination;
+		} elseif ($module_name !== null) {
+
+			if ($module_name === 'Frn' && $module_logic !== null) {
+				$server_info = '';
+				if (
+					isset($_SESSION['status']['logic'][$module_logic]['module']['Frn']['connected_nodes']) &&
+					is_array($_SESSION['status']['logic'][$module_logic]['module']['Frn']['connected_nodes'])
+				) {
+
+					$connected_nodes = $_SESSION['status']['logic'][$module_logic]['module']['Frn']['connected_nodes'];
+					if (!empty($connected_nodes)) {
+						$first_node = reset($connected_nodes);
+						if (isset($first_node['callsign'])) {
+							$server_info = ' (' . $first_node['callsign'] . ')';
+						} elseif (isset($first_node['name'])) {
+							$server_info = ' (' . $first_node['name'] . ')';
+						}
+					}
+				}
+				$destination = getTranslation('Module') . ': ' . $module_name . $server_info;
+			} else {
+				$destination = getTranslation('Module') . ': ' . $module_name;
+			}
+		}
+
+		if (!empty($dtmf_digits)) {
+			$dtmf_text = implode('', $dtmf_digits);
+			if (!empty($dtmf_prefix)) {
+				if ($destination !== $defaultDestination) {
+					$destination .= ': ' . $dtmf_prefix . ' <b>DTMF ' . $dtmf_text . '</b>';
+				} else {
+					$destination = $dtmf_prefix . ': <b>DTMF ' . $dtmf_text . '</b>';
+				}
+			} else {
+				$destination .= ': <b>DTMF ' . $dtmf_text . '</b>';
+			}
+		}
+
+		$open_time = getLineTime($pair['open_line']);
 		$duration = (int)$pair['duration'];
 
+		// ПРИМЕНЕНИЕ ФИЛЬТРА ДЛИТЕЛЬНОСТИ
 		if ($duration >= $min_duration) {
 			$activity_rows[] = [
 				'date' => date('d M Y', $open_time),
@@ -201,14 +246,16 @@ function findSquelchPairs(array $squelch_lines): array
 		} elseif ($event['state'] === 'CLOSED' && $open_event && $open_event['device'] === $event['device']) {
 			$duration = $event['time'] - $open_event['time'];
 
-			$pairs[] = [
-				'open_time' => $open_event['time'],
-				'close_time' => $event['time'],
-				'duration' => $duration,
-				'device' => $event['device'],
-				'open_line' => $open_event['line'],
-				'close_line' => $event['line']
-			];
+			if ($duration >= 2) {
+				$pairs[] = [
+					'open_time' => $open_event['time'],
+					'close_time' => $event['time'],
+					'duration' => $duration,
+					'device' => $event['device'],
+					'open_line' => $open_event['line'],
+					'close_line' => $event['line']
+				];
+			}
 
 			$open_event = null;
 		}
@@ -288,7 +335,6 @@ function getRfActivityTable(): string
 }
 
 $rfResultLimit = RF_ACTIVITY_LIMIT . ' ' . getTranslation('Actions');
-
 $current_filter = $_SESSION['rf_filter'] ?? 'ON';
 $current_max = $_SESSION['rf_filter_max'] ?? '1';
 ?>
@@ -338,7 +384,7 @@ $current_max = $_SESSION['rf_filter_max'] ?? '1';
 		</div>
 	</div>
 
-	<div class="larger" style="vertical-align: bottom; font-weight:bold;text-align:left;margin-top:12px;">
+	<div class="larger block-header" style="margin-top:12px;">
 		<?php echo getTranslation('Last') . ' ' . RF_ACTIVITY_LIMIT . ' ' . getTranslation('Actions') . " " . getTranslation('RF Activity') ?>
 	</div>
 	<div id="rf_activity_content">

@@ -7,7 +7,7 @@
  * @version 0.4.6
  */
 
-define("ACTION_LIFETIME", 1); 
+define("ACTION_LIFETIME", 1);
 
 if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 	header('Content-Type: text/html; charset=utf-8');
@@ -162,7 +162,7 @@ function getNetActivityActions(): array
 
 							$regexp = '/received from (.+) ---$/';
 							if (preg_match($regexp, $parent, $matches)) {
-								$source = 'EchoLink Conference <b>' . $matches[1] . '</b>';
+								$source = 'EchoLink ' . getTranslation('Conference') . ' <b>' . $matches[1] . '</b>';
 							} else {
 								$source = '';
 							}
@@ -241,8 +241,8 @@ function getNetActivityTable(): string
 	$html .= '<tr>';
 	$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Date') . '<span><b>' . getTranslation('Date') . '</b></span></a></th>';
 	$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Time') . '<span><b>' . getTranslation('Time') . '</b></span></a></th>';
-	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Source') . '<span><b>' . getTranslation('Source') . '</b></span></a></th>';
-	$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration') . '</b></span></a></th>';
+	$html .= '<th><a class="tooltip" href="#">' . getTranslation('Source') . '<span><b>' . getTranslation('Source') . ': ' .  getTranslation("Frn Server, Reflector's Talkgroup, Echolink Node, Conference etc.") . '</b></span></a></th>';
+	$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration in Seconds') . '</b></span></a></th>';
 	$html .= '</tr>';
 	$html .= '</thead>';
 	$html .= '<tbody>';
@@ -278,7 +278,7 @@ if (!isset($_GET['ajax'])) {
 	$netResultLimit = NET_ACTIVITY_LIMIT . ' ' . getTranslation('Actions');
 	$current_filter = $_SESSION['net_filter'] ?? 'ON';
 	$current_max = $_SESSION['net_filter_max'] ?? '1';
-	
+
 ?>
 	<div id="net_activity">
 		<div style="float: right; vertical-align: bottom; padding-top: 0px;" id="lhAc">
@@ -325,7 +325,7 @@ if (!isset($_GET['ajax'])) {
 					value="<?php echo $current_max; ?>"> s
 			</div>
 		</div>
-		<div class="larger" style="vertical-align: bottom; font-weight:bold;text-align:left;margin-top:12px;">
+		<div class="larger block-header" style="margin-top:12px;">
 			<?php echo getTranslation('Last') . " " . $netResultLimit . " " . getTranslation('NET Activity') ?>
 		</div>
 		<div id="net_activity_content">

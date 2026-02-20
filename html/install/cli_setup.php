@@ -4,6 +4,7 @@
  * CLI Setup Script
  * Usage: php cli_setup.php
  * @version 0.1.1
+ * @deprecated since 1.0
  */
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/auth_config.php';
@@ -13,7 +14,6 @@ function createAuthFileCli()
 	$auth_file = '/etc/svxlink/dashboard/auth.ini';
 	$auth_dir = dirname($auth_file);
 
-	// Create directory
 	if (!is_dir($auth_dir)) {
 		if (!mkdir($auth_dir, 0755, true)) {
 			echo "ERROR: Cannot create directory: $auth_dir\n";
@@ -22,7 +22,6 @@ function createAuthFileCli()
 		echo "Created directory: $auth_dir\n";
 	}
 
-	// Create file
 	$default_user = 'svxlink';
 	$default_password = 'svxlink';
 	$hashed_password = password_hash($default_password, PASSWORD_DEFAULT);
@@ -39,7 +38,6 @@ function createAuthFileCli()
 	}
 }
 
-// Run setup
 if (createAuthFileCli()) {
 	echo "Setup completed successfully!\n";
 	echo "Default credentials: svxlink / svxlink\n";

@@ -2,18 +2,18 @@
 
 /**
  * Calculating actual service status
-  * @filesource /include/fn/getActualStatus.php 
+ * @filesource /include/fn/getActualStatus.php 
  * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
- * @date 2026.02.11
- * @version 0.4.6
+ * @date 2026.02.20
+ * @version 0.4.9
  */
 function getActualStatus(array $config = null): array
 {
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.php';
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getLineTime.php';
 	require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/parseXmlTags.php';
-	
-	if($config === null)	{
+
+	if ($config === null) {
 		$status = [
 			'link' => $_SESSION['status']['link'],
 			'logic' => $_SESSION['status']['logic'],
@@ -24,27 +24,24 @@ function getActualStatus(array $config = null): array
 	} else {
 		$status = $config;
 	}
-		
-	// }
 
 	// @bookmark Заполнение конфигурации данными
 	$search_limit = isset($status['service']['log_line_count'])
 		? ($status['service']['log_line_count'] > 0 ? $status['service']['log_line_count'] : null)
 		: null;
-	
-	$log_growth_rate = ( (defined("UPDATE_INTERVAL") && UPDATE_INTERVAL > 1000 ) ? UPDATE_INTERVAL : 10000 ) / 3 ;
-	if(!is_null($search_limit)) $search_limit = $search_limit + $log_growth_rate; 
+
+	$log_growth_rate = ((defined("UPDATE_INTERVAL") && UPDATE_INTERVAL > 1000) ? UPDATE_INTERVAL : 10000) / 3;
+	if (!is_null($search_limit)) $search_limit = $search_limit + $log_growth_rate;
 
 	$or_conditions = ["SIGTERM", "Tobias Blomberg"];
 	$search_result = getLogTailFiltered(1, null, $or_conditions, $search_limit);
-		
+
 	if ($search_result === false) {
-		
+
 		$status['service']['name'] = "SRV STATUS UNKNOWN";
 		return $status;
-
 	} else {
-		
+
 		$action_line = $search_result[0];
 		if (empty($action_line)) {
 			error_log("getActualStatus: Cant find svxlink start/stop actions in empty line $action_line");
@@ -55,12 +52,12 @@ function getActualStatus(array $config = null): array
 	unset($or_conditions);
 
 	$action_line_timestamp = getLineTime($action_line);
-	if ($action_line_timestamp === false || $action_line_timestamp === 0 ) {
+	if ($action_line_timestamp === false || $action_line_timestamp === 0) {
 		error_log("getActualStatus: Cant parse timestamp from $service_action_line");
 		$status['service']['name'] = "LOG TIMESTAMP ERROR";
 		return $status;
 	}
-	
+
 	if (strpos($action_line, 'Tobias Blomberg', 0) !== false) {
 		$status['service']['is_active'] = true;
 		$status['service']['start'] = $action_line_timestamp;
@@ -71,12 +68,10 @@ function getActualStatus(array $config = null): array
 	unset($or_conditions, $action_line_timestamp);
 
 	// Service up, calculate log size
-
-	
 	$max_lines = is_null($search_limit) ? 0 : $search_limit;
 	$log_size = countLogLines($action_line, $max_lines);
 	if ($log_size === false) {
-		
+
 		error_log("getActualStatus: Zero size log for pattetn $action_line last $max_lines");
 		$status['service']['name'] = "ZERO SERVICE SIZE";
 		return $status;
@@ -87,16 +82,16 @@ function getActualStatus(array $config = null): array
 			$status['service']['log_line_count'] = $log_size;
 		}
 		unset($session_log_size, $max_lines);
-
 	}
-	
-
 
 	if ($status['service']['is_active'] === false) {
 		return $status;
 	}
 
 	$needMuteLogic = false;
+
+	// ========== СБОР ИСТОРИИ МОДУЛЕЙ ==========
+	$modules_history = [];
 
 	foreach ($status['logic'] as $logicName => &$logic) {
 		if (!isset($logic['type'])) {
@@ -116,10 +111,10 @@ function getActualStatus(array $config = null): array
 		} else {
 			$or_conditions[] = "Event handler script successfully loaded";
 			$or_conditions[] = "ctivating module";
-		}		
+		}
 		$search_result = getLogTailFiltered(1, $required_condition, $or_conditions, $log_size + 50);
-		
-		if($search_result !== false){
+
+		if ($search_result !== false) {
 			$serviceCommand = $search_result[0];
 		} else {
 			error_log("getActualStatus: Cant found state for $logicName");
@@ -152,8 +147,8 @@ function getActualStatus(array $config = null): array
 			$or_conditions[] = "Connected nodes:";
 			$search_result = getLogTailFiltered(1, $required_condition, $or_conditions, $log_size);
 			unset($or_conditions);
-			
-			if ($search_result !== false) {			
+
+			if ($search_result !== false) {
 				$connected_nodes = $search_result[0];
 				$nodes_connecting_time = getLineTime($connected_nodes);
 
@@ -176,7 +171,7 @@ function getActualStatus(array $config = null): array
 					}
 				}
 			}
-			
+
 
 			// @todo Разговорные группы Временный монитор            
 			$or_conditions[] = "emporary monitor";
@@ -244,7 +239,6 @@ function getActualStatus(array $config = null): array
 						$logic['rx']['start'] = getLineTime($dev_last_action[0]);
 						$logic['caller_callsign'] = $m[3];
 						$logic['caller_tg'] = $m[2];
-
 					} else {
 						$logic['rx']['start'] = 0;
 						$logic['caller_callsign'] = '';
@@ -255,9 +249,71 @@ function getActualStatus(array $config = null): array
 				}
 				unset($or_conditions);
 			}
-
 		} else {
-			if (isset($logic['module']) || is_array($logic['module'])) {
+			// Modules status history
+			if (isset($logic['module']) && is_array($logic['module'])) {
+				$or_conditions = ["Activating module", "Deactivating module"];
+				$module_changes = getLogTailFiltered(20, $logicName, $or_conditions, $log_size);
+
+				if ($module_changes !== false && !empty($module_changes)) {
+					$active_modules_tracker = [];
+
+					foreach ($module_changes as $line) {
+						$time = getLineTime($line);
+						if (!$time) continue;
+
+						if (preg_match('/:\s*' . $logicName . ':\s*(Deactivating|Activating) module (\w+)\.\.\./', $line, $m)) {
+							$action = $m[1];
+							$module = $m[2];
+							$key = $logicName . '|' . $module;
+
+							if ($action === 'Activating') {
+								if (isset($active_modules_tracker[$key])) {
+									$modules_history[] = [
+										'start' => $active_modules_tracker[$key]['start'],
+										'end' => $time,
+										'module' => $module,
+										'logic' => $logicName
+									];
+								}
+								$active_modules_tracker[$key] = [
+									'start' => $time,
+									'module' => $module,
+									'logic' => $logicName
+								];
+							} else {
+								if (isset($active_modules_tracker[$key])) {
+									$modules_history[] = [
+										'start' => $active_modules_tracker[$key]['start'],
+										'end' => $time,
+										'module' => $module,
+										'logic' => $logicName
+									];
+									unset($active_modules_tracker[$key]);
+								} else {
+									$modules_history[] = [
+										'start' => 0,
+										'end' => $time,
+										'module' => $module,
+										'logic' => $logicName
+									];
+								}
+							}
+						}
+					}
+
+					foreach ($active_modules_tracker as $key => $active) {
+						$modules_history[] = [
+							'start' => $active['start'],
+							'end' => 0,
+							'module' => $active['module'],
+							'logic' => $active['logic']
+						];
+					}
+				}
+			}
+			// Current active module
+			if (isset($logic['module']) && is_array($logic['module'])) {
 				if (strpos($serviceCommand, 'module') === false) {
 					continue;
 				} else {
@@ -269,14 +325,15 @@ function getActualStatus(array $config = null): array
 							$logic['is_connected'] = true;
 							$module['is_active'] = true;
 							$module['start'] = $serviceCommandTimestamp;
-							
+
 							$needMuteLogic = $module['mute_logic'];
+							
 							// @bookmark Для модуля EchoLink
 							if ($moduleName === "EchoLink") {
 								$logELcount = countLogLines("Activating module EchoLink", $log_size);
-								if($logELcount !== false) {
+								if ($logELcount !== false) {
 									$logEL = getLogTail($logELcount);
-									if($logEL !== false) {
+									if ($logEL !== false) {
 										if (!isset($module['connected_nodes']) || !is_array($module['connected_nodes'])) {
 											$module['connected_nodes'] = [];
 										}
@@ -349,7 +406,7 @@ function getActualStatus(array $config = null): array
 										}
 										continue;
 									}
-								} 
+								}
 							}
 
 							// @bookmark Для модуля Frn
@@ -385,7 +442,6 @@ function getActualStatus(array $config = null): array
 										}
 									}
 								}
-								
 							}
 						} else {
 							$module['is_active'] = false;
@@ -396,9 +452,9 @@ function getActualStatus(array $config = null): array
 					}
 				}
 			}
-			
+
 			// @bookmark Состояние передатчика и приемника
-			
+
 			if (isset($logic['rx']) && !empty($logic['rx']['name'])) {
 				$required_condition = $logic['rx']['name'];
 				$or_conditions = ["The squelch is"];
@@ -425,7 +481,6 @@ function getActualStatus(array $config = null): array
 					}
 				}
 			}
-			
 		}
 	}
 
@@ -491,6 +546,16 @@ function getActualStatus(array $config = null): array
 			if ($logic['type'] === "Reflector") $logic['is_active'] = false;
 		}
 	}
+
+
+	if (count($modules_history) > 10) {
+		usort($modules_history, function ($a, $b) {
+			return $a['start'] <=> $b['start'];
+		});
+		// Last 10
+		$modules_history = array_slice($modules_history, -10);
+	}
+	$status['modules_history'] = $modules_history;
 
 	// @bookmark APRS
 	if (isset($status['service']['aprs_server'])) {

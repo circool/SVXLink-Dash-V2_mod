@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Connection details block rendering
  * @filesource /include/connection_details.php
@@ -20,7 +21,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 		'/include/fn/getLineTime.php',
 		'/include/fn/parseXmlTags.php'
 	];
-	
+
 	foreach ($requiredFiles as $file) {
 		$fullPath = $docRoot . $file;
 		if (file_exists($fullPath)) {
@@ -32,7 +33,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
 		session_name(SESSION_NAME);
 		session_start();
 	}
-	
+
 	echo getConnectionDetailsTable();
 	return;
 }
@@ -144,7 +145,7 @@ function getEchoLinkMsg($nodeName): array
 {
 	$result = [];
 	$msg = [];
-	
+
 	if (isset($_SESSION['status'])) {
 
 		$actualLogSize = $_SESSION['status']['service']['log_line_count'];
@@ -168,14 +169,14 @@ function getEchoLinkMsg($nodeName): array
 
 		$search_condition = "message received from " . $nodeName . ' ';
 		$logPosition = countLogLines($search_condition, $actualLogSize);
-		
+
 		if ($logPosition !== false) {
 			$logContent = getLogTail($logPosition);
 			if ($logContent !== false) {
-				
+
 				$nodes = [];
 				$message_start_time = getLineTime($logContent[0]);
-							
+
 				foreach ($logContent as $line) {
 					$time_diff = getLineTime($line) - $message_start_time;
 
@@ -229,13 +230,13 @@ function getConnectionDetailsTable(): string
 	if (!empty($data)) {
 		$html = '';
 		foreach ($data as $logic) {
-			
+
 			$html .= '<table style="word-wrap: break-word; white-space:normal;">';
 			$html .= '<thead>';
 			$html .= '<tr>';
 			$html .= '<th><a class="tooltip" href="#">' . getTranslation('Logic') . '<span><b>' . getTranslation('Source') . '</b></span></a></th>';
 			$html .= '<th><a class="tooltip" href="#">' . getTranslation('Destination') . '<span><b>' . getTranslation('Destination of transmission') . '</b></span></a></th>';
-			$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration') . '</b></span></a></th>';
+			$html .= '<th width="150px"><a class="tooltip" href="#">' . getTranslation('Duration') . '<span><b>' . getTranslation('Duration in Seconds') . '</b></span></a></th>';
 			$html .= '</tr>';
 			$html .= '</thead>';
 			$html .= '<tbody>';
@@ -306,7 +307,6 @@ function getConnectionDetailsTable(): string
 					$html .= '</div>';
 				}
 			}
-			// $html .= '<br>';
 		}
 	} else {
 		$html = '<table style="word-wrap: break-word; white-space:normal;">';
@@ -392,7 +392,7 @@ function getConnectionDetailsTable(): string
 }
 ?>
 <div id="connection_details">
-	<div id="refl_header" class="larger" style="vertical-align: bottom; font-weight:bold;text-align:left;margin-top:12px;">
+	<div id="refl_header" class="larger block-header" style="margin-top:12px;">
 		<?= getTranslation('Connection Details') ?>
 	</div>
 	<div id="connection_details_content">

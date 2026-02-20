@@ -2,7 +2,7 @@
 
 /**
  * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
- * @version 0.1.3.release
+ * @version 0.4.6
  * @filesource /include/fn/getLineTime.php
  */
 function getLineTime(string $line): int
@@ -17,7 +17,8 @@ function getLineTime(string $line): int
 			$timeZone = 'UTC';
 		}	
 	}
-	
+
+	date_default_timezone_set($timeZone);
 	
 	$pos = strpos($line, ': ');
 
