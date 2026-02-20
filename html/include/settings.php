@@ -32,11 +32,7 @@ define("SVXCONFIG", 'svxlink.conf');
 
 // Parts
 define('SHOW_AUDIO_MONITOR', true);
-
 define('SHOW_MACROS', true);
-
-
-
 define('SHOW_CON_DETAILS', true);
 define('SHOW_RADIO_ACTIVITY', true);
 
@@ -67,9 +63,13 @@ define("UPDATE_INTERVAL", 3000);
 // Cashe
 define("USE_CACHE", true);
 if (USE_CACHE) {
-	// Время жизни кеша
+	// Cashe TTL
 	define("LOG_CACHE_TTL_MS", 1000);
 }
+
+// Multilanguage support
+define("LANGUAGE_SUPPORT", false);
+
 
 // @deprecated since v1.0
 define('SHOW_AUTH', false);

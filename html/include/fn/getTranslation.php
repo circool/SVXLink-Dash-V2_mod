@@ -9,12 +9,18 @@
  */
 function getTranslation(string $key, string $default = '', bool $escape_html = true): string
 {
+	if(defined("LANGUAGE_SUPPORT") && LANGUAGE_SUPPORT===false) return $key;
+	
 	if (trim($key) === '') {
 		$result = $default ?: $key;
 		return $escape_html ? htmlspecialchars($result, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') : $result;
 	}
 
 	$lang = $_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? 'en';
+	// Catch only the first language if a list is sent
+	if (strpos($lang, ',')) {
+		$lang = strstr($lang, ',', true);
+	}
 
 	$langFile = $_SERVER["DOCUMENT_ROOT"] . "/include/languages/{$lang}.php";
 

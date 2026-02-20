@@ -1,5 +1,12 @@
 <?php
-// return [];
+/**
+ * Russian translation dict
+ * @filesource /include/language/ru.php
+ * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
+ * @date 2026.02.20
+ * @version 0.4.7
+ */
+
 return [
 	'About' => 'О системе',
 	'Actions' => 'событий',
