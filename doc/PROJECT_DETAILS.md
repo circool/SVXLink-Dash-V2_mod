@@ -47,7 +47,7 @@ Settings are located in the `/include/settings.php` file.
 Translation settings are located in corresponding files in the `/include/languages` directory.
 Color scheme settings:
   - Main (base) - `/css/css.php`
-  - Additional (priority) - `/css/menu.css`
+  - Additional (priority) - `/css/custom.css`
   - Update server button styling - `/css/websocket_control.css`
 
 #### 3.1.1. User Settings
@@ -143,6 +143,7 @@ Configuration and service state data is stored in the session (session with a fi
   - `service`: array (service information)
   - `multiple_device`: array[deviceName] (multiple devices)
   - `callsign`: string (global callsign)
+	- `modules_history` : array (module activity history)
 
 #### link[linkName] Structure
 
@@ -230,7 +231,16 @@ Configuration and service state data is stored in the session (session with a fi
 
 #### multiple_device[deviceName] Structure
 
-  - `device_name` : string (comma-separated list of transmitters)
+- `device_name` : string (comma-separated list of transmitters)
+
+#### modules_history Structure
+
+- `start` : int (start time)
+- `end` : int (stop time)
+- `module` : string (module name)
+- `logic` : string (logic name)
+	
+
 
 ## 6. File Structure
 
@@ -286,7 +296,7 @@ Configuration and service state data is stored in the session (session with a fi
 ├── css/                                 # Styles
 │   ├── css-mini.php                     # Styles
 │   ├── css.php                          # Main style set
-│   ├── menu.css                         # Additions to main set
+│   ├── custom.css                         # Additions to main set
 │   ├── websocket_control.css            # Styles for WS control button
 │   └── font-awesome.min.css             # Awesome Fonts
 ├── fonts/                               # Fonts

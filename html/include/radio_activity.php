@@ -3,8 +3,8 @@
 /**
  * @filesource /include/radio_activity.php
  * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
- * @date 2026.02.14
- * @version 0.4.7
+ * @date 2026.02.19
+ * @version 1.0
  */
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
@@ -32,12 +32,12 @@ function renderRadioActivityTable()
 		$row_rxDevice = htmlspecialchars($rxDevice);
 		$txDevice = $logic['tx']['name'] ?? '';
 		$row_txDevice = htmlspecialchars($txDevice);
-		$callsign = $logic['callsign'] ?? '';
-		
+		$callsign = ''; 
+
 		if (empty($rxDevice) && empty($txDevice)) {
 			if ($logic['type'] !== 'Reflector') continue;
 		}
-		
+
 		$rxDeviceStart = $logic['rx']['start'];
 		$txDeviceStart = $logic['tx']['start'];
 		if ($rxDeviceStart > 0) {
@@ -68,7 +68,7 @@ function renderRadioActivityTable()
 			$rxDeviceAction = getTranslation('RECEIVE');
 			$txDeviceAction = getTranslation('TRANSMIT');
 			$destination = '';
-			
+
 			// Module
 			if (isset($logic['module']) && is_array($logic['module'])) {
 				foreach ($logic['module'] as $moduleName => $module) {
@@ -102,14 +102,13 @@ function renderRadioActivityTable()
 			// Large font
 			$rowStyle = ' style = "font-size:1.3em; text-align: center;" ';
 			$rowClass = '';
-
 		} else {
 			// Reflector
 			$row_rxDevice = $logic['name'];
 			$row_txDevice = $logic['name'];
 			$rxDeviceAction = getTranslation('INCOMING');
 			$txDeviceAction = getTranslation('OUTCOMING');
-			
+
 			$rowStyle = '';
 			$rowClass = $rxDeviceStart > 0 ? '' : 'hidden';
 			if (!empty($logic['caller_tg'])) {
@@ -120,14 +119,14 @@ function renderRadioActivityTable()
 
 			if (!empty($logic['caller_callsign'])) {
 				$callsign = $logic['caller_callsign'];
-				if($logic['caller_callsign'] === $logic['callsign']){
+				if ($logic['caller_callsign'] === $logic['callsign']) {
 					[$rxDeviceStart, $txDeviceStart] = [$txDeviceStart, $rxDeviceStart];
 					[$rxDuration, $txDuration] = [$txDuration, $rxDuration];
 				}
 			}
 		}
 
-		if($rxDeviceStart > 0){
+		if ($rxDeviceStart > 0) {
 			$rxCellClass = ' receiving-mode-cell';
 		} else {
 			$rxCellClass = ' transparent';
@@ -138,7 +137,7 @@ function renderRadioActivityTable()
 		} else {
 			$txCellClass = ' transparent';
 		}
-		
+
 		$rxDeviceState = $rxDeviceAction . ': <span class="val">' . $rxDuration . '</span>';
 		$txDeviceState = $txDeviceAction . ': <span class="val">' . $txDuration . '</span>';
 
@@ -177,17 +176,17 @@ function renderRadioActivityTable()
 }
 ?>
 <div id="radio_activity">
-	<div class="larger" style="vertical-align: bottom; font-weight:bold;text-align:left;margin-top:-12px;"><?php echo getTranslation('Radio Status') ?></div>
+	<div class="larger block-header" style="margin-top:-12px;"><?php echo getTranslation('Radio Status') ?></div>
 
 	<div class="divTable">
 		<div class="divTableBody">
 			<div class="divTableRow">
 				<div style="width: 200px" class="divTableHeadCell"><?php echo getTranslation('Logic') ?></div>
-				<div style="width: 200px" class="divTableHeadCell"><?php echo getTranslation('Device') ?> RX</div>
+				<div style="width: 150px" class="divTableHeadCell"><?php echo getTranslation('Device') ?> RX</div>
 				<div style="width: 200px" class="divTableHeadCell"><?php echo getTranslation('Status') ?> RX</div>
-				<div style="width: 200px" class="divTableHeadCell"><?php echo getTranslation('Device') ?> TX </div>
+				<div style="width: 150px" class="divTableHeadCell"><?php echo getTranslation('Device') ?> TX </div>
 				<div style="width: 200px" class="divTableHeadCell"><?php echo getTranslation('Status') ?> TX</div>
-				<div style="width: 200px" class="divTableHeadCell"><?php echo getTranslation('Callsign') ?></div>
+				<div class="divTableHeadCell"><?php echo getTranslation('Callsign') ?></div>
 				<div class="divTableHeadCell"><?php echo getTranslation('Destination') ?></div>
 			</div>
 			<?php echo renderRadioActivityTable(); ?>
