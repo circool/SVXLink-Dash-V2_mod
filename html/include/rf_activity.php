@@ -27,7 +27,6 @@
 			}
 		}
 
-		// ОБРАБОТКА POST-ЗАПРОСОВ ДЛЯ ФИЛЬТРА
 		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$data = json_decode(file_get_contents('php://input'), true);
 			if (isset($data['filter_activity'])) {
@@ -51,7 +50,6 @@ require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getLineTime.php';
 
 function getRfActivityActions(): array
 {
-	// ФИЛЬТР ДЛИТЕЛЬНОСТИ
 	$min_duration = 1; // default
 	if (isset($_SESSION['rf_filter']) && $_SESSION['rf_filter'] === 'OFF') {
 		$min_duration = 0;
@@ -194,7 +192,6 @@ function getRfActivityActions(): array
 		$open_time = getLineTime($pair['open_line']);
 		$duration = (int)$pair['duration'];
 
-		// ПРИМЕНЕНИЕ ФИЛЬТРА ДЛИТЕЛЬНОСТИ
 		if ($duration >= $min_duration) {
 			$activity_rows[] = [
 				'date' => date('d M Y', $open_time),
