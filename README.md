@@ -195,7 +195,6 @@ If you are looking for:
 Deployment instructions are available in `doc/INSTALL.md`
 
 
-
 [^note1]: Radio status, active module, reflector, connected nodes.
 [^note2]: The `DTMF_CTRL_PTY` parameter must be configured for control.
 [^note3]: Configured via parameter in `settings.php` file.
