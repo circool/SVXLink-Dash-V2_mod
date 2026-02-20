@@ -7,29 +7,42 @@
  * @version 0.4.7
  */
 
-// AJAX
-if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
-	header('Content-Type: text/html; charset=utf-8');
-	$docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/var/www/html';
-	require_once $docRoot . '/include/session_header.php';
+	// AJAX
+	if (isset($_GET['ajax']) && $_GET['ajax'] == 1) {
+		header('Content-Type: text/html; charset=utf-8');
+		$docRoot = $_SERVER['DOCUMENT_ROOT'] ?? '/var/www/html';
+		require_once $docRoot . '/include/session_header.php';
 
-	$requiredFiles = [
-		'/include/fn/getTranslation.php',
-		'/include/fn/logTailer.php',
-		'/include/fn/formatDuration.php',
-		'/include/fn/getLineTime.php'
-	];
+		$requiredFiles = [
+			'/include/fn/getTranslation.php',
+			'/include/fn/logTailer.php',
+			'/include/fn/formatDuration.php',
+			'/include/fn/getLineTime.php'
+		];
 
-	foreach ($requiredFiles as $file) {
-		$fullPath = $docRoot . $file;
-		if (file_exists($fullPath)) {
-			require_once $fullPath;
+		foreach ($requiredFiles as $file) {
+			$fullPath = $docRoot . $file;
+			if (file_exists($fullPath)) {
+				require_once $fullPath;
+			}
 		}
-	}
 
-	echo getRfActivityTable();
-	return;
-}
+		// ОБРАБОТКА POST-ЗАПРОСОВ ДЛЯ ФИЛЬТРА
+		if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+			$data = json_decode(file_get_contents('php://input'), true);
+			if (isset($data['filter_activity'])) {
+				$_SESSION['rf_filter'] = $data['filter_activity'];
+			}
+			if (isset($data['filter_activity_max'])) {
+				$_SESSION['rf_filter_max'] = floatval($data['filter_activity_max']);
+			}
+			echo json_encode(['status' => 'ok']);
+			exit;
+		}
+
+		echo getRfActivityTable();
+		return;
+	}
 
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getTranslation.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/logTailer.php';
@@ -38,6 +51,14 @@ require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getLineTime.php';
 
 function getRfActivityActions(): array
 {
+	// ФИЛЬТР ДЛИТЕЛЬНОСТИ
+	$min_duration = 1; // default
+	if (isset($_SESSION['rf_filter']) && $_SESSION['rf_filter'] === 'OFF') {
+		$min_duration = 0;
+	} elseif (isset($_SESSION['rf_filter_max'])) {
+		$min_duration = $_SESSION['rf_filter_max'];
+	}
+
 	$logLinesCount = $_SESSION['service']['log_line_count'] ?? 10000;
 
 	$squelch_lines = getLogTailFiltered(RF_ACTIVITY_LIMIT * 20, null, ["The squelch is"], $logLinesCount);
@@ -171,12 +192,17 @@ function getRfActivityActions(): array
 		}
 
 		$open_time = getLineTime($pair['open_line']);
-		$activity_rows[] = [
-			'date' => date('d M Y', $open_time),
-			'time' => date('H:i:s', $open_time),
-			'destination' => $destination,
-			'duration' => formatDuration((int)$pair['duration'])
-		];
+		$duration = (int)$pair['duration'];
+
+		// ПРИМЕНЕНИЕ ФИЛЬТРА ДЛИТЕЛЬНОСТИ
+		if ($duration >= $min_duration) {
+			$activity_rows[] = [
+				'date' => date('d M Y', $open_time),
+				'time' => date('H:i:s', $open_time),
+				'destination' => $destination,
+				'duration' => formatDuration($duration)
+			];
+		}
 	}
 
 	usort($activity_rows, function ($a, $b) {
@@ -309,9 +335,56 @@ function getRfActivityTable(): string
 }
 
 $rfResultLimit = RF_ACTIVITY_LIMIT . ' ' . getTranslation('Actions');
+$current_filter = $_SESSION['rf_filter'] ?? 'ON';
+$current_max = $_SESSION['rf_filter_max'] ?? '1';
 ?>
 <div id="rf_activity">
-	<div class="larger" style="vertical-align: bottom; font-weight:bold;text-align:left;margin-top:12px;">
+	<div style="float: right; vertical-align: bottom; padding-top: 0px;" id="rfAc">
+		<div class="grid-container" style="display: inline-grid; grid-template-columns: auto 40px; padding: 1px; grid-column-gap: 5px;">
+			<div class="grid-item filter-activity" style="padding: 10px 0 0 20px;" title="<?= getTranslation('Hide Kerchunks') ?>"><?= getTranslation('Hide Kerchunks') ?>:</div>
+			<div class="grid-item">
+				<div style="padding-top:6px;">
+					<input id="toggle-rf-filter-activity" class="toggle toggle-round-flat" type="checkbox" name="display-lastcaller"
+						value="ON" <?php echo $current_filter === 'OFF' ? '' : 'checked="checked"'; ?>
+						onchange="
+                            fetch('/include/rf_activity.php?ajax=1', {
+                                method: 'POST',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({
+                                    filter_activity: this.checked ? 'ON' : 'OFF',
+                                    filter_activity_max: document.querySelector('.filter-activity-max').value
+                                })
+                            }).then(() => {
+                                if (typeof updateBlock === 'function') {
+                                    updateBlock({name: 'rf_activity', container: 'rf_activity_content'});
+                                }
+                            });
+                        ">
+					<label for="toggle-rf-filter-activity"></label>
+				</div>
+			</div>
+		</div>
+		<div class="filter-activity-max-wrap">
+			<input onchange="
+                fetch('/include/rf_activity.php?ajax=1', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        filter_activity: document.getElementById('toggle-rf-filter-activity').checked ? 'ON' : 'OFF',
+                        filter_activity_max: this.value
+                    })
+                }).then(() => {
+                    if (typeof updateBlock === 'function') {
+                        updateBlock({name: 'rf_activity', container: 'rf_activity_content'});
+                    }
+                });
+            " class="filter-activity-max"
+				style="width:40px;" type="number" step="0.5" min="0.5" max="5" name="filter-activity-max"
+				value="<?php echo $current_max; ?>"> s
+		</div>
+	</div>
+
+	<div class="larger block-header" style="margin-top:12px;">
 		<?php echo getTranslation('Last') . ' ' . RF_ACTIVITY_LIMIT . ' ' . getTranslation('Actions') . " " . getTranslation('RF Activity') ?>
 	</div>
 	<div id="rf_activity_content">
