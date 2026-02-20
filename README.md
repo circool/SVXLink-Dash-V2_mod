@@ -43,52 +43,129 @@ The panel is designed for SVXLink owners/administrators, reflecting the server's
 
 ### Modern Interface
 
-- Customizable multi-language interface in the WPSD style
-![Menu](./readme_images/top_menu_en.jpg)
-![Menu](./readme_images/top_menu_rus.jpg)
+- Interface in the WPSD style
 
-### Extended Monitoring
+![Main screen](./readme_images/main_screen_en.jpg)
 
-- Informative status panel with connection information
+- Disablable  [^note3] multilingual interface with the ability to add custom languages
 
-- Available and active modules, connected nodes/conferences/servers, etc. (for EchoLink/Frn modules)
+### Dual-mode updates
 
-![Modules](./readme_images/modules.jpg)
+- Available realtime and periodic update mode
 
-![EchoLink](./readme_images/el_panel.jpg)
-![Frn](./readme_images/frn_panel.jpg)
+![Menu](./readme_images/top_menu_en_realtime.jpg)
+![Menu](./readme_images/top_menu_en_ajax.jpg)
 
-- Modules and Links management
+### Service, Logic, Reflectorsm, Modules and Link states
 
-![Module deactivating](./readme_images/deactivating_module.jpg)
+#### Service
+![Service](./readme_images/service_en.jpg)
+
+#### Logic and module state
+
+- Active but not connected
+
+![Modules](./readme_images/module_disconnected_en.jpg)
+
+- Active and connected
+
+![Modules](./readme_images/module_connected_en.jpg)
+
+#### Mouse swhitchable modules and links
+
+![Modules](./readme_images/switchable_module_state_en.jpg)
+
+#### Reflector's state and information 
+
+![Reflectors](./readme_images/reflector_en.jpg)
 
 
-- Reflectors, talk groups, links, connected nodes
+#### Extended pop-up link's information
 
-![Reflector Talk Groups](./readme_images/reflectors_panel_rus.jpg)
+![Link](./readme_images/switchable_links_en.jpg)
+
+
+#### Different colours for selected ans temporally monitored talkgroup
+
 ![Talk Groups](./readme_images/tg_panel.jpg)
-![Link Control](./readme_images/link.jpg)
 
-- Display of APRS and directory server statuses.
+### Additional information
 
-![APRS](./readme_images/aprs_directory.jpg)
+#### APRS connection status
 
-- Convenient DTMF keypad controllable by mouse or direct keyboard input for managing the server state, similar to sending control signals over the air
+![APRS](./readme_images/aprs_en.jpg)
+
+#### Echolink directory and proxy status
+
+![EL Directory](./readme_images/directory_en.jpg)
+
+#### Hideable macros panel
+
+Different button colors for different modules
+
+![Macros](./readme_images/macros_en.jpg)
+
+### Receiver and Transmitter status
+
+#### Main receiver & transmitter row
+
+![Radio status](./readme_images/radio_status_single_en.jpg)
+![Radio status](./readme_images/el_callsign_en.jpg)
+![Radio status](./readme_images/radio_transmit_en.jpg)
+
+#### Additional reflector's rows
+
+![Radio status](./readme_images/radio_status_en.jpg)
+
+#### Error detecting
+
+Overload and timeout error indication for devices (including composite devices)
+
+![Peak](./readme_images/peak_meter_en.jpg)
+![Peak](./readme_images/tx_error_en.jpg)
+![Peak](./readme_images/tx_timeout_en.jpg)
+
+### Convenient DTMF keypad controllable by mouse or direct keyboard input for managing the server state, similar to sending control signals over the air
+
+#### Single logic compact view
+
+![DTMF Keypad](./readme_images/keypad_single_en.jpg)
+
+#### Multiple logic supporting
 
 ![DTMF Keypad](./readme_images/dtmf_keypad.jpg)
 
-- Audio monitoring of the transmitted signal
 
-- Overload indication for the PEAK METER
+### Audio monitoring of the transmitted signal
 
-![Peak Meter](./readme_images/peak_warning.jpg)
+Listen activity with web-browser
 
+![Monitor off](./readme_images/monitor_off_en.jpg)
+![Monitor on](./readme_images/monitor_on_en.jpg)
 
-- Extended information from the active module
-![EchoLink Conference Info](./readme_images/el_conf_details.jpg)
-![Frn Nodes](./readme_images/frn_details.jpg)
+### Hideable information about current state
 
-- Historical data (last n on-air events, incoming calls from the network)
+#### EchoLink chat, message and malformed support
+
+![EchoLink details](./readme_images/el_msg_en.jpg)
+![EchoLink details](./readme_images/el_info_en.jpg)
+![EchoLink details](./readme_images/el_repeater_details.jpg)
+
+#### Frn server connected nodes
+
+![Frn details](./readme_images/frn_details_en.jpg)
+
+### Historical data with ajustable kerchungs limits
+
+![kerchungs](./readme_images/kerchung_en.jpg)
+
+#### Ajustable [^note3] network activity
+
+![network](./readme_images/network_activity_en.jpg)
+
+#### Ajustable [^note3] local activity (RF incoming)
+
+![rf](./readme_images/rf_activity_en.jpg)
 
 
 ## Technical Notes
@@ -121,3 +198,4 @@ Deployment instructions are available in `doc/INSTALL.md`
 
 [^note1]: Radio status, active module, reflector, connected nodes.
 [^note2]: The `DTMF_CTRL_PTY` parameter must be configured for control.
+[^note3]: Configured via parameter in `settings.php` file.
