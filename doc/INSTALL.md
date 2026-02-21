@@ -1,29 +1,91 @@
 # SVXLink Dashboard Installation Guide
 
+**IMPORTANT NOTE**
+Keep in mind that no special measures have been taken to ensure the secure use of the dashboard.
+Consider this if you provide access to the dashboard from the internet.
+
 ## Mandatory Requirements
 
-1. Set the system timezone in `/etc/timezone`.
-2. Ensure that SVXlink has the `TIMESTAMP_FORMAT` parameter with milliseconds in the `[GLOBAL]` section. For example:  
-   `TIMESTAMP_FORMAT = "%d %b %Y %H:%M:%S.%f"` (`.%f` - milliseconds).
+1. **Timezone**: Set the system timezone
+
+```bash
+sudo timedatectl set-timezone Europe/Moscow
+# or manually:
+echo "Europe/Moscow" | sudo tee /etc/timezone
+```
+
+2. **SVXLink Configuration**:
+
+	2.1. Make sure that the `TIMESTAMP_FORMAT` parameter is set in the `[GLOBAL]` section of the SVXLink configuration, use the `%d %b %Y %H:%M:%S.%f` format for guaranteed operation.
+
+```bash
+sudo nano /etc/svxlink/svxlink.conf
+```
+Add or uncomment:
+
+```
+[GLOBAL]
+TIMESTAMP_FORMAT = "%d %b %Y %H:%M:%S.%f"
+```
+
+2.2. Make sure that the `LOCATION_INFO` parameter is set in the `[GLOBAL]` section of the SVXLink configuration and the `CALLSIGN` parameter is set in the specified section.
+		
+```
+[GLOBAL]
+...
+LOCATION_INFO=LocationInfo
+...
+[LocationInfo]
+CALLSIGN=...
+
+```
+
+3. **Install web server (if not installed)**:
+```bash
+sudo apt update
+sudo apt install apache2 -y
+```
+
+4. **Install PHP (if not installed)**:
+```bash
+sudo apt install php php-json php-mbstring -y
+```
+
+5. **Install Node.js (if not installed)**:
+```bash
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt install nodejs -y
+```
 
 ## Optional Settings
 
-3. For DTMF control, ensure that the SVXlink logic has the `DTMF_CTRL_PTY` parameter set to `/dev/shm/dtmf_ctrl` or another path.
+### 1. DTMF Control
 
-4.1. For audio monitoring, configure multiple devices for the logic's `TX` device.
+To enable control via the web interface, make sure that each logic in the `svxlink.conf` configuration has a unique value for the `DTMF_CTRL_PTY` parameter:
 
-```svxlink.conf
-...
-[SimplexLogic]
-#TX = Tx1
-TX=MultiTx
-...
+If multiple logics are used, set different values for each.
+
+In the required logic (e.g., in the `[SimplexLogic]` section), add:
+
+```
+DTMF_CTRL_PTY = /dev/shm/simplex_ctrl
 ```
 
-4.2. Add the device itself (similar to [TX1])
+### 2. Audio Monitoring
+To listen to the airwaves through the browser:
 
-```svxlink.conf
-...
+**2.1.** Configure the logic in the SVXLink config to use a composite device:
+
+Replace the audio device in the required logic:
+
+```
+[SimplexLogic]
+#TX = Tx1
+TX = MultiTx
+```
+
+**2.2.** Add the composite device and the streaming device:
+```
 [TxStream]
 TYPE = Local
 AUDIO_DEV = alsa:plughw:Loopback,0,0
@@ -36,111 +98,139 @@ PREEMPHASIS = 0
 [MultiTx]
 TYPE = Multi
 TRANSMITTERS = Tx1,TxStream
-
 ```
 
+## Dashboard Installation
 
-## Quick Installation
+### Copying Project Files
 
-1. **Upload Files**: Copy all files to your web server.
-2. **Copy and run the installation script** from `doc/install.sh`.
-3. @TODO **Automatic Setup**: Open your browser and navigate to your site.
-4. @TODO **One-Click Setup**: You will be automatically redirected to the setup page.
-5. @TODO **Click "Run Setup"**: The system will create all necessary files.
-6. **Login**: Use default credentials: **svxlink** / **svxlink**.
-7. **Secure**: Change the password after the first login.
+1. **Navigate to the project directory** 
 
-## Default Credentials
-- **Username**: `svxlink`
-- **Password**: `svxlink`
+2. **Copy all contents to the web server root**:
+   
+```bash
+sudo cp -r * /var/www/html/
+```
 
-## Manual Installation (if needed)
+3. **Set access permissions**:
+   
+```bash
+# File owner - (svxlink service)
+sudo chown -R svxlink:svxlink /var/www/html/
+
+# Directory permissions - 755 (rwxr-xr-x)
+sudo find /var/www/html/ -type d -exec chmod 755 {} \;
+
+# File permissions - 644 (rw-r--r--)
+sudo find /var/www/html/ -type f -exec chmod 644 {} \;
+
+# JavaScript and PHP files must be executable for the owner
+sudo chmod 755 /var/www/html/scripts/*.js
+sudo chmod 755 /var/www/html/include/*.php
+```
+
+### First Launch and Authorization Setup
+
+Upon first access to the site, administrator credentials will be created.
+
+You will be redirected to the /install/setup_auth.php page
+
+Click the **"Run Setup"** button
+
+The installer will create the necessary directories and the credentials file
+
+The created credentials will be displayed on the screen
+
+Go to the main page and log in
+
+Change the password through the login menu
+
+#### Manual Installation
+
+If for some reason the automatic installation did not work, perform the installation manually.
 
 ```bash
-# Create the dashboard directory
+# Create the configuration directory
 sudo mkdir -p /etc/svxlink/dashboard
 
-# Set proper ownership (adjust www-data to your web server user if different)
+# Set the directory owner (svxlink user)
 sudo chown svxlink:svxlink /etc/svxlink/dashboard
-
-# Set proper permissions
 sudo chmod 755 /etc/svxlink/dashboard
 
-# Copy sample config
-sudo cp config/sample.auth.ini /etc/svxlink/dashboard/auth.ini
+# Copy the configuration example
+sudo cp /var/www/html/config/sample.auth.ini /etc/svxlink/dashboard/auth.ini
 
-# Set permissions (adjust for your web server user)
-sudo chown www-data:www-data /etc/svxlink/dashboard/auth.ini
+# Set the file owner (svxlink user)
+sudo chown svxlink:svxlink /etc/svxlink/dashboard/auth.ini
 sudo chmod 644 /etc/svxlink/dashboard/auth.ini
 ```
 
-## Support
+### Default Credentials
+- **Login**: `svxlink`
+- **Password**: `svxlink`
 
-If setup fails, check:
+## Audio Monitoring Configuration
 
-- Web server has write permissions.
-- PHP can create directories.
-- No firewall is blocking access.
+### Creating a systemd Service
 
-After setup, remove the install directory for security.
-
-## SVXLink Setup
-
-### Additional Logic
-
-When adding non-standard logic (for example, for a `ReflectorLogicMyName`), remember to create a corresponding TCL file by copying an existing standard one and editing its workspace name.
+Create the service file:
 
 ```bash
-cp ReflectorLogic.tcl ReflectorLogicMyName.tcl
-nano ReflectorLogicMyName.tcl
+sudo nano /etc/systemd/system/svxlink-audio-proxy.service
 ```
 
-```tcl
-###############################################################################
-#
-# ReflectorLogic event handlers
-#
-###############################################################################
+Paste the contents:
 
-#
-# This is the namespace in which all functions below will exist. The name
-# must match the corresponding section "[ReflectorLogic]" in the configuration
-# file. The name may be changed but it must be changed in both places.
-#
-namespace eval ReflectorLogic {
-...
+```ini
+[Unit]
+Description=SVXLink Node.js Server
+After=network.target
 
+[Service]
+StandardOutput=journal
+StandardError=journal
+Restart=always
+RestartSec=5
+ExecReload=/bin/kill -HUP
+TimeoutStopSec=10
+Type=simple
+User=svxlink
+Group=svxlink
+ExecStart=/usr/bin/node /var/www/html/scripts/svxlink-audio-proxy-server.js
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target
 ```
 
-Rename `ReflectorLogic` to `ReflectorLogicMyName` and save the file.
+### Audio Monitoring Service Management
 
-## Beta Testing Notes
+To reduce load, the service automatically shuts down when there is no connection and starts when monitoring is enabled in the dashboard menu.
 
-1. Check if necessary files are present in the site directory:
+For manual service management, use the following commands:
 
 ```bash
-sudo chmod +x files_check.sh
-./files_check.sh
-```
+# Start the server
+sudo systemctl start svxlink-audio-proxy.service
 
-2. Update symlinks for `/include`, `/include/fn/`, and `/scripts` directories:
+# Stop the server
+sudo systemctl stop svxlink-audio-proxy.service
 
-```bash
-cd /var/www/html/include
-sudo chmod +x update_symlink.sh
-sudo ./update_symlink.sh exct
+# Restart the server
+sudo systemctl restart svxlink-audio-proxy.service
 
-cd /var/www/html/include/fn
-sudo chmod +x update_symlink.sh
-sudo ./update_symlink.sh exct
+# Enable service to start on boot
+sudo systemctl enable svxlink-audio-proxy.service
 
-cd /var/www/html/scripts
-sudo chmod +x update_symlink.sh
-sudo ./update_symlink.sh exct
+# Disable service from starting on boot
+sudo systemctl disable svxlink-audio-proxy.service
 
-cd /var/www/html
-sudo chmod +x update_symlink.sh
-sudo ./update_symlink.sh include/exct
+# Check status
+sudo systemctl status svxlink-audio-proxy.service
 
-sudo ./set_rights.sh
+# View logs in real time
+sudo journalctl -u svxlink-audio-proxy.service -f
+
+# Logs from the last hour
+sudo journalctl -u svxlink-audio-proxy.service --since="1 hour ago"
 ```
