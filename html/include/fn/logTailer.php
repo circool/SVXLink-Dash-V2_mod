@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Функции для работы с журналом svxlink
+ * Functions for working with the svxlink log
  * @filesource /include/fn/logTailer.php
  * @version 0.4.0.release
  * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
@@ -13,13 +13,12 @@ if (defined("DEBUG") && DEBUG && function_exists("dlog")) {
 }
 
 
-/** Возвращает последние N строк из лог-файла SVXLink
- * 
- * Использует системную команду tail для максимальной производительности
+/** 
+ * Returns the last N lines from the SVXLink log file
  * @filesource /include/fn/logTailer.php
  * @version 0.4.0
- * @param int $num_lines Количество строк для чтения с конца файла
- * @return array|false Массив строк (без символов конца строк) или false при ошибке
+ * @param int $num_lines Number of lines to read from the end of the file
+ * @return array|false Array of lines (without end-of-line characters) or false on error
  */
 function getLogTail($num_lines)
 {
@@ -30,15 +29,12 @@ function getLogTail($num_lines)
 		return false;
 	}
 
-	// Определение пути к лог-файлу (из глобальных констант, предполагается что они определены)
 	if (!defined('SVXLOGPATH') || !defined('SVXLOGPREFIX')) {
 		error_log("$ver: Unset SVXLOGPATH or SVXLOGPREFIX");
 		return false;
 	}
 
 	$logPath = SVXLOGPATH . SVXLOGPREFIX;
-
-	// Проверка существования файла (быстрая проверка перед вызовом tail)
 	if (!file_exists($logPath) || !is_readable($logPath)) {
 		error_log("$ver: Not found $logPath");
 		return false;
@@ -55,12 +51,9 @@ function getLogTail($num_lines)
 		array_pop($lines);
 	}
 
-	
 	foreach ($lines as $line) {
 		$line = trim($line);
 	}
-	
-
 	
 	if (empty($lines) || (count($lines) === 1 && $lines[0] === '')) {
 		return false;
@@ -69,17 +62,15 @@ function getLogTail($num_lines)
 	return $lines;
 }
 
-/** Возвращает количество строк после последнего вхождения паттерна в лог-файле
- * 
- * Использует fixed-string поиск (grep -F) для максимальной скорости
- * Запрещает wildcards и regex-символы в паттерне
- * @version 0.4.2 - упрощенное структурированное кеширование
- * @param string $pattern Подстрока для поиска (чувствительная к регистру)
- * @param int $analyze_lines Количество анализируемых строк:
- *   - 0 = анализировать весь файл
- *   - N > 0 = анализировать только последние N строк
- * @return int|false Количество строк после паттерна или false если не найден
-*/
+/** 
+ * Returns the number of lines after the last occurrence of the pattern in the log file
+ * @version 0.4.2
+ * @param string $pattern Substring to search for
+ * @param int $analyze_lines Number of lines to analyze:
+ * 	0 = analyze entire file
+ * 	N > 0 = analyze only the last N lines
+ * @return int|false Number of lines after the pattern or false if not found
+ */
 function countLogLines(string $pattern, int $analyze_lines = 0): int|false {
 	
 	$useCache = false;
@@ -124,10 +115,8 @@ function countLogLines(string $pattern, int $analyze_lines = 0): int|false {
 			return $cacheData['result'];
 		}
 	}
-	
-
-	
-		if (!is_string($pattern) || trim($pattern) === '') {
+		
+	if (!is_string($pattern) || trim($pattern) === '') {
 		error_log("countLogLines: Wrong searching pattern");
 		return false;
 	}
@@ -149,14 +138,11 @@ function countLogLines(string $pattern, int $analyze_lines = 0): int|false {
 		return false;
 	}
 
-
-	// Экранируем только кавычки для shell
 	$shell_escaped_pattern = str_replace("'", "'\"'\"'", $pattern);
-
-	$result = false; // Инициализируем результат
+	$result = false; 
 
 	if ($analyze_lines === 0) {
-		// Поиск во всем файле
+
 		$command = sprintf(
 			"grep -a -F -n '%s' %s 2>/dev/null | tail -1 | cut -d: -f1",
 			$shell_escaped_pattern,
@@ -177,7 +163,7 @@ function countLogLines(string $pattern, int $analyze_lines = 0): int|false {
 			}
 		}
 	} else {
-		// Поиск только в последних N строках
+
 		$command = sprintf(
 			"tail -n %d %s 2>/dev/null | grep -a -F -n '%s' 2>/dev/null | tail -1 | cut -d: -f1",
 			$analyze_lines,
@@ -189,13 +175,10 @@ function countLogLines(string $pattern, int $analyze_lines = 0): int|false {
 
 		if ($last_line !== null && trim($last_line) !== '') {
 			$last_line = trim($last_line);
-			$result = $analyze_lines - (int)$last_line;
-
-			
+			$result = $analyze_lines - (int)$last_line;			
 		}
 	}
 
-	// Сохраняем результат в кеш
 	if ($useCache && $cacheKey !== null && $currentTimeMs !== null) {
 		$_SESSION['countLogLines_cache'][$cacheKey] = [
 			'result' => $result,
@@ -204,41 +187,39 @@ function countLogLines(string $pattern, int $analyze_lines = 0): int|false {
 			'analyze_lines' => $analyze_lines,
 			'cached_at' => date('Y-m-d H:i:s')
 		];
-
 	}
 
 	return $result;
 }
 
-/** Возвращает последние N строк из лог-файла SVXLink с фильтрацией по условиям
- * 
- * @note getLogTailFiltered
+/** 
+ * Returns the last N lines from the SVXLink log file with filtering by conditions
  * @version 0.1.13
- * @param int $num_lines Сколько строк вернуть в результате
- * @param string|null $required_condition Опциональное условие И
- * @param array $or_conditions Массив условий для ИЛИ
- * @param int|null $search_limit Сколько строк проверять (глубина разбора)
- * @return array|false При отсутствии результата, неправильных параметрах, ошибке получения журнала.
+ * @param int $num_lines How many lines to return in the result
+ * @param string|null $required_condition Optional AND condition
+ * @param array $or_conditions Array of conditions for OR
+ * @param int|null $search_limit How many lines to check (parsing depth)
+ * @return array|false In case of no result, incorrect parameters, or error getting the log.
  */
 function getLogTailFiltered($num_lines, $required_condition = null, $or_conditions = [], $search_limit = null) : array|false
-{
-	
+{	
+	$ver = 'getLogTailFiltered 0.1.13';
 	if (!is_int($num_lines) || $num_lines <= 0) {
-		error_log("getLogTailFiltered: Wrong quantity in 1 param in getLogTailFiltered - $num_lines");
+		error_log("$ver: Wrong quantity in 1 param in - $num_lines");
 		return false;
 	}
 
 	if (!is_array($or_conditions)) {
-		error_log("getLogTailFiltered: Wrong param - or_conditions");
+		error_log("$ver: Wrong param - or_conditions");
 		return false;
 	}
 
-	// Обработка search_limit
+	// search_limit
 	$actual_search_limit = 100000;
 
 	if ($search_limit !== null) {
 		if (!is_numeric($search_limit)) {
-			error_log("getLogTailFiltered: Wrong param - search_limit");
+			error_log("$ver: Wrong param - search_limit");
 			return false;
 		}
 
@@ -250,16 +231,15 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 			$actual_search_limit = abs($search_limit);
 		}
 	}
-
 	
 	if (!defined('SVXLOGPATH') || !defined('SVXLOGPREFIX')) {
-		error_log("getLogTailFiltered: SVXLOGPATH or SVXLOGPREFIX not set");
+		error_log("$ver: SVXLOGPATH or SVXLOGPREFIX not set");
 		return false;
 	}
 
 	$logPath = SVXLOGPATH . SVXLOGPREFIX;
 	if (!file_exists($logPath) || !is_readable($logPath)) {
-		error_log("getLogTailFiltered: File not found: $logPath");
+		error_log("$ver: File not found: $logPath");
 		return false;
 	}
 
@@ -279,18 +259,15 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 		}
 	}
 
-
 	if (!$has_required && empty($valid_or_conditions)) {
 		$command = sprintf('tail -n %d %s 2>&1', $num_lines, escapeshellarg($logPath));
 		$output = shell_exec($command);
-		if ($output === null || $output === '') {
-			
+		if ($output === null || $output === '') {		
 			return false;
 		}
 
 		$lines = explode("\n", trim($output));
-		$lines = array_map('trim', $lines);
-		
+		$lines = array_map('trim', $lines);		
 		return $lines;
 	}
 
@@ -307,7 +284,6 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 			implode(' -e ', array_map('escapeshellarg', $valid_or_conditions)),
 			$num_lines
 		);
-
 		
 	} elseif ($has_required) {
 
@@ -331,59 +307,17 @@ function getLogTailFiltered($num_lines, $required_condition = null, $or_conditio
 
 	$output = shell_exec($command);
 
-	if ($output === null || $output === '') {
-		
+	if ($output === null || $output === '') {		
 		return false;
 	}
 
 	$lines = explode("\n", trim($output));
 	$lines = array_map('trim', $lines);
 
-	if (empty($lines) || (count($lines) === 1 && $lines[0] === '')) {
-		
+	if (empty($lines) || (count($lines) === 1 && $lines[0] === '')) {		
 		return false;
 	}
 	return $lines;
 }
-
-
-
-/** Возвращает номер последней строки в лог-файле SvxLink
- * Использует awk для максимальной производительности
- * 
- * @param string $logPath Полный путь к лог-файлу
- * @return int Номер последней строки (0 при ошибке)
- * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
- * @since 0.2.1
- */
-
-function getLogLastLineNumber(): int {
-	$logPath = SVXLOGPATH . SVXLOGPREFIX;
-		if (!file_exists($logPath)) {
-        error_log("SvxLink log file not found: " . $logPath);
-        return 0;
-    }
-    
-    if (!is_readable($logPath)) {
-        error_log("SvxLink log file is not readable: " . $logPath);
-        return 0;
-    }
-    
-    exec("awk 'END {print NR}' " . escapeshellarg($logPath) . " 2>/dev/null", $output, $returnCode);
-    
-    if ($returnCode !== 0 || empty($output)) {
-        
-        return 0;
-    }
-    
-    $lineNumber = trim($output[0]);
-    
-    if (!is_numeric($lineNumber)) {
-        return 0;
-    }
-    
-    return (int)$lineNumber;
-}
-
 
 ?>

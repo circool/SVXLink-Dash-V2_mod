@@ -4,10 +4,15 @@
  * Session updater & block proxy
  * @filesource /include/ajax_update.js
  * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
- * @date 2026.02.11
- * @version 0.4.6
+ * @date 2026.02.21
+ * @version 0.4.7
  */
 header('Content-Type: application/json');
+
+$customSettingsFile = __DIR__ . '/custom_settings.php';
+if (file_exists($customSettingsFile)) {
+	require_once $customSettingsFile;
+}
 
 if (session_status() === PHP_SESSION_NONE) {
 	require_once __DIR__ . '/session_header.php';
