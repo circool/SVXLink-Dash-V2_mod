@@ -58,7 +58,7 @@ if (defined("SHOW_AUDIO_MONITOR") && SHOW_AUDIO_MONITOR) {
 
 if (SHOW_AUTH) {
 	if (isset($_SESSION['auth']) && $_SESSION['auth'] == 'AUTHORISED') {
-		echo '<a class="menusettings" href="#">';
+		echo '<a class="menusettings" href="/include/ui_settings.php">';
 		echo getTranslation('Settings');
 		echo '</a>';
 	}
@@ -93,7 +93,7 @@ if (defined("SHOW_CON_DETAILS") && SHOW_CON_DETAILS) : ?>
 			<h3 style="color: #bebebe; margin-bottom: 20px;"><?php echo getTranslation('Adminisration') ?></h3>
 			<div style="display: flex; flex-direction: column; gap: 10px;">
 				<a class="menuadmin" href="javascript:void(0)" onclick="openPasswordForm(); closeLogoutModal();" style="display: block; padding: 10px; text-align: center;"><?php echo getTranslation('Change password') ?></a>
-				<a class="menuconfig" href="/include/settings.php" style="display: block; padding: 10px; text-align: center;"><?php echo getTranslation('Settings') ?? 'Settings'; ?></a>
+				<a class="menuconfig" href="/include/ui_settings.php" style="display: block; padding: 10px; text-align: center;"><?php echo getTranslation('Settings') ?? 'Settings'; ?></a>
 				<a href="/include/logout.php" class="menuadmin" style="display: block; padding: 10px; text-align: center;"><?php echo getTranslation('Logout') ?? 'Logout'; ?></a>
 			</div>
 			<button onclick="closeLogoutModal()" style="margin-top: 20px; padding: 8px 16px; background: #65737e; color: #bebebe; border: 1px solid #3c3f47; cursor: pointer;"><?php echo getTranslation('Cancel') ?></button>

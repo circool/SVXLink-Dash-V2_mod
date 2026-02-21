@@ -20,8 +20,7 @@
 	margin: 0;
 }
 
-#reflector_activity_content table tr:hover td,
-#reflector_activity_content table tr:hover td a,
+
 #net_activity_content table tr:hover td,
 #net_activity_content table tr:hover td a,
 #rf_activity_content table tr:hover td,
@@ -30,12 +29,11 @@
 	color: #ffffff;
 }
 
-.menureflector,
+
 .menukeypad,
 .menuaudio,
 .menumacros,
 .menusettings,
-.menureflector,
 .menuconnection {
 	position: relative;
 }
@@ -107,15 +105,6 @@
 
 .menureflector:before {
 	content: "\f0a1";
-	font-family: FontAwesome;
-	font-style: normal;
-	font-weight: normal;
-	text-decoration: inherit;
-	padding-right: 0.2em;
-}
-
-.link-control:before {
-	content: "\f127";
 	font-family: FontAwesome;
 	font-style: normal;
 	font-weight: normal;

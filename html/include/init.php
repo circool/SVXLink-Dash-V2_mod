@@ -7,6 +7,12 @@
  * @version 0.4.6
  */
 
+// Custom UI settings 
+$customSettingsFile = $_SERVER["DOCUMENT_ROOT"] . '/include/custom_settings.php';
+if (file_exists($customSettingsFile)) {
+	include_once $customSettingsFile;
+}
+
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/settings.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getActualStatus.php';
 require_once $_SERVER["DOCUMENT_ROOT"] . '/include/fn/getConfig.php';

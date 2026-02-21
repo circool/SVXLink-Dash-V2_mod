@@ -7,8 +7,10 @@
  * 
  * @return string 
  */
+
 function getTranslation(string $key, string $default = '', bool $escape_html = true): string
 {
+	
 	if(defined("LANGUAGE_SUPPORT") && LANGUAGE_SUPPORT===false) return $key;
 	
 	if (trim($key) === '') {

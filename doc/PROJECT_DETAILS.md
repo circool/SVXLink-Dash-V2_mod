@@ -79,7 +79,7 @@ Color scheme settings:
     + Real-time server settings:
       - `WS_PORT`
       - `WS_PATH`
-    + `USE_CACHE` - Global cache usage for parsing
+    + `USE_CACHE` - Global cache usage for parsing (strongly recommended)
     + `LOG_CACHE_TTL_MS` - Cache lifetime settings for log parsing functions
   
   - Constants defining session settings:
@@ -129,10 +129,12 @@ Configuration and service state data is stored in the session (session with a fi
 ### ['TIMEZONE'] : string
 
 ### RF Activity kerchunks filter:
+
   - ['rf_filter'] : string ON | OFF (default: ON)
   - ['rf_filter_max'] : float (default: 1)
 
 ### NET Activity kerchunks filter:
+
   - ['net_filter'] : string ON | OFF (default: ON)
   - ['net_filter_max'] : float (default: 1)
 
@@ -240,8 +242,6 @@ Configuration and service state data is stored in the session (session with a fi
 - `module` : string (module name)
 - `logic` : string (logic name)
 	
-
-
 ## 6. File Structure
 
 ```
@@ -274,6 +274,7 @@ Configuration and service state data is stored in the session (session with a fi
 │   ├── rf_activity.php                  # Local activity history
 │   ├── session_header.php               # Lightweight session opening
 │   ├── settings.php                     # Application settings
+│   ├── ui_settings.php                  # Dashboard UI settings
 │   ├── top_menu.php                     # Main command menu
 │   ├── websocket_client_config.php      # Update client configuration
 │   ├── websocket_server.php             # Update server configuration (PHP)
@@ -349,7 +350,6 @@ Commands are JSON objects with a mandatory `action` field:
 
 Detailed documentation in `ws_client.md`
 
-
 ### Interface Elements
 
 #### Modal Windows
@@ -358,6 +358,7 @@ Detailed documentation in `ws_client.md`
 3. **Logout/Administration** (`logoutModal`) - admin menu
 
 #### Functional Blocks
+
 1. **Radio Status** - radio device status
 2. **Connection Details** - network connection details
 3. **Reflectors Info** - reflector information
@@ -366,11 +367,13 @@ Detailed documentation in `ws_client.md`
 6. **Debug Console** - debug information
 
 #### Control Panels
+
 1. **Navigation Panel** - control buttons
 2. **Left Panel** (`#leftPanel`) - logic and module structure
 3. **Debug Panel** - performance metrics and variables
 
 ### Structure Features
+
 - Responsive flex layout used
 - Responsive design support
 
