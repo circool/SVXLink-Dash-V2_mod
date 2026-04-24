@@ -4,7 +4,7 @@
  * @filesource /include/websocket_client_config.php
  * @author Vladimir Tsurkanenko <vladimir@tsurkanenko.ru>
  * @date 2026.02.11
- * @version 0.4.6
+ * @version 0.4.7
  */
 
 if (!defined('DASHBOARD_HOST')) {
