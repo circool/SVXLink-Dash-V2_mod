@@ -21,7 +21,7 @@ if (defined('WS_ENABLED') && WS_ENABLED): ?>
 		window.DASHBOARD_CONFIG = window.DASHBOARD_CONFIG || {};
 		window.DASHBOARD_CONFIG.websocket = {
 			enabled: true,
-			host: "<?php echo DASHBOARD_HOST; ?>",
+			host: window.location.hostname,
 			port: <?php echo defined('WS_PORT') ? WS_PORT : 8080; ?>,
 			path: "<?php echo defined('WS_PATH') ? WS_PATH : '/ws'; ?>",
 			autoConnect: true,
