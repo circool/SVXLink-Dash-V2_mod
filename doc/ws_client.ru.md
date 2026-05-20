@@ -1,4 +1,3 @@
-```markdown
 # Документация DOM Command Client v4.2
 
 ## Обзор
